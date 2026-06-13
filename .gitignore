@@ -1,0 +1,124 @@
+
+adbkey*
+.aider*
+.android/
+# Android y logs locales
+.antigravity
+*.apk
+ARCHIVOS_HISTORICOS_NEXUS/
+*.bak
+# Bases de datos y persistencia
+.bash_history
+*.bin
+bin/lanzador_nexus.sh
+bin/nexus_browser_*
+bin/nexus_nerve
+bin/shadowcrawl-*
+bin/zeroclaw
+brain/
+.cache/
+**/Cache/
+**/CacheStorage/
+.cargo/
+.cargo/.global-cache
+.cargo/index/
+.cargo/.package-cache*
+.cargo/registry/
+.claude/
+.clinerules
+**/Code Cache/
+# Compilaciones
+compilation_output.txt
+!composer.json
+.config/
+# Configuración del Sistema, Credenciales y Cachés Locales
+*.corrupt
+*.d
+data/intelligence.db
+data/lancedb/
+data/nexus_vectors/
+data/profiles/
+data/qdrant/
+data/santuario/
+data/vault/ancestral_knowledge.txt
+data/vault/rescatado/
+# Datos de usuario y Secretos
+*.db
+*.db.bak
+db_data*/
+default/
+dist/
+downloads/
+duplicates/
+# Entornos Virtuales, Sandboxes y Basura de Compilación
+.env
+# Exclusiones de Almacenamiento Masivo, Binarios Compilados y Descargas
+faz_omega/
+**/.gemini/
+*.gguf
+.gitnexus
+# Herencia y Residuos
+# Herramientas y Otros
+**/IndexedDB/
+*.jpg
+*.json
+*.lance/
+Last Session
+Last Tabs
+legado/
+Local State
+**/Local Storage/
+*.log
+# Logs y Archivos Temporales
+# Modelos de Inteligencia Artificial y Bases de Datos Locales
+.nexusclaw/
+.nexus_internal/
+.nexus_profile/
+.nexus_session/
+node_modules/
+*.old
+**/.ollama/
+*.onnx
+.opencode/
+!package.json
+!package-lock.json
+# Perfiles de navegador y basura de Chrome
+# Perfiles de Navegador y Caches de Sesión
+*.pid
+*.png
+.profile
+profiles/
+.python_history
+recovery.sql
+*.redb
+Reliquias/
+*.rlib
+*.rmeta
+# Rust / Cargo
+.rustup/
+scripts/binaries/
+secrets/
+**/Session Storage/
+shadowcrawl/mcp-server/
+*.Singleton*
+*.sqlite
+*.sqlite3
+.ssh/
+target/
+target_antigravity/
+*.tar.gz
+*.tflite
+*.tgz
+*.tmp
+token/
+tools/venv*/
+.ts/
+!tsconfig.json
+venv/
+vscodium/
+*.wasm
+*.webp
+.wget-hsts
+workshop/
+*.xapk
+*.zip
