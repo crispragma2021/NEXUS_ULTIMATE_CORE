@@ -13,8 +13,9 @@ use std::io::{self, Write};
 
 fn main() {
     // ─── Cargar API key de OpenRouter ──────────────────────────────────────
+    // 🔒 Sin llaves hardcodeadas: la clave se lee de OPENROUTER_API_KEY.
     let openrouter_key = std::env::var("OPENROUTER_API_KEY")
-        .unwrap_or_else(|_| "sk-or-v1-REDACTADO".to_string());
+        .expect("Falta OPENROUTER_API_KEY en el entorno");
     let tutor = std::sync::Mutex::new(TutorOpenRouter::new(openrouter_key));
 
     println!("\n{}", "=".repeat(60));

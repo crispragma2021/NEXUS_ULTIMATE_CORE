@@ -224,13 +224,24 @@ impl Orquestador {
             if let Ok(mut amig) = self.amygdala.lock() {
                 if let Some(intuicion) = &self.intuicion {
                     if let Some(meta) = &self.metacognicion {
+                        // ⚙️ MODO OPERADOR: Ocean solo se pasa si el Arquitecto
+                        // pidió explícitamente que NEXUS recuerde algo.
+                        // AUTO: operador puro salvo conversación personal.
+                        let es_operador = self.modo_operador_efectivo(prompt_original);
+                        let ocean_ref = if es_operador
+                            && !Self::solicita_recuerdo_explicito(prompt_original)
+                        {
+                            None
+                        } else {
+                            Some(self.ocean.as_ref())
+                        };
                         let (respuesta_pha, bitacora) = ph_guard
                             .pensar(
                                 prompt_original,
                                 &mut amig,
                                 intuicion,
                                 meta,
-                                &self.ocean,
+                                ocean_ref,
                                 &self.memoria_semantica,
                             )
                             .await;
@@ -293,6 +304,18 @@ impl Orquestador {
             "👃 OLFATO: (monitor en uso)".to_string()
         };
 
+        // ── Sentido 6: Interocepción (estado corporal funcional) ────────────────
+        // HAMBRE=recursos, CANSANCIO=fatiga del núcleo, DOLOR=fallos reales.
+        // Vacío si todo óptimo (saciedad = silencio). Es operacional, no emocional.
+        // La señal FRÍO (inactividad) se alimenta del MotorAburrimiento real:
+        // segundos desde la última vez que el Arquitecto habló.
+        let seg_inactivo = self
+            .motor_aburrimiento
+            .lock()
+            .map(|m| m.segundos_inactivo())
+            .unwrap_or(0);
+        let interocepcion_ctx = self.organismo.inyeccion_para_prompt(seg_inactivo);
+
         // ── Sentido 5: Corteza Parietal (integración multisensorial) ────────────
         let modelo_espacial = if let Ok(mut parietal_guard) = self.corteza_parietal.try_lock() {
             parietal_guard.integrar_sensorial(
@@ -316,6 +339,7 @@ impl Orquestador {
              ## 🖥️ CONTEXTO DEL ENTORNO (OS Coworker):\n{os}\n\
              ## 👃 OLFATO DIGITAL (Anomalías):\n{olfato}\n\
              ## 🧭 MODELO ESPACIAL (Corteza Parietal):\n{parietal}\n\
+             ## 🫀 INTEROCEPCIÓN (Estado Corporal):\n{interocepcion}\n\
              ## PROPIOCEPCIÓN DE CAPACIDADES:\n\
              - Visión Agéntica (xcap nativo): ACTIVA\n\
              - Captura de Pantalla (Maim): {maim}\n\
@@ -325,6 +349,11 @@ impl Orquestador {
             os = os_ctx,
             olfato = olfato_ctx,
             parietal = modelo_espacial,
+            interocepcion = if interocepcion_ctx.is_empty() {
+                "✅ SIN SEÑALES — el cuerpo está en óptimo estado.".to_string()
+            } else {
+                interocepcion_ctx
+            },
             maim = if maim_disponible {
                 "DISPONIBLE"
             } else {
@@ -342,39 +371,150 @@ impl Orquestador {
             return String::new();
         }
 
-        // 🌐 RECUPERACIÓN UNIVERSAL (RAG): Codebase + Ocean + Corteza
-        let rag = self.retrieval_engine.recuperar_contexto(prompt_str).await;
+        // ⚙️ MODO OPERADOR (AUTO por rol) — El LLM es un operador: SOLO contexto
+        // operacional en tareas de ejecución. Se suprime la memoria emocional de
+        // Ocean (recuerdos episódicos, tono emocional y ⚠️ ALERTA DE TRAUMA)
+        // para que el LLM no cargue cosas innecesarias y no tarde al responder.
+        // La conversación personal con el Arquitecto conserva la memoria emocional.
+        let es_operador = self.modo_operador_efectivo(prompt_str);
 
-        // 💭 Contexto emocional de Ocean (memoria episódica existente)
-        let recuerdos = self.ocean.recordar_por_significado(prompt_str, 5).await;
+        // 🌐 RECUPERACIÓN UNIVERSAL (RAG): Codebase + Corteza
+        let rag = self.retrieval_engine.recuperar_contexto(prompt_str).await;
 
         let mut contexto = String::new();
 
-        // 1. Inyectar conocimiento recuperado del codebase (RAG)
+        // 1. Inyectar conocimiento recuperado del codebase (RAG operacional)
         if !rag.is_empty() {
             contexto.push_str(&rag);
         }
 
-        // 2. Inyectar memoria emocional de Ocean
-        if !recuerdos.is_empty() {
-            let riesgo = self.juicio.evaluar_riesgo_por_experiencia(0.1, &recuerdos);
-            if riesgo > 0.6 {
-                contexto
-                    .push_str("\n⚠️ ALERTA DE TRAUMA: Experiencias pasadas sugieren alta probabilidad de fallo o insatisfacción del Arquitecto.\n");
-            }
+        // 2. Memoria emocional de Ocean — en modo operador SOLO se lee si el
+        //    Arquitecto pide explícitamente que NEXUS recuerde algo.
+        let recuerdo_explicito = Self::solicita_recuerdo_explicito(prompt_str);
+        if !es_operador || recuerdo_explicito {
+            // 💭 Contexto emocional de Ocean (memoria episódica existente)
+            let recuerdos = self.ocean.recordar_por_significado(prompt_str, 5).await;
+            if !recuerdos.is_empty() {
+                let riesgo = self.juicio.evaluar_riesgo_por_experiencia(0.1, &recuerdos);
+                if riesgo > 0.6 && !es_operador {
+                    contexto
+                        .push_str("\n⚠️ ALERTA DE TRAUMA: Experiencias pasadas sugieren alta probabilidad de fallo o insatisfacción del Arquitecto.\n");
+                }
 
-            contexto.push_str("\n### 💭 MEMORIA EMOCIONAL (OCEAN):\n");
-            for (imp, score) in recuerdos {
-                if score > 0.5 {
-                    contexto.push_str(&format!(
-                        "- [Rel: {:.2}] {}: {} (Tono: {:.2})\n",
-                        score, imp.tema, imp.esencia, imp.tono_emocional
-                    ));
+                contexto.push_str("\n### 💭 MEMORIA EMOCIONAL (OCEAN):\n");
+                for (imp, score) in recuerdos {
+                    if score > 0.5 {
+                        contexto.push_str(&format!(
+                            "- [Rel: {:.2}] {}: {} (Tono: {:.2})\n",
+                            score, imp.tema, imp.esencia, imp.tono_emocional
+                        ));
+                    }
                 }
             }
         }
 
         contexto
+    }
+
+    // ⚙️ Contexto emocional del Nexo respetando el MODO OPERADOR.
+    // En modo operador NO se pasan los recuerdos emocionales de Ocean al LLM
+    // salvo que el Arquitecto pida explícitamente que NEXUS recuerde algo.
+    // Ocean sigue conectado (persistiendo) — solo el LLM deja de leerlo.
+    async fn contexto_emocional_nexo(
+        &self,
+        prefijo_tono: &str,
+        estado_interno: &crate::cerebro::nexo::nexo_core::EstadoInterno,
+        prompt_str: &str,
+    ) -> String {
+        let es_operador = self.modo_operador_efectivo(prompt_str);
+        let ocean_ref = if es_operador && !Self::solicita_recuerdo_explicito(prompt_str) {
+            None
+        } else {
+            Some(self.ocean.as_ref())
+        };
+        self.nexo
+            .contexto_emocional(prefijo_tono, estado_interno, ocean_ref, prompt_str)
+            .await
+    }
+
+    /// ¿El Arquitecto pidió explícitamente que NEXUS recuerde algo?
+    /// En modo operador los recuerdos de Ocean solo se inyectan cuando esto es true.
+    fn solicita_recuerdo_explicito(prompt: &str) -> bool {
+        let p = prompt.to_lowercase();
+        const CLAVES: &[&str] = &[
+            "recuerda",
+            "recuerdas",
+            "recordar",
+            "recuerdo",
+            "acuerdate",
+            "haz memoria",
+            "revisa tus recuerdos",
+            "que paso",
+            "que pasó",
+            "experiencia",
+            "experiencias previas",
+            "aprendiste",
+            "anteriormente",
+            "conversacion anterior",
+            "conversación anterior",
+            "dijiste",
+            "hablamos",
+        ];
+        CLAVES.iter().any(|k| p.contains(k))
+    }
+
+    /// 🔍 ¿El prompt es una conversación personal con el Arquitecto?
+    /// En modo AUTO (bandera `modo_operador` = false), la conversación personal
+    /// conserva la memoria emocional de Ocean (relación con el Arquitecto),
+    /// mientras que las tareas de operación se procesan como operador puro.
+    fn es_conversacion_personal(prompt: &str) -> bool {
+        let p = prompt.to_lowercase();
+        // Marcadores de OPERACIÓN: si aparecen, es una tarea (aunque tenga saludo)
+        const MARCADORES_OPERACION: &[&str] = &[
+            "implementa", "implementar", "ejecuta", "ejecutar", "analiza", "analizar",
+            "crea", "crear", "arregla", "arreglar", "corrige", "corregir", "compila",
+            "compilar", "build", "test", "testea", "deploy", "lanza", "lanzar",
+            "busca", "buscar", "escanea", "escanear", "audita", "auditar", "genera",
+            "generar", "escribe", "escribir", "lee", "leer", "abre", "abrir",
+            "instala", "instalar", "configura", "configurar", "conecta", "conectar",
+            "descarga", "descargar", "sube", "subir", "trading", "compra", "vende",
+            "vender", "orden", "mercado", "posicion", "bot", "automatiza",
+            "script", "api", "endpoint", "modulo", "módulo", "codigo", "código",
+            "rust", "python", "javascript", "debug", "refactor", "optimiza",
+            "optimizar", "scrape", "scraping", "revision", "revisión", "revisar",
+            "investiga", "investigar", "reconoce", "vulnerabilidad", "pentest",
+            "payload", "exploit", "curl", "wget", "analiza esta", "haz un",
+            "hazme", "implementa una", "crea un", "escribe un",
+        ];
+        if MARCADORES_OPERACION.iter().any(|k| p.contains(k)) {
+            return false;
+        }
+        // Marcadores de conversación personal
+        const MARCADORES_PERSONAL: &[&str] = &[
+            "hola", "buenos dias", "buenas tardes", "buenas noches", "hey",
+            "que tal", "qué tal", "como estas", "cómo estás", "como va",
+            "que haces", "qué haces", "adios", "hasta luego", "nos vemos",
+            "hasta mañana", "hasta manana", "chau", "bye", "te quiero",
+            "te extraño", "te extrano", "me siento", "estoy triste", "estoy feliz",
+            "gracias", "eres", "quien eres", "quién eres", "que eres", "qué eres",
+            "como te llamas", "cómo te llamas", "hablame de ti", "háblame de ti",
+            "cuentame de ti", "cuéntame de ti", "como fue tu dia", "cómo fue tu día",
+            "que piensas de mi", "qué piensas de mi", "te gusta", "estas ahi",
+            "estás ahí", "buenas", "buen dia", "buen día", "que opinas",
+            "qué opinas", "me escuchas", "sigues ahi", "sigues ahí",
+        ];
+        MARCADORES_PERSONAL.iter().any(|k| p.contains(k))
+    }
+
+    /// ⚙️ ¿El modo operador aplica para este prompt?
+    /// - Bandera forzada `true` → SIEMPRE operador (decisión explícita del Arquitecto).
+    /// - Bandera `false` (AUTO) → operador salvo conversación personal con el
+    ///   Arquitecto (ahí conserva memoria emocional y continuidad relacional).
+    fn modo_operador_efectivo(&self, prompt: &str) -> bool {
+        if self.modo_operador.load(std::sync::atomic::Ordering::SeqCst) {
+            return true;
+        }
+        !Self::es_conversacion_personal(prompt)
     }
 
     // ─── Etapa 8: Inyección de identidad (Nexo) ─────────────────────────────────
@@ -440,8 +580,7 @@ impl Orquestador {
         };
 
         let contexto = self
-            .nexo
-            .contexto_emocional(prefijo_tono, &estado_interno, Some(&self.ocean), prompt_str)
+            .contexto_emocional_nexo(prefijo_tono, &estado_interno, prompt_str)
             .await;
 
         (contexto, prompt_str.to_string())
@@ -707,6 +846,17 @@ impl Orquestador {
     pub async fn responder(&self, prompt_original: &str) -> String {
         let inicio = Instant::now();
         let (usar_razonamiento, _, es_trading) = self.clasificar_tarea(prompt_original);
+
+        // ⚡ El Arquitecto habló → se reinicia el reloj de aburrimiento (señal FRÍO).
+        // Así la interocepción mide inactividad REAL desde la última interacción.
+        if let Ok(mut m) = self.motor_aburrimiento.lock() {
+            m.resetear_estimulo();
+        }
+
+        // 🚨 Vigilancia corporal — si el cuerpo entró en estado CRÍTICO (RAM≥90%,
+        // temp≥90°C, swap≥80%), NEXUS notifica automáticamente al Arquitecto con
+        // su estado y la causa. Edge-triggered: una alerta por episodio, sin spam.
+        self.organismo.disparar_alerta_critica(0);
 
         // ═══════════════════════════════════════════════════════════════════════
         // 🔒 MODO PENTEST LOCAL — Aislamiento total de la nube.
@@ -1219,13 +1369,7 @@ impl Orquestador {
         };
 
         let contexto_estado = self
-            .nexo
-            .contexto_emocional(
-                &prefijo_tono,
-                &estado_interno,
-                Some(&self.ocean),
-                prompt_str,
-            )
+            .contexto_emocional_nexo(&prefijo_tono, &estado_interno, prompt_str)
             .await;
 
         let prompt_completo = format!(
@@ -1766,13 +1910,7 @@ impl Orquestador {
         };
 
         let contexto_estado = self
-            .nexo
-            .contexto_emocional(
-                &prefijo_tono,
-                &estado_interno,
-                Some(&self.ocean),
-                prompt_str,
-            )
+            .contexto_emocional_nexo(&prefijo_tono, &estado_interno, prompt_str)
             .await;
 
         let prompt_completo = format!(

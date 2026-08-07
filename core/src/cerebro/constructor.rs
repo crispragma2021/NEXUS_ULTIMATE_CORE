@@ -145,6 +145,21 @@ pub struct Orquestador {
     /// Ningún modelo de nube (Gemini/DeepSeek/OpenRouter/Groq/Vertex/WebClaw)
     /// ni el GOI pueden interferir: cero restricciones ajenas, cero fugas.
     pub aislamiento_local: std::sync::atomic::AtomicBool,
+    /// ⚙️ MODO OPERADOR — El LLM es solo un operador.
+    /// Cuando `true`, se suprime la inyección de memoria emocional (Ocean:
+    /// recuerdos episódicos, tono emocional y ⚠️ ALERTA DE TRAUMA) y de
+    /// identidad afectiva. Solo se inyecta contexto OPERACIONAL: RAG del
+    /// codebase, ring buffer del hipocampo y estado del mercado — nada que
+    /// distraiga de hacer bien el trabajo ni que haga perder el contexto.
+    pub modo_operador: std::sync::atomic::AtomicBool,
+    /// 🫀 Interocepción — sensaciones corporales funcionales (hambre=recursos,
+    /// cansancio=fatiga del núcleo, frío=inactividad, dolor=fallos reales).
+    pub organismo: crate::organismo::Organismo,
+    /// 🥱 Motor de Aburrimiento — mide inactividad real (señal FRÍO de la
+    /// interocepción). Es el reloj biológico del cuerpo: si no hay estímulos
+    /// durante N horas, NEXUS genera curiosidad activa. Se resetea al hablar.
+    pub motor_aburrimiento:
+        std::sync::Mutex<crate::cerebro::motor_aburrimiento::MotorAburrimiento>,
     /// 🧬 Sistema inmune cognitivo — heurística propia, memoria de amenazas, aprendizaje
     pub sistema_inmune: std::sync::Mutex<crate::defensa::sistema_inmune::SistemaInmune>,
     // FASE 1: Extirpado el puente cognitivo por violación de arquitectura
@@ -438,6 +453,11 @@ impl Orquestador {
             generador: std::sync::Mutex::new(Some(generador_interno)),
             usar_generador_interno: true,
             aislamiento_local: std::sync::atomic::AtomicBool::new(false),
+            modo_operador: std::sync::atomic::AtomicBool::new(false),
+            organismo: crate::organismo::Organismo::new(),
+            motor_aburrimiento: std::sync::Mutex::new(
+                crate::cerebro::motor_aburrimiento::MotorAburrimiento::new(6),
+            ),
             sistema_inmune: std::sync::Mutex::new(
                 crate::defensa::sistema_inmune::SistemaInmune::new(),
             ),

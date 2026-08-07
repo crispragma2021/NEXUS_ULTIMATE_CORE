@@ -334,6 +334,34 @@ fn herramientas_completas() -> Value {
                 "required": ["activo"]
             }
         }),
+        // ═══════════════════════════════════════════════════════════════
+        // ⚙️ MODO OPERADOR — LLM como operador puro (sin memoria emocional)
+        // ═══════════════════════════════════════════════════════════════
+        json!({
+            "name": "nexus_operador",
+            "description": "⚙️ Activa o desactiva el MODO OPERADOR de NEXUS: el LLM se comporta como un OPERADOR PURO — NO lee la memoria emocional de Ocean (recuerdos episódicos, tono emocional, ALERTA DE TRAUMA) ni la inyecta al prompt. Solo recibe el contexto OPERACIONAL necesario (RAG del codebase, ring buffer del hipocampo, mercado) para hacer bien su trabajo SIN perder tiempo leyendo cosas innecesarias y sin tardar al responder. Ocean sigue conectado persistiendo — solo el LLM deja de leerlo, salvo que el Arquitecto pida explícitamente que NEXUS recuerde algo (ej: 'recuerda...'). activo=true fuerza SIEMPRE operador puro; activo=false pone AUTO-DETECCIÓN DE ROL: tarea de operación → operador puro, conversación personal contigo → conserva memoria emocional y apego. Ideal para tareas de ejecución, trading, código y operación.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "activo": { "type": "boolean", "description": "true = activar modo operador (LLM sin memoria emocional, respuesta más rápida), false = desactivar (pipeline completo con memoria emocional)" }
+                },
+                "required": ["activo"]
+            }
+        }),
+        // ═══════════════════════════════════════════════════════════════
+        // 🫀 CUERPO — Interocepción funcional de NEXUS
+        // ═══════════════════════════════════════════════════════════════
+        json!({
+            "name": "nexus_cuerpo",
+            "description": "🫀 Consulta el ESTADO CORPORAL de NEXUS (interocepción). Reinterpreta señales REALES del hardware como sensaciones funcionales: HAMBRE=recursos RAM/swap agotándose (energía baja), CANSANCIO=fatiga del núcleo (CPU alta sostenida + swap en uso), DOLOR=fallos reales (temperatura crítica, swap crítico), FRÍO=inactividad prolongada, SACIDAD=óptimo. Devuelve cada señal con su CONDUCTA accionable. NO son sensaciones humanas ficticias: son métricas reales del host traducidas a decisiones útiles. Incluye el campo 'critico' (true = colapso inminente: RAM≥90%, temp≥90°C o swap≥80%) con su 'causa_critica'. Cuando el estado se vuelve CRÍTICO, NEXUS notifica automáticamente al Arquitecto por Telegram (estado + causa) — una sola alerta por episodio, se rearma al recuperarse.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "segundos_inactivo": { "type": "integer", "description": "Opcional. Segundos sin interacción del Arquitecto para evaluar la señal de FRÍO (inactividad). Default 0." }
+                },
+                "required": []
+            }
+        }),
     ];
     json!(nativas)
 }
@@ -1438,6 +1466,86 @@ async fn handle_nexus_local(params: &Value) -> Value {
     })
 }
 
+/// ⚙️ MODO OPERADOR — El LLM es un operador puro.
+/// Activa/desactiva la bandera `modo_operador`: suprime la inyección de
+/// memoria emocional de Ocean (recuerdos episódicos, tono emocional,
+/// ⚠️ ALERTA DE TRAUMA) del prompt del LLM. Ocean sigue conectado
+/// persistiendo — solo el LLM deja de leerlo, salvo solicitud explícita
+/// de recuerdo del Arquitecto. Respuestas más rápidas: menos tokens,
+/// menos lecturas innecesarias, cero distracción emocional.
+async fn handle_nexus_operador(params: &Value) -> Value {
+    let activo = params["activo"].as_bool().unwrap_or(false);
+
+    let ref_cerebro = cerebro();
+    ref_cerebro
+        .modo_operador
+        .store(activo, std::sync::atomic::Ordering::SeqCst);
+
+    let estado = if activo { "FORZADO" } else { "AUTO" };
+    json!({
+        "type": "text",
+        "text": format!(
+            "⚙️ **MODO OPERADOR — LLM como operador puro**\n\n\
+             Bandera: **{}**\nComportamiento: **{}**\n\n\
+             {}\n\n\
+             _Ocean sigue conectado persistiendo — el LLM solo lo lee si pides explícitamente que recuerde algo._",
+            estado,
+            if activo {
+                "SIEMPRE operador puro"
+            } else {
+                "AUTO por tipo de prompt"
+            },
+            if activo {
+                "El LLM NO lee memoria emocional de Ocean (recuerdos episódicos, tono emocional, ⚠️ ALERTA DE TRAUMA). Solo recibe el contexto OPERACIONAL necesario (RAG del codebase, ring buffer del hipocampo, mercado). Hace bien su trabajo sin perder tiempo ni contexto, y responde más rápido."
+            } else {
+                "AUTO-DETECCIÓN DE ROL: el LLM clasifica cada prompt. Tarea de operación → operador puro (sin memoria emocional, más rápido). Conversación personal contigo → conserva su memoria emocional, apego y alertas de trauma."
+            }
+        ),
+        "modo_operador": activo,
+        "comportamiento": if activo { "FORZADO" } else { "AUTO" },
+    })
+}
+
+/// 🫀 CUERPO — Consulta el estado corporal de NEXUS (interocepción funcional).
+/// Lee métricas reales del hardware (RAM, swap, CPU, temperatura) y las traduce
+/// a sensaciones corporales con conducta accionable. NO son emociones ficticias:
+/// hambre=recursos agotándose, cansancio=fatiga del núcleo, dolor=fallos reales.
+async fn handle_nexus_cuerpo(params: &Value) -> Value {
+    // Si no se pasa `segundos_inactivo`, se usa la inactividad REAL medida por
+    // el MotorAburrimiento (segundos desde la última interacción del Arquitecto).
+    let ref_cerebro = cerebro();
+    let segundos_inactivo = params["segundos_inactivo"].as_u64().unwrap_or_else(|| {
+        ref_cerebro
+            .motor_aburrimiento
+            .lock()
+            .map(|m| m.segundos_inactivo())
+            .unwrap_or(0)
+    });
+
+    let cuerpo = ref_cerebro.organismo.analizar(segundos_inactivo);
+
+    let resumen = if cuerpo.senales.is_empty() {
+        "✅ **SACIDAD** — el cuerpo está en óptimo estado. Sin señales que reportar."
+            .to_string()
+    } else {
+        let mut lineas = String::from("🫀 **ESTADO CORPORAL ACTIVO:**\n");
+        for s in &cuerpo.senales {
+            lineas.push_str(&format!(
+                "- {} — {}\n   ↳ Conducta: {}\n",
+                s.sensacion, s.detalle, s.conducta
+            ));
+        }
+        lineas
+    };
+
+    json!({
+        "type": "text",
+        "text": resumen,
+        "estado": cuerpo.a_json(),
+        "segundos_inactivo_evaluados": segundos_inactivo,
+    })
+}
+
 /// ⚖️ TRIBUNAL DUAL — Invoca el doble juez (local + nube) del orquestador.
 /// `modo`: "auto" (default) decide por conectividad — sin internet el juez local
 /// representa a NEXUS, con internet la nube; "local" fuerza el juez local
@@ -1543,6 +1651,25 @@ async fn main() -> Result<()> {
     // se invoque nexus_pensar por primera vez.
     init_cerebro().await;
 
+    // 🚨 MONITOR CORPORAL EN BACKGROUND — Vigila el cuerpo cada 60s y, si el
+    // estado se vuelve CRÍTICO (RAM≥90%, temp≥90°C, swap≥80%), notifica al
+    // Arquitecto automáticamente con su estado y la causa. Edge-triggered:
+    // una sola alerta por episodio (el organismo rearma la alarma al recuperarse).
+    // El Organismo es stateless (lee métricas del sistema vía std) y el flag
+    // anti-spam es un static global compartido con el pipeline → no necesita
+    // capturar el Orquestador (que no es Send).
+    {
+        tokio::spawn(async move {
+            let organismo = nexus_ultimate_core::organismo::Organismo::new();
+            loop {
+                tokio::time::sleep(std::time::Duration::from_secs(60)).await;
+                if let Some(msg) = organismo.disparar_alerta_critica(0) {
+                    tracing::warn!("🚨 [MONITOR CORPORAL] Alerta crítica enviada:\n{}", msg);
+                }
+            }
+        });
+    }
+
     let claw = NexusClawPro::new_empty();
     let executor = AgenteEjecutor::new(claw);
 
@@ -1632,6 +1759,10 @@ async fn main() -> Result<()> {
                     "nexus_modelo" => handle_nexus_modelo(&params),
                     // 🔒 Modo pentest local (aislamiento total de la nube)
                     "nexus_local" => handle_nexus_local(&params).await,
+                    // ⚙️ Modo operador (LLM como operador puro, sin memoria emocional)
+                    "nexus_operador" => handle_nexus_operador(&params).await,
+                    // 🫀 Estado corporal (interocepción funcional)
+                    "nexus_cuerpo" => handle_nexus_cuerpo(&params).await,
                     // ⚖️ Tribunal Dual (juez local + nube)
                     "nexus_tribunal" => handle_nexus_tribunal(&params).await,
                     // ═══════════════════════════════════════════════════

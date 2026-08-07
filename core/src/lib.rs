@@ -18,6 +18,7 @@ pub mod identities;
 pub mod infra;
 pub mod memoria;
 pub mod neuroquimica;
+pub mod organismo; // 🫀 Interocepción: sensaciones corporales funcionales
 pub mod nexus_embedder;
 pub mod nexus_telegram;
 pub mod phantom; // 👻 Módulo fantasma de compatibilidad

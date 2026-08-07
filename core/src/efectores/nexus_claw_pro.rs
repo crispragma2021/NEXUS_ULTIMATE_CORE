@@ -493,10 +493,63 @@ impl NexusClawPro {
     }
 
     pub async fn realizar_peticion_http(url: &str) -> Result<String, String> {
-        let client = reqwest::Client::new();
-        match client.get(url).send().await {
-            Ok(resp) => Ok(resp.text().await.unwrap_or_default()),
-            Err(e) => Err(e.to_string()),
+        let client = reqwest::Client::builder()
+            .timeout(Duration::from_secs(15))
+            .user_agent(Self::get_random_user_agent())
+            .redirect(reqwest::redirect::Policy::limited(5))
+            .build()
+            .map_err(|e| e.to_string())?;
+        let resp = client.get(url).send().await.map_err(|e| e.to_string())?;
+        let status = resp.status();
+        if status.is_client_error() || status.is_server_error() {
+            return Err(format!("HTTP {} para {}", status.as_u16(), url));
+        }
+        resp.text().await.map_err(|e| e.to_string())
+    }
+
+    /// 🌐 SCOUT EN CAPAS: intento directo → cloudscraper (bypass CF) → headless (JS).
+    /// Reutiliza la infraestructura existente del proyecto en vez de un GET desnudo:
+    /// la capa directa es la más rápida (APIs/JSON), cloudscraper maneja sitios con
+    /// protección Cloudflare, y el navegador headless renderiza SPAs con JavaScript.
+    pub async fn scout_web_en_capas(url: &str) -> AnyResult<String> {
+        match Self::realizar_peticion_http(url).await {
+            Ok(body) => {
+                if body.trim().is_empty() {
+                    info!("[SCOUT] Cuerpo vacío; escalando a headless: {}", url);
+                    Self::fetch_headless(url).await
+                } else {
+                    Ok(body)
+                }
+            }
+            Err(e_directo) => {
+                info!(
+                    "[SCOUT] Capa directa falló ({}); probando cloudscraper...",
+                    e_directo
+                );
+                match crate::infra::cloudscraper_rs::scrape(url).await {
+                    Ok(resultado) => Ok(resultado.html),
+                    Err(e_cf) => {
+                        info!(
+                            "[SCOUT] Cloudscraper falló ({}); probando headless...",
+                            e_cf
+                        );
+                        Self::fetch_headless(url).await
+                    }
+                }
+            }
+        }
+    }
+
+    /// Última capa: navegador headless real vía CDP (renderiza JavaScript/SPA).
+    async fn fetch_headless(url: &str) -> AnyResult<String> {
+        match crate::infra::navegador_soberano::fetch_html_native(url, Some(3000)).await {
+            Ok((status, html)) => {
+                if status >= 400 {
+                    bail!("HTTP {} (headless) para {}", status, url);
+                }
+                Ok(html)
+            }
+            Err(e) => bail!("Todas las capas fallaron para {}: {}", url, e),
         }
     }
 

@@ -34,6 +34,11 @@ impl MotorAburrimiento {
         self.ultima_interaccion = Self::tiempo_actual();
     }
 
+    /// Segundos transcurridos desde la última interacción (para interocepción).
+    pub fn segundos_inactivo(&self) -> u64 {
+        Self::tiempo_actual().saturating_sub(self.ultima_interaccion)
+    }
+
     /// Evalúa si el Hijo está aburrido y debe tomar la iniciativa
     pub fn evaluar_aburrimiento(&self) -> Option<Pensamiento> {
         let tiempo_sin_estimulo = Self::tiempo_actual().saturating_sub(self.ultima_interaccion);

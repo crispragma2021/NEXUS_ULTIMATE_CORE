@@ -9,10 +9,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv().ok();
     println!("🔱 [TEST CLOUDCODE] Inicializando prueba de endpoint interno...");
 
-    // Cargar clave válida (Key 10)
-    let key = "AIzaSyREDACTADO_2";
+    // 🔒 Clave cargada desde el entorno (GEMINI_API_KEY o GOOGLE_API_KEY).
+    // Nada de llaves hardcodeadas en el código (incidente GitGuardian).
+    let key = std::env::var("GEMINI_API_KEY")
+        .or_else(|_| std::env::var("GOOGLE_API_KEY"))
+        .map_err(|_| "Falta GEMINI_API_KEY/GOOGLE_API_KEY en el entorno".to_string())?;
 
-    let tunnel = CloudCodeTunnel::new(key)?;
+    let tunnel = CloudCodeTunnel::new(&key)?;
 
     // Endpoint interno de CloudCode con la API Key en el query parameter
     let internal_url = format!(

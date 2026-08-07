@@ -1151,14 +1151,9 @@ fn load_keys_from_env() -> Vec<String> {
             }
         }
     }
-    if keys.is_empty() {
-        keys = vec![
-            "AIzaSyREDACTADO_1".to_string(),
-            "AIzaSyREDACTADO_2".to_string(),
-            "AIzaSyREDACTADO_3".to_string(),
-            "AIzaSyREDACTADO_4".to_string(),
-        ];
-    }
+    // 🔒 Llaves API hardcodeadas ELIMINADAS (incidente GitGuardian).
+    // El proxy solo usa llaves del .env; si no hay, cae a fallbacks
+    // DeepSeek/OpenRouter configurados en variables de entorno.
     println!(
         "🔱 [PROXY HIJACK] Cargadas {} llaves de API desde .env",
         keys.len()

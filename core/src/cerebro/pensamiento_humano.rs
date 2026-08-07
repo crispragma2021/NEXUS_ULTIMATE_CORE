@@ -139,7 +139,7 @@ impl PensamientoHumanoAcelerado {
         amygdala: &mut Amygdala,
         intuicion: &Intuicion,
         metacognicion: &Metacognicion,
-        ocean: &Ocean,
+        ocean: Option<&Ocean>,
         memoria_semantica: &MemoriaSemantica,
     ) -> (String, BitacoraCreativa) {
         let inicio_total = Instant::now();
@@ -309,7 +309,7 @@ impl PensamientoHumanoAcelerado {
     async fn generar_ideas(
         &self,
         problema: &str,
-        ocean: &Ocean,
+        ocean: Option<&Ocean>,
         memoria_semantica: &MemoriaSemantica,
     ) -> Vec<String> {
         let mut ideas = Vec::new();
@@ -327,13 +327,17 @@ impl PensamientoHumanoAcelerado {
         ));
 
         // Idea 3: Enfoque por memoria (experiencias previas)
-        let recuerdos = ocean.recordar_por_significado(problema, 3).await;
-        if !recuerdos.is_empty() {
-            let mejor_recuerdo = &recuerdos[0];
-            ideas.push(format!(
-                "Enfoque por experiencia: Recordando '{}' (confianza: {:.0}%). Esto se parece a una situacion previa.",
-                mejor_recuerdo.0.tema, mejor_recuerdo.1 * 100.0
-            ));
+        // Solo si Ocean está disponible (modo operador lo omite a menos que
+        // el Arquitecto pida explícitamente que NEXUS recuerde algo).
+        if let Some(o) = ocean {
+            let recuerdos = o.recordar_por_significado(problema, 3).await;
+            if !recuerdos.is_empty() {
+                let mejor_recuerdo = &recuerdos[0];
+                ideas.push(format!(
+                    "Enfoque por experiencia: Recordando '{}' (confianza: {:.0}%). Esto se parece a una situacion previa.",
+                    mejor_recuerdo.0.tema, mejor_recuerdo.1 * 100.0
+                ));
+            }
         }
 
         // Idea 4: Enfoque de busqueda semantica
@@ -366,7 +370,7 @@ impl PensamientoHumanoAcelerado {
         &self,
         ideas: &[String],
         intuicion: &Intuicion,
-        _ocean: &Ocean,
+        _ocean: Option<&Ocean>,
     ) -> (usize, String) {
         if ideas.is_empty() {
             return (0, String::new());
@@ -405,7 +409,7 @@ impl PensamientoHumanoAcelerado {
     // ==========================================
     // FASE 4: PROTOTIPADO RAPIDO
     // ==========================================
-    async fn prototipar(&self, idea: &str, problema: &str, _ocean: &Ocean) -> String {
+    async fn prototipar(&self, idea: &str, problema: &str, _ocean: Option<&Ocean>) -> String {
         // Construir el prototipo mas pequeno posible de la idea
         format!(
             "[PROTOTIPO] Aplicando '{}' al problema '{}':\n\
@@ -524,7 +528,7 @@ impl PensamientoHumanoAcelerado {
         _prototipo: &str,
         razon_fracaso: &str,
         _ideas_previas: &[String],
-        _ocean: &Ocean,
+        _ocean: Option<&Ocean>,
         _memoria_semantica: &MemoriaSemantica,
     ) -> String {
         // El insight es la síntesis de:
@@ -556,7 +560,7 @@ impl PensamientoHumanoAcelerado {
     // ==========================================
     // FASE 9: REFINAMIENTO ITERATIVO
     // ==========================================
-    async fn refinar(&self, base: &str, problema: &str, _ocean: &Ocean) -> String {
+    async fn refinar(&self, base: &str, problema: &str, _ocean: Option<&Ocean>) -> String {
         let mut refinado = String::from("=== SOLUCION REFINADA ===\n\n");
         refinado.push_str(&format!("Problema original: {}\n\n", problema));
         refinado.push_str(&format!(

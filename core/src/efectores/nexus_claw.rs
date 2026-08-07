@@ -25,11 +25,11 @@ impl NexusClaw {
         }
     }
 
-    /// 🌐 SCOUT_WEB: Redirigido a petición HTTP sigilosa
+    /// 🌐 SCOUT_WEB: Fetch web en capas (directo → cloudscraper → headless)
     pub async fn scout_web(&self, url: &str) -> Result<String> {
-        NexusClawPro::realizar_peticion_http(url)
+        NexusClawPro::scout_web_en_capas(url)
             .await
-            .map_err(|e| anyhow::anyhow!(e))
+            .map_err(|e| anyhow::anyhow!("{}", e))
     }
 
     /// 🦾 SYSTEM_SCAVENGE: Patrullar procesos (implementación limpia)
