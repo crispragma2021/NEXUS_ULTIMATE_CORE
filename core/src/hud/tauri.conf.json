@@ -1,0 +1,32 @@
+{
+  "productName": "nexus-hud",
+  "version": "0.1.0",
+  "identifier": "com.nexus.sovereign.hud",
+  "build": {
+    "frontendDist": "./ui",
+    "devUrl": null
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "NEXUS OMEGA",
+        "width": 180,
+        "height": 50,
+        "resizable": true,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "label": "main"
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": false,
+    "icon": [
+        "icons/icon.png"
+    ]
+  }
+}

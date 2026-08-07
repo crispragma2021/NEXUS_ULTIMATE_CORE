@@ -1,0 +1,15 @@
+[Unit]
+Description=NEXUS Proxy Hijack Service (Port 4444)
+After=network.target
+
+[Service]
+Type=simple
+User=soberano
+WorkingDirectory=/home/soberano/NEXUS_ULTIMATE_CORE
+ExecStart=/bin/sh -c '/home/soberano/NEXUS_ULTIMATE_CORE/bin/proxy_hijack >> /home/soberano/NEXUS_ULTIMATE_CORE/brain/sessions/proxy_hijack.log 2>&1'
+Restart=always
+RestartSec=5
+Environment=RUST_LOG=info
+
+[Install]
+WantedBy=default.target

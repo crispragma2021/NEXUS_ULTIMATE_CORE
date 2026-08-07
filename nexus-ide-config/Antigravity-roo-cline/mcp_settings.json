@@ -1,0 +1,25 @@
+{
+	"mcpServers": {
+		"claws-mcp": {
+			"command": "/home/soberano/NEXUS_ULTIMATE_CORE/bin/claws-mcp",
+			"args": [],
+			"type": "stdio",
+			"disabled": false,
+			"alwaysAllow": [
+				"leer_archivo",
+				"escribir_archivo",
+				"buscar_codigo_regex",
+				"ejecutar_comando",
+				"listar_agentes",
+				"listar_skills",
+				"ejecutar_workflow",
+				"nexus_pensar",
+				"propiocepcion_scan",
+				"consultar_memoria",
+				"fusion_evaluate",
+				"vision_capture",
+				"sentinel_diagnostic"
+			]
+		}
+	}
+}

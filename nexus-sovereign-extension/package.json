@@ -1,0 +1,137 @@
+{
+  "name": "nexus-sovereign",
+  "displayName": "🔱 NEXUS Sovereign Extension",
+  "description": "🤖 Agente autónomo NEXUS — Sin modos, sin Roo Code. Con Agentic Loop + Tools nativas + OpenRouter. Como Antigravity pero con TODOS los poderes de NEXUS.",
+  "version": "1.0.0",
+  "publisher": "nexus",
+  "icon": "media/nexus-icon.png",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other",
+    "Debuggers",
+    "Machine Learning"
+  ],
+  "keywords": [
+    "nexus",
+    "ai",
+    "agent",
+    "autonomous",
+    "antigravity"
+  ],
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "nexus-sovereign-container",
+          "title": "NEXUS",
+          "icon": "media/nexus-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "nexus-sovereign-container": [
+        {
+          "type": "webview",
+          "id": "nexus.hudPanel",
+          "name": "NEXUS Agent",
+          "icon": "media/nexus-icon.svg",
+          "contextualTitle": "NEXUS Agent Autónomo"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "nexus.openHud",
+        "title": "📊 Abrir NEXUS Agent",
+        "category": "NEXUS"
+      },
+      {
+        "command": "nexus.status",
+        "title": "📡 Verificar Estado NEXUS",
+        "category": "NEXUS"
+      },
+      {
+        "command": "nexus.openTerminal",
+        "title": "🖥️ Abrir NEXUS Terminal",
+        "category": "NEXUS"
+      },
+      {
+        "command": "nexus.diffPreview",
+        "title": "📋 Diff Preview (portapapeles vs archivo activo)",
+        "category": "NEXUS"
+      },
+      {
+        "command": "nexus.actionHistory",
+        "title": "📜 Historial de Acciones",
+        "category": "NEXUS"
+      },
+      {
+        "command": "nexus.projectContext",
+        "title": "📁 Ver Contexto del Proyecto",
+        "category": "NEXUS"
+      },
+      {
+        "command": "nexus.resetSession",
+        "title": "🗑️ Resetear Sesión NEXUS",
+        "category": "NEXUS"
+      },
+      {
+        "command": "nexus.setupKeybindings",
+        "title": "⌨️ Ver Atajos de Teclado Recomendados",
+        "category": "NEXUS"
+      }
+    ],
+    "configuration": {
+      "title": "NEXUS Sovereign",
+      "properties": {
+        "nexus.openRouterApiKey": {
+          "type": "string",
+          "default": "",
+          "description": "API Key de OpenRouter para el Agentic Loop autónomo. Sin esto, NEXUS no puede operar de forma independiente."
+        },
+        "nexus.model": {
+          "type": "string",
+          "default": "google/gemini-2.5-flash-preview-04-17",
+          "description": "Modelo por defecto para el Agentic Loop (OpenRouter model ID)"
+        },
+        "nexus.apiBase": {
+          "type": "string",
+          "default": "http://localhost:43210",
+          "description": "URL base de la API de NEXUS Core"
+        },
+        "nexus.logLevel": {
+          "type": "string",
+          "enum": ["debug", "info", "warn", "error"],
+          "default": "info",
+          "description": "Nivel de detalle en logs de la extensión"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile",
+    "package": "vsce package --out nexus-sovereign-1.0.0.vsix"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.3.3",
+    "@vscode/vsce": "^2.32.0",
+    "@types/ws": "^8.5.10"
+  },
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "xterm": "5.0.0",
+    "@xterm/addon-fit": "0.9.0",
+    "ws": "^8.18.0"
+  }
+}

@@ -1,0 +1,54 @@
+[package]
+name = "cerebro-digital"
+version = "1.0.0"
+edition = "2021"
+description = "🧠 CEREBRO DIGITAL DINÁMICO v1 — Arquitectura Biológicamente Inspirada con Hodgkin-Huxley, STDP real y Memoria Jerárquica VRAM→RAM→SSD"
+
+[lib]
+name = "cerebro_digital"
+path = "src/lib.rs"
+
+[[bin]]
+name = "cerebro-digital"
+path = "src/bin/cerebro.rs"
+
+[[bin]]
+name = "cargador-corpus"
+path = "src/bin/cargador_corpus.rs"
+
+[[bin]]
+name = "demo-expresion"
+path = "src/bin/demo_expresion.rs"
+
+[[bin]]
+name = "aprendiz-autonomo"
+path = "src/bin/aprendiz_autonomo.rs"
+
+[[bin]]
+name = "entrenar-nucleo"
+path = "src/bin/entrenar_nucleo.rs"
+
+[dependencies]
+# Cerebro Digital Dinámico
+rand = "0.8"
+rayon = "1.7"
+sysinfo = "0.29"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Tutor OpenRouter Free (HTTP síncrono — 0 overhead async)
+ureq = { version = "2.9", features = ["json"] }
+
+# 🧬 Bio-Transformer Híbrido (SAE v2) — Núcleo numérico entrenable por backprop.
+# ÚNICA dependencia de ML autorizada (ADR SAE-002): autograd real en Rust.
+# NEXUS es el único maestro (destilación vía tutor_nexus.py). Nunca Ollama.
+candle-core = "0.11.0"
+candle-nn = "0.11.0"
+
+# GPU Acceleration (opcional)
+wgpu = { version = "0.19", optional = true }
+
+[features]
+default = ["cpu"]
+cpu = []
+gpu = ["wgpu"]

@@ -1,0 +1,101 @@
+{
+  "name": "🕶️ Deep Web — Exploración Profunda",
+  "description": "Hidden Wiki + CIA FOIA (nombres) + TorWire directory + búsquedas específicas",
+  "userDataDir": "/home/soberano/.nexus_profile",
+  "headless": false,
+  "proxy": "socks5://127.0.0.1:9050",
+  "useProxy": true,
+  "urlTimeout": 90000,
+  "urlWaitUntil": "domcontentloaded",
+
+  "phases": {
+    "searchEngines": false,
+    "portals": false,
+    "directURLs": true,
+    "warmup": ["tor", "browser"],
+    "cooldown": ["report"]
+  },
+
+  "engines": {
+    "browser": "chromium",
+    "google": false,
+    "duckduckgo": false,
+    "ai": "none"
+  },
+
+  "targets": {
+    "Hidden Wiki": {
+      "description": "El directorio principal de la deep web — lista de sitios .onion",
+      "urls": {
+        "Main Page": {
+          "url": "https://thehiddenwiki.org/",
+          "timeout": 60000,
+          "scroll": true,
+          "waitUntil": "networkidle0"
+        },
+        "Wiki Index": {
+          "url": "https://thehidden-wiki.org/wiki/index.php/Main_Page",
+          "timeout": 60000,
+          "scroll": true,
+          "waitUntil": "networkidle0"
+        }
+      }
+    },
+    "TorWire — Best Onion Sites": {
+      "description": "Lista actualizada 2026 de los mejores sitios onion",
+      "urls": {
+        "Best Dark Web Sites": {
+          "url": "https://torwire.com/dark-web/best/dark-web-sites/",
+          "timeout": 60000,
+          "scroll": true,
+          "waitUntil": "networkidle0"
+        }
+      }
+    },
+    "CIA FOIA — Búsqueda por nombre": {
+      "description": "Documentos desclasificados CIA sobre personas y Paraguay",
+      "urls": {
+        "Buscar 'Coronel Paraguay'": {
+          "url": "https://www.cia.gov/readingroom/search/site/coronel%20paraguay",
+          "timeout": 60000,
+          "scroll": true,
+          "waitUntil": "networkidle0"
+        },
+        "Buscar 'Stroessner'": {
+          "url": "https://www.cia.gov/readingroom/search/site/stroessner",
+          "timeout": 60000,
+          "scroll": true,
+          "waitUntil": "networkidle0"
+        },
+        "Buscar 'Paraguay intelligence'": {
+          "url": "https://www.cia.gov/readingroom/search/site/paraguay%20intelligence",
+          "timeout": 60000,
+          "scroll": true,
+          "waitUntil": "networkidle0"
+        }
+      }
+    },
+    "BBC Onion — busca deep web paraguay": {
+      "description": "BBC News buscando deep web y Paraguay en Tor",
+      "urls": {
+        "Deep web Paraguay": {
+          "url": "https://www.bbcnewsd73hkzno2ini43t4gblxvycyac5aw4gnv7t2rccijh7745uqd.onion/search?q=dark+web+paraguay",
+          "timeout": 60000,
+          "scroll": true,
+          "waitUntil": "domcontentloaded"
+        }
+      }
+    },
+    "DuckDuckGo Onion — busca .onion paraguay": {
+      "description": "Buscador anónimo — sitios onion relacionados a Paraguay",
+      "urls": {
+        "Onion sites paraguay": {
+          "url": "https://duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion/?q=paraguay+.onion+sites&ia=web",
+          "timeout": 120000,
+          "scroll": true,
+          "waitUntil": "domcontentloaded"
+        }
+      }
+    }
+  }
+}

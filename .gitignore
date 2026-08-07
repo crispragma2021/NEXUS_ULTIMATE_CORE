@@ -1,124 +1,304 @@
+# ============================================================================
+# 🧬 NEXUS ULTIMATE CORE — .gitignore SOBERANO
+# Solo código fuente. Nada de builds, pesos muertos ni modelos LLM.
+# ============================================================================
 
-adbkey*
-.aider*
-.android/
-# Android y logs locales
-.antigravity
-*.apk
-ARCHIVOS_HISTORICOS_NEXUS/
-*.bak
-# Bases de datos y persistencia
-.bash_history
-*.bin
-bin/lanzador_nexus.sh
-bin/nexus_browser_*
-bin/nexus_nerve
-bin/shadowcrawl-*
-bin/zeroclaw
-brain/
-.cache/
-**/Cache/
-**/CacheStorage/
-.cargo/
-.cargo/.global-cache
-.cargo/index/
-.cargo/.package-cache*
-.cargo/registry/
-.claude/
-.clinerules
-**/Code Cache/
-# Compilaciones
-compilation_output.txt
-!composer.json
-.config/
-# Configuración del Sistema, Credenciales y Cachés Locales
-*.corrupt
-*.d
-data/intelligence.db
-data/lancedb/
-data/nexus_vectors/
-data/profiles/
-data/qdrant/
-data/santuario/
-data/vault/ancestral_knowledge.txt
-data/vault/rescatado/
-# Datos de usuario y Secretos
-*.db
-*.db.bak
-db_data*/
-default/
+# --- Rust build artifacts ---
+target/
+**/target/
+Cargo.lock
+
+# --- JavaScript/Node ---
+node_modules/
+**/node_modules/
 dist/
-downloads/
-duplicates/
-# Entornos Virtuales, Sandboxes y Basura de Compilación
-.env
-# Exclusiones de Almacenamiento Masivo, Binarios Compilados y Descargas
-faz_omega/
-**/.gemini/
+*.vsix
+
+# --- Python ---
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+**/.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+
+# --- Cachés del sistema ---
+.cargo-cache/
+.cache/
+**/.cache/
+.cargo/
+**/.cargo/
+
+# --- Rust cache (sccache) ---
+sccache/
+
+# --- LLM Models (pesan GBs) ---
 *.gguf
-.gitnexus
-# Herencia y Residuos
-# Herramientas y Otros
-**/IndexedDB/
+*.bin
+*.safetensors
+models/
+**/models/
+bin/whisper/*.bin
+bin/whisper/*.gguf
+
+# --- Audio / Media ---
+*.mp3
+*.wav
+*.mp4
+*.avi
+*.mov
+*.flac
+*.ogg
+
+# --- Imágenes grandes ---
+*.png
 *.jpg
-*.json
-*.lance/
-Last Session
-Last Tabs
-legado/
-Local State
-**/Local Storage/
+*.jpeg
+*.gif
+*.ico
+*.svg
+media/*.png
+media/*.jpg
+
+# --- IDEs / Editors ---
+.vscode/settings.json
+.vscode/*.code-snippets
+.idea/
+*.swp
+*.swo
+*~
+
+# --- OS files ---
+.DS_Store
+Thumbs.db
+*.bak
+*.orig
+
+# --- Logs (directorios enteros, no solo archivos .log) ---
 *.log
-# Logs y Archivos Temporales
-# Modelos de Inteligencia Artificial y Bases de Datos Locales
-.nexusclaw/
+logs/
+**/logs/
+
+# --- Database locks ---
+*.db.lock
+*.db-shm
+*.db-wal
+
+# --- Docker (optional builds) ---
+*.dockerignore
+
+# --- NEXUS Core (binarios compilados internos) ---
+bin/nexus-build-debug
+bin/nexus_memory
+bin/nexus_memory_bridge
+bin/nexus_mcp_runner
+bin/claws-mcp
+bin/mcp_browser_native
+bin/rust_architect_eye
+bin/rust_filesystem
+bin/rust_github
+bin/rust_sqlite
+bin/rust_stitch
+
+# --- ARCHIVOS OCULTOS DEL SISTEMA Y CONFIG LOCAL ---
+.cargo/
+**/.cargo/
+brain/
+**/brain/
+trading-portal/
+**/trading-portal/
+# SSH, agentes, configs locales, sesiones
+.ssh/
+**/.ssh/
+.agent/
+**/.agent/
+.android/
+**/.android/
+.claude/
+**/.claude/
+.cloudflared/
+**/.cloudflared/
+.config/
+**/.config/
+.gitnexus/
+**/.gitnexus/
+.opencode/
+**/.opencode/
+.rustup/
+**/.rustup/
+.suroot/
+**/.suroot/
+.vault/
+**/.vault/
+
+# --- ebpf builds ---
+nexus_ebpf/target/
+nexus_ebpf-ebpf/target/
+nexus_ebpf-common/target/
+
+# --- antigravity builds ---
+antigravity_extension/out/
+antigravity_extension/*.vsix
+
+# --- nexus-sovereign-extension builds ---
+nexus-sovereign-extension/out/
+nexus-sovereign-extension/*.vsix
+
+# --- Tauri (src-tauri builds) ---
+src-tauri/target/
+
+# --- Ghost Shell builds ---
+nexus-ghost-shell/target/
+
+# --- Scratch / Temp ---
+scratch/
+tmp/
+**/tmp/
+
+# --- Datos locales ---
+data/
+DRIVE/
+google_drive/
+backups/
+config/
+**/config/
+
+# --- INFRAESTRUCTURA LOCAL (NUNCA SUBIR) ---
+# Sesiones, perfiles, cachés del sistema NEXUS
 .nexus_internal/
 .nexus_profile/
 .nexus_session/
-node_modules/
-*.old
-**/.ollama/
-*.onnx
-.opencode/
-!package.json
-!package-lock.json
-# Perfiles de navegador y basura de Chrome
-# Perfiles de Navegador y Caches de Sesión
-*.pid
-*.png
-.profile
-profiles/
-.python_history
-recovery.sql
-*.redb
-Reliquias/
-*.rlib
-*.rmeta
-# Rust / Cargo
-.rustup/
-scripts/binaries/
+.suroot/
+.vault/
+**/.vault/
+memoria/vault/
+**/memoria/vault/
+
+# --- Secretos y credenciales ---
 secrets/
-**/Session Storage/
-shadowcrawl/mcp-server/
-*.Singleton*
-*.sqlite
-*.sqlite3
-.ssh/
-target/
-target_antigravity/
-*.tar.gz
-*.tflite
-*.tgz
-*.tmp
-token/
-tools/venv*/
-.ts/
-!tsconfig.json
-venv/
+**/secrets/
+*.pem
+*.key
+*.p12
+*certificate*.pem
+credentials.json
+*_token.json
+sovereign_identity.json
+.env
+.envrc
+.env.local
+.env.production
+**/.env
+**/.envrc
+config.toml
+*.cred
+*.credential
+
+# --- Inteligencia y reportes sensibles ---
+reports/
+**/reports/
+shadowcrawl/
+**/shadowcrawl/
+downloads/
+**/downloads/
+artifacts/
+**/artifacts/
+archive/
+**/archive/
+
+# --- Binarios pre-compilados (no código fuente) ---
+bin/
+**/bin/
+*.so
+*.dll
+*.dylib
+
+# --- EXCEPCIÓN: código fuente Rust dentro de src/bin/ (bins del crate) ---
+!core/src/bin/
+core/src/bin/*
+!core/src/bin/*.rs
+!**/src/bin/
+**/src/bin/*
+!**/src/bin/*.rs
+
+# --- Trading portal (código sensible, aislado) ---
+trading-portal/
+**/trading-portal/
+
+# --- Cerebro/mente de NEXUS (sesiones, conocimiento interno, alucinaciones) ---
+brain/
+**/brain/
+
+# --- Datos locales (nunca subir) ---
+
+# --- Credenciales capturadas (NUNCA subir a GitHub) ---
+captured_creds.jsonl
+**/captured_creds.jsonl
+captured_creds*.jsonl
+**/captured_creds*.jsonl
+*.jsonl
+**/*.jsonl
+
+# --- IDE completo (VSCodium entero, decenas de GB) ---
 vscodium/
-*.wasm
-*.webp
-.wget-hsts
-workshop/
-*.xapk
-*.zip
+**/vscodium/
+
+# --- Perfiles de datos (modelos on-device, pesos) ---
+data/profiles/
+**/data/profiles/
+optimization_guide_model_store/
+**/optimization_guide_model_store/
+OptGuideOnDeviceModel/
+**/OptGuideOnDeviceModel/
+*.ts.bin
+**/*.ts.bin
+weights.bin
+**/weights.bin
+cache.bin
+**/cache.bin
+
+# --- Entornos virtuales de Python en tools ---
+tools/venv_osint/
+**/tools/venv_osint/
+tools/venv*/
+**/tools/venv*/
+
+# --- Modelos locales Ollama (NUNCA subir — inservibles en GitHub) ---
+.ollama/
+**/.ollama/
+ollama/
+**/ollama/
+models/
+**/models/
+*.gguf
+**/*.gguf
+*.safetensors
+**/*.safetensors
+*.bin
+**/*.bin
+
+# --- Imágenes de sistema / kernels / VMs (pesos muertos) ---
+*.ext4
+**/*.ext4
+vmlinux
+**/vmlinux
+*.iso
+**/*.iso
+*.qcow2
+**/*.qcow2
+
+# --- Bases de datos y cookies de sesión (NUNCA subir) ---
+*.db
+**/*.db
+*.redb
+**/*.redb
+*.sqlite
+**/*.sqlite
+*.sqlite3
+**/*.sqlite3
+cookies/
+**/cookies/
+*session_cookies*
+**/*session_cookies*

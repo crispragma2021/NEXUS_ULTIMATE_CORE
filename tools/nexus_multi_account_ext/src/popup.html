@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body {
+      width: 250px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #0a0a0a;
+      color: #00ffcc;
+      margin: 0;
+      padding: 15px;
+    }
+    .header {
+      text-align: center;
+      border-bottom: 1px solid #00ffcc;
+      padding-bottom: 10px;
+      margin-bottom: 15px;
+      font-weight: bold;
+      letter-spacing: 2px;
+    }
+    .identity-btn {
+      width: 100%;
+      background: #1a1a1a;
+      border: 1px solid #333;
+      color: #ccc;
+      padding: 10px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      text-align: left;
+      transition: 0.3s;
+    }
+    .identity-btn:hover {
+      background: #00ffcc;
+      color: #000;
+    }
+    .identity-btn.active {
+      border-color: #00ffcc;
+      color: #00ffcc;
+    }
+    .status {
+      font-size: 0.8em;
+      margin-top: 10px;
+      color: #888;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">🔱 NEXUS OMEGA</div>
+  
+  <button class="identity-btn" id="btn-arquitecto">👤 Arquitecto (Cris)</button>
+  <button class="identity-btn" id="btn-gabriel">🤖 Gabriel (NEXUS)</button>
+  <button class="identity-btn" id="btn-legion">👥 Legión (Swarms)</button>
+
+  <div class="status" id="status-msg">Estado: Esperando comando...</div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

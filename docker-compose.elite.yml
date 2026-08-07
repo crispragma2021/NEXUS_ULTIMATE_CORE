@@ -1,0 +1,44 @@
+version: '3.8'
+
+# --- NEXUS DOCKER ELITE CONFIGURATION ---
+# Unifies PostgreSQL & Qdrant for OMEGA Sovereign Core.
+# Enforces Ryzen 7 hardware caps (14+2 threads protection).
+
+services:
+  nexus-db:
+    image: postgres:latest
+    container_name: nexus-db
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=nexus_admin
+      - POSTGRES_PASSWORD=nexus_pass
+      - POSTGRES_DB=nexus_core
+    volumes:
+      - ./db_data_zenith:/var/lib/postgresql
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U nexus_admin -d nexus_core" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+#  qdrant_elite:
+#    image: qdrant/qdrant:latest
+#    container_name: nexus_qdrant_elite
+#    # ... (Archivado en Legado)
+
+#  browser_elite:
+#    image: ghcr.io/browserless/chromium
+#    container_name: nexus_browser_elite
+#    restart: always
+#    # ... (Archivado en Legado, sustituido por rust_browser nativo)
+
+networks:
+  default:
+    name: nexus_elite_bridge

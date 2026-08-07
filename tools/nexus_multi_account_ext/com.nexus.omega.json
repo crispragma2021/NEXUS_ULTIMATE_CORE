@@ -1,0 +1,9 @@
+{
+  "name": "com.nexus.omega",
+  "description": "NEXUS Sovereign Native Messaging Host",
+  "path": "/home/soberano/NEXUS_ULTIMATE_CORE/bin/nexus_native_bridge",
+  "type": "stdio",
+  "allowed_origins": [
+    "chrome-extension://ocgbfhldkjdblmkljbjokjbjokjbjokj/"
+  ]
+}

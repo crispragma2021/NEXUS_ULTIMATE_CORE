@@ -1,0 +1,47 @@
+[Unit]
+Description=🕸️ NEXUS Scraper Daemon — Pipeline de scraping Two-Tier
+Documentation=https://github.com/nexus/sovereign
+After=network.target network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=soberano
+Group=soberano
+WorkingDirectory=/home/soberano/NEXUS_ULTIMATE_CORE
+
+# === EJECUCIÓN PRINCIPAL ===
+# El binario se construye con: cargo build -p nexus_ultimate_core --release --bin scraper-daemon
+# Ruta esperada: target/release/scraper-daemon
+ExecStart=/home/soberano/NEXUS_ULTIMATE_CORE/target/release/scraper-daemon \
+    --db /home/soberano/NEXUS_ULTIMATE_CORE/scraper.db \
+    --poll-ms 5000 \
+    --ollama-model qwen2.5:7b
+ExecReload=/bin/kill -HUP $MAINPID
+KillSignal=SIGTERM
+TimeoutStopSec=30
+
+# === POLÍTICA DE REINICIO ===
+Restart=on-failure
+RestartSec=10
+StartLimitIntervalSec=60
+StartLimitBurst=3
+
+# === ENTORNO ===
+Environment="RUST_LOG=info"
+Environment="NEXUS_HOME=/home/soberano/NEXUS_ULTIMATE_CORE"
+
+# === RECURSOS (i7-12700F / 64GB) ===
+# El scraping no debe consumir toda la RAM; dejar margen para Ollama.
+Nice=5
+MemoryMax=8G
+MemorySwapMax=1G
+
+# === SANDBOXING ===
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/soberano/NEXUS_ULTIMATE_CORE/scraper.db /home/soberano/NEXUS_ULTIMATE_CORE/scratchpad
+
+[Install]
+WantedBy=multi-user.target

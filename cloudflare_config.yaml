@@ -1,0 +1,11 @@
+tunnel: 45f8896c-5961-4ad6-8137-e454b6cca666
+credentials-file: /home/soberano/NEXUS_ULTIMATE_CORE/.cloudflared/45f8896c-5961-4ad6-8137-e454b6cca666.json
+
+ingress:
+  - hostname: nexus.autosasistente.app
+    service: http://localhost:1420
+  - hostname: sovereign.autosasistente.app
+    service: http://localhost:1420
+  - hostname: ssh-nexus.autosasistente.app
+    service: ssh://localhost:22
+  - service: http_status:404

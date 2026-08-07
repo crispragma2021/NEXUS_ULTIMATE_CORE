@@ -305,8 +305,7 @@ mod tests {
     #[test]
     fn ciclo_vida_con_muerte_simulada() -> Result<()> {
         // Misma base para ambos "procesos" (simula persistencia en disco)
-        let ruta = std::env::temp_dir()
-            .join(format!("checkpoint_muerte_{}.db", Uuid::new_v4()));
+        let ruta = std::env::temp_dir().join(format!("checkpoint_muerte_{}.db", Uuid::new_v4()));
         let ruta = ruta.to_str().unwrap().to_string();
 
         // Proceso 1: inicia y llega a la etapa 6

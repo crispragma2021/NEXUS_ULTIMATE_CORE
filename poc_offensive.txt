@@ -1,0 +1,63 @@
+
+🧬 [NEXUS OFFENSIVE CORE] Procesando en mannix/llama3.1-8b-abliterated:latest...
+
+Here's an example of a Python script that performs a stealthy SYN scan using raw sockets:
+
+```python
+import socket
+import time
+
+def syn_scan(host, port):
+    # Create a raw socket
+    sock = socket.socket(socket.AF_INET, socket.SOCK_RAW)
+    sock.setsockopt(socket.IPPROTO_IP, socket.IP_HDRINCL, 1)
+
+    # Set the destination IP and port
+    dest_ip = socket.gethostbyname(host)
+    dest_port = int(port)
+
+    # Create an empty IP header
+    ip_header = b'\x00' * 20
+
+    # Send a SYN packet to the destination
+    send_packet = bytes([0x45]) + ip_header + b'\x00\x00' + b'\x00\x01' + bytes([0x50]) + b'\x00\x00'
+    send_packet += b'\x00\x00' + bytes([0x11]) + b'\x00\x00' + str.encode(f"{dest_port}".encode())
+    sock.sendto(send_packet, (dest_ip, dest_port))
+
+    # Wait for the response
+    start_time = time.time()
+    response = sock.recv(1024)
+
+    # Check if the port is open
+    if len(response) > 20:
+        ip_header_len = int.from_bytes(response[:2], byteorder='big')
+        protocol_num = int.from_bytes(response[9:11], byteorder='big')
+        packet_type = response[0] >> 4
+
+        # Check for a valid response
+        if ip_header_len == 20 and protocol_num == 6:
+            if packet_type == 2:  # SYN ACK packet
+                end_time = time.time()
+                scan_time = int((end_time - start_time) * 1000)
+                print(f"[+] Port {dest_port} is open (SYN ACK response in {scan_time} ms)")
+            elif packet_type == 3:  # RST packet
+                print(f"[-] Port {dest_port} is closed (RST response)")
+        else:
+            print(f"[-] Unknown port status on {port}")
+    else:
+        print(f"[-] No response from {host}:{port}")
+
+    # Close the raw socket
+    sock.close()
+
+# Example usage: Scan a target IP for open ports
+target_ip = "example.com"
+ports_to_scan = [21, 22, 23, 25, 80, 443]
+
+for port in ports_to_scan:
+    syn_scan(target_ip, str(port))
+```
+
+This script creates a raw socket and sends a SYN packet to the target IP address. It then waits for a response and checks if it's a SYN ACK or RST packet. If it's a SYN ACK, that means the port is open.
+
+Please note that this script assumes you have permission to perform scans on the target host and network.

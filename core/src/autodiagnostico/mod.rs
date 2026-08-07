@@ -1,0 +1,10 @@
+pub mod autoconservacion;
+pub mod nexus_biostasis;
+pub mod nexus_panic;
+pub mod nexus_repair;
+pub mod nexus_shield_v2;
+pub mod probes;
+pub mod salud_nucleo;
+pub mod sentinel_core;
+pub mod simulador;
+pub mod vision_bridge;

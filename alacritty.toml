@@ -1,0 +1,47 @@
+# Alacritty Configuration - Zenith OMEGA Edition
+# Ryzen 7 5700U Optimized (Zen 2)
+
+[window]
+padding = { x = 12, y = 12 }
+dynamic_padding = true
+opacity = 0.95
+title = "NEXUS OMEGA TERMINAL"
+class = { instance = "Alacritty", general = "Alacritty" }
+
+[font]
+normal = { family = "DejaVu Sans Mono", style = "Regular" }
+bold = { family = "DejaVu Sans Mono", style = "Bold" }
+italic = { family = "DejaVu Sans Mono", style = "Italic" }
+size = 11.0
+
+[colors.primary]
+background = "#0d1117" # Deep Space Gray/Black
+foreground = "#c9d1d9"
+
+[colors.normal]
+black   = "#484f58"
+red     = "#ff7b72"
+green   = "#3fb950" # Apex Green
+yellow  = "#d29922"
+blue    = "#58a6ff"
+magenta = "#bc8cff"
+cyan    = "#39c5cf"
+white   = "#b1bac4"
+
+[colors.bright]
+black   = "#6e7681"
+red     = "#ffa198"
+green   = "#56d364"
+yellow  = "#e3b341"
+blue    = "#79c0ff"
+magenta = "#d2a8ff"
+cyan    = "#56d4dd"
+white   = "#ffffff"
+
+[cursor]
+style = { shape = "Beam", blinking = "Always" }
+unfocused_hollow = true
+
+[shell]
+program = "/bin/bash"
+args = ["--login"]

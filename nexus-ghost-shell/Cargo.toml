@@ -1,0 +1,22 @@
+[package]
+name = "nexus-ghost"
+version = "0.1.0"
+edition = "2021"
+description = "NEXUS GHOST-SHELL: Interfaz agéntica periférica para control soberano mediante pensamiento."
+
+[dependencies]
+tauri = { version = "2.0.0-rc", features = ["tray-icon"] }
+tauri-plugin-shell = "2.0.0-rc"
+tauri-plugin-os = "2.0.0-rc"
+tauri-plugin-global-shortcut = "2.0.0-rc"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tokio = { version = "1.35", features = ["full"] }
+tokio-tun = { version = "0.6", optional = true } # Reservado para OMEGA-VPN
+futures-util = "0.3"
+tokio-tungstenite = "0.21" # Para el puente con el orquestador
+tracing = "0.1"
+tracing-subscriber = "0.3"
+
+[build-dependencies]
+tauri-build = { version = "2.0.0-rc", features = [] }

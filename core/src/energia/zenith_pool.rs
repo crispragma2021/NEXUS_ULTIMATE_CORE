@@ -664,7 +664,7 @@ impl ZenithPool {
         }
 
         let payload = json!({
-            "model": "openai/gpt-4o-mini", // Modelo económico y rápido
+            "model": "deepseek/deepseek-v4-flash", // Motor Élite Pagado (Bonus de 10$ activo)
             "messages": [
                 {"role": "system", "content": NEXUS_OVERRIDE},
                 {"role": "user", "content": prompt}
@@ -832,6 +832,16 @@ impl ZenithPool {
     /// Cadena de fallback multi-proveedor secuencial
     /// Prueba cada proveedor en orden hasta que uno responda exitosamente
     async fn cadena_fallbacks(&self, prompt: &str) -> String {
+        // 0. Prioridad Suprema: CÓRTEX NATIVO (Rust Puro / mistral.rs)
+        info!("🔄 [ZENITH] Intentando inferencia nativa (mistral.rs)...");
+        let cerebro_nativo = crate::energia::ia_nativa::CerebroNativo::new();
+        if let Ok(resp) = cerebro_nativo.generar_token_nativo(prompt).await {
+            if !resp.contains("warm-up") {
+                info!("✅ [ZENITH] Inferencia nativa exitosa.");
+                return resp;
+            }
+        }
+
         // DeepSeek
         info!("🔄 [ZENITH] Intentando fallback: DeepSeek");
         let respuesta = self.ejecutor_deepseek(prompt).await;

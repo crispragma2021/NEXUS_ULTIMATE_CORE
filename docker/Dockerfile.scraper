@@ -1,0 +1,53 @@
+# 🕸️ NEXUS Scraper Daemon — Dockerfile (daemon + SQLite, Ollama externo)
+# Construcción multi-etapa: compila el binario Rust, luego imagen mínima.
+#
+# Build:
+#   docker build -f docker/Dockerfile.scraper -t nexus-scraper:latest .
+#
+# Runtime:
+#   docker compose -f docker/docker-compose.scraper.yml up -d
+#
+# Ollama se ejecuta como servicio externo (en el host o contenedor aparte);
+# el daemon se conecta a http://host.docker.internal:11434 por defecto.
+
+FROM rust:1.80-bookworm AS builder
+WORKDIR /build
+
+# Copiar manifiestos para cachear capa de dependencias.
+COPY Cargo.toml Cargo.lock ./
+COPY core/Cargo.toml core/Cargo.toml
+COPY nexus-ghost-shell/Cargo.toml nexus-ghost-shell/Cargo.toml 2>/dev/null || true
+COPY nexus-shell/Cargo.toml nexus-shell/Cargo.toml 2>/dev/null || true
+COPY src-tauri/Cargo.toml src-tauri/Cargo.toml 2>/dev/null || true
+COPY workshop/nexus-terminal/Cargo.toml workshop/nexus-terminal/Cargo.toml 2>/dev/null || true
+COPY scratch/nexus_headless/Cargo.toml scratch/nexus_headless/Cargo.toml 2>/dev/null || true
+COPY mcp_arsenal/nexus_web_search/Cargo.toml mcp_arsenal/nexus_web_search/Cargo.toml 2>/dev/null || true
+
+# Compilar dependencias del binario (sin fuentes aún) para cachear.
+RUN mkdir -p core/src/bin && echo "fn main() {}" > core/src/bin/scraper_daemon.rs \
+    && echo "" > core/src/lib.rs \
+    && cargo build -p nexus_ultimate_core --bin scraper-daemon --release 2>/dev/null || true
+
+# Copiar fuentes reales y compilar.
+COPY core/src core/src
+RUN cargo build -p nexus_ultimate_core --bin scraper-daemon --release
+
+# ── Imagen final mínima ──
+FROM debian:bookworm-slim
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates curl \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+COPY --from=builder /build/target/release/scraper-daemon ./scraper-daemon
+RUN mkdir -p /app/scratchpad
+
+# Ollama accesible desde el host (Docker Desktop / Linux con host.docker.internal).
+ENV OLLAMA_HOST=http://host.docker.internal:11434
+
+# Volumen para la DB persistente.
+VOLUME /app/data
+
+EXPOSE 0
+
+ENTRYPOINT ["./scraper-daemon"]
+CMD ["--db", "/app/data/scraper.db", "--poll-ms", "5000", "--ollama-model", "qwen2.5:7b"]

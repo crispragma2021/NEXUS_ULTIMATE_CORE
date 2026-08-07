@@ -329,28 +329,28 @@ impl MundoInterno {
         if let Some(ref bus) = self.bus_neuronal {
             let mut rx = bus.subscribirse();
             while let Ok(msg) = rx.try_recv() {
-                    info!(
-                        "🪖 [MUNDO INTERNO] Misión recibida para especialista: {:?}",
-                        msg.receptor
-                    );
-                    self.agregar_pensamiento(PensamientoInterno::PlanLatente {
-                        objetivo: format!(
-                            "🪖 [SQUADRON] Especialista: {:?} — Misión: {}",
-                            msg.receptor, msg.contenido
-                        ),
-                        confianza_minima: 0.8,
-                    });
+                info!(
+                    "🪖 [MUNDO INTERNO] Misión recibida para especialista: {:?}",
+                    msg.receptor
+                );
+                self.agregar_pensamiento(PensamientoInterno::PlanLatente {
+                    objetivo: format!(
+                        "🪖 [SQUADRON] Especialista: {:?} — Misión: {}",
+                        msg.receptor, msg.contenido
+                    ),
+                    confianza_minima: 0.8,
+                });
 
-                    // ⚡ PROPIOCEPCIÓN DE SILICIO — Ejecutar misión en MicroVM si es técnica
-                    if msg.contenido.contains("código") || msg.contenido.contains("test") {
-                        let vm = &self.ghost_vm;
-                        let mision = msg.contenido.clone();
-                        tokio::spawn(async move {
-                            info!("🛡️ [GHOST-VM] Validando misión en silicio: {}", mision);
-                            // Simulación de ciclo de validación (en prod esto Boot + Exec)
-                        });
-                    }
+                // ⚡ PROPIOCEPCIÓN DE SILICIO — Ejecutar misión en MicroVM si es técnica
+                if msg.contenido.contains("código") || msg.contenido.contains("test") {
+                    let vm = &self.ghost_vm;
+                    let mision = msg.contenido.clone();
+                    tokio::spawn(async move {
+                        info!("🛡️ [GHOST-VM] Validando misión en silicio: {}", mision);
+                        // Simulación de ciclo de validación (en prod esto Boot + Exec)
+                    });
                 }
+            }
         }
 
         // Paso 3: Determinar si estamos dormidos o despiertos

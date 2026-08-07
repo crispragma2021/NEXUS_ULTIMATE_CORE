@@ -1,0 +1,29 @@
+[Unit]
+Description=NEXUS TR — Trading Portal + Sembrador OMEGA
+After=network.target
+StartLimitIntervalSec=120
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=soberano
+WorkingDirectory=/home/soberano/NEXUS_ULTIMATE_CORE/trading-portal
+
+ExecStartPre=/bin/bash -c "fuser -k 42210/tcp > /dev/null 2>&1; sleep 0.3; exit 0"
+ExecStart=/home/soberano/.cargo-target/release/nexus-tr
+
+KillMode=control-group
+KillSignal=SIGTERM
+TimeoutStopSec=10
+
+Restart=on-failure
+RestartSec=10
+
+Environment="RUST_LOG=info"
+Environment="RUST_BACKTRACE=1"
+Nice=-5
+IOSchedulingClass=best-effort
+IOSchedulingPriority=2
+
+[Install]
+WantedBy=default.target

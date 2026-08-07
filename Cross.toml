@@ -1,0 +1,24 @@
+# Cross.toml — Configuración de cross-compilación para NEXUS Shell
+# Usado por `cross` (https://github.com/cross-rs/cross) para compilar
+# a múltiples arquitecturas vía Docker.
+
+[build]
+# Solo compilar nexus-shell, no todo el workspace
+default-target = "x86_64-unknown-linux-gnu"
+
+# No pre-build: la imagen cross base ya trae pkg-config, cmake, etc
+# pre-build = ["./scripts/nexus-cross-prepare.sh"]
+
+[target.x86_64-unknown-linux-gnu]
+# Native Linux x86_64 (compilación directa)
+
+[target.aarch64-unknown-linux-gnu]
+# ARM64 Linux (Raspberry Pi 4/5, AWS Graviton, Apple M1/M2 con Linux VM)
+# Openssl vendorizado para evitar dependencias del sistema
+
+[target.x86_64-unknown-linux-musl]
+# Fully static binary for Linux x86_64 (no libc dependencies)
+# Ideal para Alpine Linux y distros minimalistas
+
+[target.aarch64-unknown-linux-musl]
+# Fully static binary for ARM64 Linux

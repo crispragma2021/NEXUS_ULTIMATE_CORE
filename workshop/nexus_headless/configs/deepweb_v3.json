@@ -1,0 +1,99 @@
+{
+  "name": "🛠️ Deep Web V3 — Últimos fixes",
+  "description": "Refinar IntelX (sintaxis correcta) + DarknetLive (dominio alternativo)",
+  "userDataDir": "/home/soberano/.nexus_profile",
+  "headless": false,
+  "proxy": "socks5://127.0.0.1:9050",
+  "useProxy": true,
+  "urlTimeout": 60000,
+  "urlWaitUntil": "domcontentloaded",
+
+  "phases": {
+    "searchEngines": false,
+    "portals": false,
+    "directURLs": true,
+    "warmup": ["tor", "browser"],
+    "cooldown": ["report"]
+  },
+
+  "engines": {
+    "browser": "chromium",
+    "google": false,
+    "duckduckgo": false,
+    "ai": "none"
+  },
+
+  "targets": {
+    "IntelX (sin proxy - sintaxis correcta)": {
+      "description": "IntelX sin Tor — sintaxis correcta de búsqueda",
+      "urls": {
+        "Portada IntelX": {
+          "url": "https://intelx.io/",
+          "timeout": 30000,
+          "scroll": false,
+          "waitUntil": "domcontentloaded",
+          "noProxy": true
+        },
+        "Búsqueda email paraguay": {
+          "url": "https://intelx.io/?s=paraguay",
+          "timeout": 45000,
+          "scroll": true,
+          "waitUntil": "networkidle0",
+          "noProxy": true
+        },
+        "Búsqueda phone Paraguay": {
+          "url": "https://intelx.io/?s=595",
+          "timeout": 45000,
+          "scroll": true,
+          "waitUntil": "networkidle0",
+          "noProxy": true
+        }
+      }
+    },
+    "Ahmia ONION (vía HTTPS)": {
+      "description": "Ahmia — forzar HTTPS .onion",
+      "urls": {
+        "Buscar 'paraguay gov'": {
+          "url": "https://ahmia.fi/search/?q=paraguay+government",
+          "timeout": 60000,
+          "scroll": true,
+          "waitUntil": "domcontentloaded"
+        },
+        "Buscar 'operation condor'": {
+          "url": "https://ahmia.fi/search/?q=operation+condor",
+          "timeout": 60000,
+          "scroll": true,
+          "waitUntil": "domcontentloaded"
+        }
+      }
+    },
+    "ProPublica — investigación Paraguay": {
+      "description": "ProPublica búsqueda deep",
+      "urls": {
+        "Búsqueda Operation Condor": {
+          "url": "https://www.propublica.org/search?q=operation+condor+paraguay",
+          "timeout": 60000,
+          "scroll": true,
+          "waitUntil": "networkidle0"
+        }
+      }
+    },
+    "DuckDuckGo Onion — buscar deepweb": {
+      "description": "DuckDuckGo onion para buscar contenido profundo",
+      "urls": {
+        "Buscar 'onion directories'": {
+          "url": "https://duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion/?q=best+onion+sites+2026&ia=web",
+          "timeout": 120000,
+          "scroll": true,
+          "waitUntil": "domcontentloaded"
+        },
+        "Buscar 'hidden wiki'": {
+          "url": "https://duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion/?q=hidden+wiki+onion&ia=web",
+          "timeout": 120000,
+          "scroll": true,
+          "waitUntil": "domcontentloaded"
+        }
+      }
+    }
+  }
+}

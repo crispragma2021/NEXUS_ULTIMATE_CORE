@@ -1,0 +1,93 @@
+{
+  "name": "🛠️ Deep Web — Fix Fallos",
+  "description": "Re-intento de sitios que fallaron con configuraciones corregidas",
+  "userDataDir": "/home/soberano/.nexus_profile",
+  "headless": false,
+  "proxy": "socks5://127.0.0.1:9050",
+  "useProxy": true,
+  "urlTimeout": 60000,
+  "urlWaitUntil": "domcontentloaded",
+
+  "phases": {
+    "searchEngines": false,
+    "portals": false,
+    "directURLs": true,
+    "warmup": ["tor", "browser"],
+    "cooldown": ["report"]
+  },
+
+  "engines": {
+    "browser": "chromium",
+    "google": false,
+    "duckduckgo": false,
+    "ai": "none"
+  },
+
+  "targets": {
+    "Ahmia Search (clearnet)": {
+      "description": "Ahmia vía HTTPS clearnet — Chrome no bloquea HTTPS",
+      "urls": {
+        "Portada Ahmia": {
+          "url": "https://ahmia.fi/",
+          "timeout": 60000,
+          "scroll": true,
+          "waitUntil": "domcontentloaded"
+        },
+        "Buscar 'osint'": {
+          "url": "https://ahmia.fi/search/?q=osint",
+          "timeout": 60000,
+          "scroll": true,
+          "waitUntil": "domcontentloaded"
+        }
+      }
+    },
+    "ProPublica (clearnet)": {
+      "description": "ProPublica vía HTTPS — onion caído",
+      "urls": {
+        "Portada ProPublica": {
+          "url": "https://www.propublica.org/",
+          "timeout": 60000,
+          "scroll": true,
+          "waitUntil": "networkidle0"
+        },
+        "Buscar 'paraguay'": {
+          "url": "https://www.propublica.org/search?q=paraguay",
+          "timeout": 60000,
+          "scroll": true,
+          "waitUntil": "networkidle0"
+        }
+      }
+    },
+    "DarknetLive (sin proxy)": {
+      "description": "Darknet Live sin Tor — bloquea Tor",
+      "urls": {
+        "DarknetLive": {
+          "url": "https://darknetlive.net/",
+          "timeout": 45000,
+          "scroll": true,
+          "waitUntil": "networkidle0",
+          "noProxy": true
+        }
+      }
+    },
+    "IntelX (sin proxy)": {
+      "description": "IntelX sin Tor — bloquea IPs Tor",
+      "urls": {
+        "Buscar 'paraguay'": {
+          "url": "https://intelx.io/?s=paraguay&category=ALL",
+          "timeout": 45000,
+          "scroll": true,
+          "waitUntil": "networkidle0",
+          "noProxy": true
+        },
+        "Buscar 'email leak'": {
+          "url": "https://intelx.io/?s=leaked+credentials+paraguay&category=ALL",
+          "timeout": 45000,
+          "scroll": true,
+          "waitUntil": "networkidle0",
+          "noProxy": true
+        }
+      }
+    }
+  }
+}

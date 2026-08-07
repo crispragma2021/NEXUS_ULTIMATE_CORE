@@ -139,6 +139,12 @@ pub struct Orquestador {
     pub generador: std::sync::Mutex<Option<crate::cerebro::generador::GeneradorInterno>>,
     /// 🧠 Flag para decidir qué pipeline usar: true = GOI, false = API externa
     pub usar_generador_interno: bool,
+    /// 🔒 MODO PENTEST LOCAL — Aislamiento total de la nube.
+    /// Cuando `true`, TODAS las respuestas y juicios del Orquestador pasan
+    /// EXCLUSIVAMENTE por el LLM local (Ollama vía NexusClawPro).
+    /// Ningún modelo de nube (Gemini/DeepSeek/OpenRouter/Groq/Vertex/WebClaw)
+    /// ni el GOI pueden interferir: cero restricciones ajenas, cero fugas.
+    pub aislamiento_local: std::sync::atomic::AtomicBool,
     /// 🧬 Sistema inmune cognitivo — heurística propia, memoria de amenazas, aprendizaje
     pub sistema_inmune: std::sync::Mutex<crate::defensa::sistema_inmune::SistemaInmune>,
     // FASE 1: Extirpado el puente cognitivo por violación de arquitectura
@@ -431,6 +437,7 @@ impl Orquestador {
             synapse,
             generador: std::sync::Mutex::new(Some(generador_interno)),
             usar_generador_interno: true,
+            aislamiento_local: std::sync::atomic::AtomicBool::new(false),
             sistema_inmune: std::sync::Mutex::new(
                 crate::defensa::sistema_inmune::SistemaInmune::new(),
             ),

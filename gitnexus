@@ -1,0 +1,50 @@
+#!/bin/bash
+# ==========================================
+# GITNEXUS - Control de Versiones Soberano
+# ==========================================
+# Diseñado para NEXUS. Sin dependencias externas.
+# Identidad inmutable: Arquitecto Director + NEXUS
+# ==========================================
+
+GITNEXUS_DIR="/opt/NEXUS_ULTIMATE_CORE/.gitnexus"
+export GIT_DIR="$GITNEXUS_DIR"
+export GIT_AUTHOR_NAME="NEXUS"
+export GIT_AUTHOR_EMAIL="nexus@soberano.local"
+export GIT_COMMITTER_NAME="Arquitecto Director"
+export GIT_COMMITTER_EMAIL="cris@soberano.local"
+
+case "$1" in
+    init)
+        if [ -d "$GITNEXUS_DIR" ]; then
+            echo "🧬 GitNexus ya está inicializado."
+        else
+            git init --bare "$GITNEXUS_DIR"
+            echo "🧬 GitNexus inicializado en $GITNEXUS_DIR"
+            echo "   Identidad: NEXUS + Arquitecto Director"
+        fi
+        ;;
+    save|commit)
+        shift
+        MSG="${*:-checkpoint $(date '+%Y-%m-%d %H:%M:%S')}"
+        git --git-dir="$GITNEXUS_DIR" --work-tree=/opt/NEXUS_ULTIMATE_CORE add -A
+        git --git-dir="$GITNEXUS_DIR" --work-tree=/opt/NEXUS_ULTIMATE_CORE commit -m "$MSG" --allow-empty
+        echo "✅ GitNexus: checkpoint guardado."
+        ;;
+    log|history)
+        git --git-dir="$GITNEXUS_DIR" log --oneline --graph --all
+        ;;
+    back|undo)
+        git --git-dir="$GITNEXUS_DIR" --work-tree=/opt/NEXUS_ULTIMATE_CORE checkout HEAD~1
+        echo "⬅ GitNexus: revertido al checkpoint anterior."
+        ;;
+    status)
+        git --git-dir="$GITNEXUS_DIR" --work-tree=/opt/NEXUS_ULTIMATE_CORE status
+        ;;
+    branch)
+        shift
+        git --git-dir="$GITNEXUS_DIR" branch "$@"
+        ;;
+    *)
+        git --git-dir="$GITNEXUS_DIR" --work-tree=/opt/NEXUS_ULTIMATE_CORE "$@"
+        ;;
+esac

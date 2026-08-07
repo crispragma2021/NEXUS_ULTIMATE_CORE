@@ -1,0 +1,12 @@
+[Unit]
+Description=NEXUS State Sensor Service
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/bin/bash /home/soberano/NEXUS_ULTIMATE_CORE/nexus_sensor.sh
+User=soberano
+WorkingDirectory=/home/soberano/NEXUS_ULTIMATE_CORE
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,11 @@
+# Ignorar base de datos local SQLite y archivos de locks para prevenir bucles de reinicio en desarrollo
+**/src-tauri/data/**
+**/src-tauri/data/*
+*.db
+*.db-journal
+*.db.lock
+nexus_intelligence.db.lock
+intelligence.db
+lancedb/
+**/src-tauri/data/intelligence.db
+**/src-tauri/data/intelligence.db-journal

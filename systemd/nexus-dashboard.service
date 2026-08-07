@@ -1,0 +1,16 @@
+[Unit]
+Description=NEXUS Dashboard UI (Vite)
+After=network.target nexus-watchdog.service
+
+[Service]
+Type=simple
+User=soberano
+WorkingDirectory=/home/soberano/NEXUS_ULTIMATE_CORE
+ExecStart=/home/soberano/.nvm/versions/node/v20.20.2/bin/npm run dev
+Restart=always
+RestartSec=10
+Environment=PATH=/home/soberano/.nvm/versions/node/v20.20.2/bin:/usr/bin:/bin:/usr/sbin:/sbin
+Environment=NODE_ENV=development
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,50 @@
+# =============================================================================
+# docker/Dockerfile.nexus-shell — 🧬 NEXUS Shell Runtime Docker (Legacy-compat)
+# =============================================================================
+# Dockerfile de un solo stage para compatibilidad con Docker legacy (sin BuildKit).
+# El binario debe estar en dist/nexus antes de construir:
+#   cargo build --release -p nexus-shell && cp (CARGO_TARGET_DIR)/release/nexus dist/
+#   docker build -f docker/Dockerfile.nexus-shell -t nexus-shell:latest .
+#
+# Ejecutar:
+#   docker run -d --name nexus \
+#     -p 8080:8080 \
+#     -v ~/.nexus:/home/nexus/.nexus \
+#     nexus-shell:latest
+# =============================================================================
+
+FROM debian:sid-slim
+
+# Runtime essentials
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    tini \
+    bash \
+    && rm -rf /var/lib/apt/lists/*
+
+# Crear usuario no-root
+RUN groupadd -r nexus && useradd -r -g nexus -m -d /home/nexus -s /bin/bash nexus
+
+# Copiar binario (debe existir en dist/nexus antes del build)
+COPY dist/nexus /usr/local/bin/nexus
+
+# Verificar binario
+RUN test -x /usr/local/bin/nexus || (echo "ERROR: dist/nexus not found! Build first: cargo build --release -p nexus-shell && cp (CARGO_TARGET_DIR)/release/nexus dist/" && exit 1)
+
+# Directorios de datos
+RUN mkdir -p /home/nexus/.nexus/{logs,config,services} && \
+    chown -R nexus:nexus /home/nexus/.nexus
+
+# Puerto del servidor
+EXPOSE 8080
+
+# Usar tini como init (maneja señales, zombies)
+ENTRYPOINT ["/usr/bin/tini", "--"]
+
+# Healthcheck
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD ["nexus", "status"] || exit 1
+
+# Por defecto inicia el daemon
+USER nexus
+CMD ["nexus", "daemon"]

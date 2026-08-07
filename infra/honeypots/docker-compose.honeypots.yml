@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  dionaea:
+    image: dionaea/dionaea
+    container_name: nexus-dionaea
+    ports:
+      - "21:21"  # FTP
+      - "23:23"  # Telnet
+      - "135:135" # MS RPC
+      - "445:445" # SMB
+      - "3389:3389" # RDP
+      - "80:80" # HTTP
+    volumes:
+      - ./dionaea_log:/opt/dionaea/var/log/dionaea
+    restart: unless-stopped
+    networks:
+      - honeypot_network
+
+  cowrie:
+    image: cowrie/cowrie
+    container_name: nexus-cowrie
+    ports:
+      - "2222:22" # SSH (redirected from a high port to standard 22 in honeypot)
+      - "2323:23" # Telnet (redirected from a high port to standard 23 in honeypot)
+    volumes:
+      - ./cowrie_log:/opt/cowrie/var/log
+      - ./cowrie_dl:/opt/cowrie/cowrie-git/var/lib/cowrie/downloads
+    restart: unless-stopped
+    networks:
+      - honeypot_network
+
+networks:
+  honeypot_network:
+    driver: bridge

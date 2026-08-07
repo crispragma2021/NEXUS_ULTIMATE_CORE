@@ -1,0 +1,6 @@
+scripts/binaries/** linguist-vendored
+arsenal_hardware/** linguist-vendored
+faz_omega/** linguist-vendored
+legado/** linguist-vendored
+*.html linguist-vendored
+*.css linguist-vendored

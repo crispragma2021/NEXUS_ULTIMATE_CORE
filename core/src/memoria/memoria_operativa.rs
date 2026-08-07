@@ -470,7 +470,12 @@ fn sanitizar_fts5(query: &str) -> String {
 
     let trimmed = sanitized.split_whitespace().collect::<Vec<_>>().join(" ");
     if trimmed.len() > 200 {
-        trimmed[..200].to_string()
+        // Recorte seguro por límite de carácter UTF-8 (nunca partir un char multibyte)
+        let mut boundary = 200;
+        while !trimmed.is_char_boundary(boundary) {
+            boundary -= 1;
+        }
+        trimmed[..boundary].to_string()
     } else {
         trimmed
     }

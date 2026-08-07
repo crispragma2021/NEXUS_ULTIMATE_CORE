@@ -1,0 +1,138 @@
+{
+  "name": "🕶️ Deep Web Explorer — Onion Recon",
+  "description": "Exploración de sitios .onion: buscadores, prensa, directorios, mercados, inteligencia",
+  "userDataDir": "/home/soberano/.nexus_profile",
+  "headless": false,
+  "proxy": "socks5://127.0.0.1:9050",
+  "useProxy": true,
+  "urlTimeout": 60000,
+  "urlWaitUntil": "domcontentloaded",
+
+  "phases": {
+    "searchEngines": false,
+    "portals": false,
+    "directURLs": true,
+    "warmup": ["tor", "browser"],
+    "cooldown": ["report"]
+  },
+
+  "engines": {
+    "browser": "chromium",
+    "google": false,
+    "duckduckgo": false,
+    "ai": "none"
+  },
+
+  "targets": {
+    "DuckDuckGo Onion": {
+      "description": "Buscador anónimo — el Google de la deep web",
+      "urls": {
+        "Portada": {
+          "url": "https://duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion/",
+          "timeout": 60000,
+          "scroll": false,
+          "waitUntil": "domcontentloaded"
+        }
+      }
+    },
+    "Ahmia Search Engine": {
+      "description": "Motor de búsqueda que indexa sitios .onion — buscador de deep web",
+      "urls": {
+        "Portada": {
+          "url": "https://juhanurmihxlp77nkq76byazcldy2hlmovfu2epvl5ankdibsot4csyd.onion/",
+          "timeout": 60000,
+          "scroll": false,
+          "waitUntil": "domcontentloaded"
+        }
+      }
+    },
+    "Facebook Onion": {
+      "description": "Facebook accesible vía Tor",
+      "urls": {
+        "Login Facebook Onion": {
+          "url": "http://facebookcorewwwi.onion/",
+          "timeout": 60000,
+          "scroll": false,
+          "waitUntil": "domcontentloaded"
+        }
+      }
+    },
+    "BBC News Onion": {
+      "description": "BBC News internacional — prensa en Tor",
+      "urls": {
+        "Portada BBC": {
+          "url": "https://www.bbcnewsd73hkzno2ini43t4gblxvycyac5aw4gnv7t2rccijh7745uqd.onion/",
+          "timeout": 60000,
+          "scroll": true,
+          "waitUntil": "domcontentloaded"
+        }
+      }
+    },
+    "ProPublica Onion": {
+      "description": "Periodismo de investigación — primer medio con onion",
+      "urls": {
+        "Portada ProPublica": {
+          "url": "https://www.propub3r6espa33w.onion/",
+          "timeout": 60000,
+          "scroll": true,
+          "waitUntil": "domcontentloaded"
+        }
+      }
+    },
+    "The Intercept": {
+      "description": "Periodismo de investigación global",
+      "urls": {
+        "Portada The Intercept": {
+          "url": "https://theintercept.com/",
+          "timeout": 45000,
+          "scroll": true,
+          "waitUntil": "networkidle0"
+        }
+      }
+    },
+    "SecureDrop Directory": {
+      "description": "Directorio oficial de SecureDrop — filtraciones anónimas",
+      "urls": {
+        "Directorio SecureDrop": {
+          "url": "https://securedrop.org/directory/",
+          "timeout": 60000,
+          "scroll": true,
+          "waitUntil": "domcontentloaded"
+        }
+      }
+    },
+    "IntelX Search": {
+      "description": "Buscador OSINT — datos filtrados, emails, credenciales",
+      "urls": {
+        "Portada IntelX": {
+          "url": "https://intelx.io/",
+          "timeout": 45000,
+          "scroll": true,
+          "waitUntil": "networkidle0"
+        }
+      }
+    },
+    "Darknet Live": {
+      "description": "Live stats y monitoreo de darknet",
+      "urls": {
+        "DarknetLive": {
+          "url": "https://darknetlive.net/",
+          "timeout": 45000,
+          "scroll": true,
+          "waitUntil": "networkidle0"
+        }
+      }
+    },
+    "CIA FOIA": {
+      "description": "Archivos desclasificados de la CIA",
+      "urls": {
+        "CIA CREST": {
+          "url": "https://www.cia.gov/readingroom/",
+          "timeout": 60000,
+          "scroll": true,
+          "waitUntil": "networkidle0"
+        }
+      }
+    }
+  }
+}

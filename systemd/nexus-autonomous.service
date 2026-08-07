@@ -1,0 +1,50 @@
+[Unit]
+Description=🔱 NEXUS Autonomous Agent Service — Ignición Autónoma OMEGA-6
+Documentation=https://github.com/nexus/sovereign
+After=network.target network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=soberano
+Group=soberano
+WorkingDirectory=/home/soberano/NEXUS_ULTIMATE_CORE
+
+# === EJECUCIÓN PRINCIPAL ===
+ExecStart=/bin/bash /home/soberano/NEXUS_ULTIMATE_CORE/scripts/nexus_auto_start.sh --daemon
+ExecReload=/bin/bash /home/soberano/NEXUS_ULTIMATE_CORE/scripts/nexus_auto_start.sh --reload
+
+# === POLÍTICA DE REINICIO ===
+Restart=on-failure
+RestartSec=10
+StartLimitIntervalSec=60
+StartLimitBurst=3
+
+# === ENTORNO ===
+Environment="RUST_LOG=info"
+Environment="NEXUS_HOME=/home/soberano/NEXUS_ULTIMATE_CORE"
+Environment="NEXUS_LOG=/tmp/nexus-auto.log"
+Environment="SANTUARIO_PORT=1420"
+Environment="OCEAN_DB=/home/soberano/NEXUS_ULTIMATE_CORE/nexus_intelligence.db"
+Environment="PATH=/usr/local/bin:/usr/bin:/bin:/home/soberano/.nvm/versions/node/*/bin"
+
+# === RECURSOS (Soberanía OMEGA — i7-12700F / 64GB) ===
+Nice=-5
+IOSchedulingClass=best-effort
+IOSchedulingPriority=2
+MemoryMax=32G
+MemorySwapMax=2G
+CPUQuota=80%
+
+# === SANDBOXING ===
+NoNewPrivileges=false
+ProtectSystem=full
+ProtectHome=false
+ReadWritePaths=/home/soberano/NEXUS_ULTIMATE_CORE /tmp
+
+# === LOGS ===
+StandardOutput=append:/tmp/nexus-auto.log
+StandardError=append:/tmp/nexus-auto.log
+
+[Install]
+WantedBy=default.target

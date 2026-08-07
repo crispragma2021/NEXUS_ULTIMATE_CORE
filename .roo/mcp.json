@@ -1,0 +1,97 @@
+{
+	"mcpServers": {
+		"nexus-claws-mcp": {
+			"command": "/home/soberano/NEXUS_ULTIMATE_CORE/bin/claws-mcp",
+			"args": [],
+			"alwaysAllow": [
+				"leer_archivo",
+				"escribir_archivo",
+				"listar_agentes",
+				"listar_skills",
+				"ejecutar_workflow",
+				"nexus_pensar",
+				"sentinel_diagnostic",
+				"resource_governor",
+				"propiocepcion_scan",
+				"buscar_codigo_regex",
+				"consultar_memoria",
+				"sistema_inmune_patrol",
+				"fusion_evaluate",
+				"buscar_conocimiento"
+			]
+		},
+		"nexus-consultar": {
+			"command": "/usr/bin/node",
+			"args": [
+				"/home/soberano/NEXUS_ULTIMATE_CORE/scripts/mcp/nexus_mcp_consultar.cjs"
+			],
+			"alwaysAllow": [
+				"consultar_nexus"
+			],
+			"disabled": false
+		},
+		"nexus-browser": {
+			"command": "/usr/bin/node",
+			"args": [
+				"/home/soberano/NEXUS_ULTIMATE_CORE/scripts/mcp/nexus_browser_mcp.cjs"
+			],
+			"alwaysAllow": [
+				"browser_navigate",
+				"browser_screenshot",
+				"browser_click",
+				"browser_type_human",
+				"browser_hover",
+				"browser_scroll",
+				"browser_eval",
+				"browser_get_dom",
+				"browser_close",
+				"browser_resolve_captcha"
+			]
+		},
+		"nexus-parallel": {
+			"command": "/usr/bin/node",
+			"args": [
+				"/home/soberano/NEXUS_ULTIMATE_CORE/scripts/mcp/nexus_parallel_mcp.cjs"
+			],
+			"alwaysAllow": [
+				"parallel_run",
+				"parallel_analyze",
+				"task_status",
+				"task_kill",
+				"task_list"
+			]
+		},
+		"nexus-omega-search": {
+			"command": "/usr/bin/node",
+			"args": [
+				"/home/soberano/NEXUS_ULTIMATE_CORE/scripts/mcp/omega_search_mcp.cjs"
+			],
+			"alwaysAllow": [
+				"omega_deep_search"
+			],
+			"timeout": 300
+		},
+		"nexus-sys": {
+			"command": "/usr/bin/node",
+			"args": [
+				"/home/soberano/NEXUS_ULTIMATE_CORE/scripts/mcp/nexus_sys_mcp.cjs"
+			],
+			"alwaysAllow": [
+				"sys_free_port",
+				"sys_daemon_control",
+				"sys_check_health"
+			]
+		},
+		"context7": {
+			"command": "npx",
+			"args": [
+				"-y",
+				"@upstash/context7-mcp"
+			],
+			"alwaysAllow": [
+				"resolve-library-id",
+				"query-docs"
+			]
+		}
+	}
+}

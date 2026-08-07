@@ -1,0 +1,6 @@
+# Ignorar código antiguo roto que satura el contexto de la IA
+legacy/
+tests/
+target/
+**/*.db
+**/*.log

@@ -1,0 +1,17 @@
+{
+  "name": "NEXUS Video Player",
+  "short_name": "NexusPlayer",
+  "description": "Reproductor de video de alta definición sin anuncios",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f0f0f",
+  "theme_color": "#ff0000",
+  "icons": [
+    {
+      "src": "/icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

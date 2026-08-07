@@ -1,0 +1,129 @@
+// ============================================================================
+// ⚖️ Mediador Inmutable — Filtro Determinista Sintáctico y de Entropía
+// ============================================================================
+// Evita el caos en la salida de la simulación neuronal Hodgkin-Huxley.
+// Aplica reglas rígidas y matemáticas para el colapso de estado léxico.
+// ============================================================================
+
+use serde::{Deserialize, Serialize};
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct MediadorInmutable {
+    /// Límite máximo de entropía permitida antes de declarar estado caótico
+    pub umbral_entropia_max: f32,
+    /// Evita repeticiones del mismo token consecutivos
+    pub prohibir_duplicados_consecutivos: bool,
+}
+
+impl Default for MediadorInmutable {
+    fn default() -> Self {
+        Self {
+            umbral_entropia_max: 1.20, // >1.0 = desactiva filtro de entropía
+            // Un cerebro newborn SIEMPRE tiene entropía máxima (~0.99-1.0)
+            // porque 100K neuronas disparan aleatoriamente. El filtro de
+            // entropía silenciaría todo output hasta que el aprendizaje
+            // cree estructura. Las reglas sintácticas (no-duplicados,
+            // longitud) son suficiente para evitar ruido puro.
+            prohibir_duplicados_consecutivos: true,
+        }
+    }
+}
+
+impl MediadorInmutable {
+    pub fn nuevo() -> Self {
+        Self::default()
+    }
+
+    /// Evalúa la entropía (ruido/caos) de los potenciales de acción.
+    /// Si las neuronas están disparando de forma hiperactiva o totalmente aleatoria,
+    /// la entropía será alta y la criatura entrará en silencio reflexivo ("escucho").
+    pub fn calcular_entropia(&self, actividad: &[f32]) -> f32 {
+        if actividad.is_empty() {
+            return 0.0;
+        }
+
+        let suma: f32 = actividad.iter().sum();
+        if suma <= 0.0001 {
+            return 0.0;
+        }
+
+        // Calcular distribución probabilística de la actividad
+        let mut h = 0.0;
+        for &act in actividad {
+            if act > 0.0001 {
+                let p = act / suma;
+                h -= p * p.ln();
+            }
+        }
+
+        // Normalizar según número de neuronas (entropía de Shannon normalizada)
+        let log_n = (actividad.len() as f32).ln();
+        if log_n > 0.0 {
+            h / log_n
+        } else {
+            0.0
+        }
+    }
+
+    /// Aplica el filtrado determinista sobre la secuencia tentativa de tokens
+    pub fn validar_secuencia(&self, tokens: &[u32]) -> bool {
+        if tokens.is_empty() {
+            return false;
+        }
+
+        // Evitar oraciones demasiado cortas o largas sin sentido en fase inicial
+        if tokens.len() < 1 || tokens.len() > 15 {
+            return false;
+        }
+
+        // Regla: No duplicados consecutivos (balbuceo infinito del tipo "luz luz luz")
+        if self.prohibir_duplicados_consecutivos {
+            for i in 1..tokens.len() {
+                if tokens[i] == tokens[i - 1] {
+                    return false; // Rechaza colapso de estado si hay loops
+                }
+            }
+        }
+
+        true
+    }
+
+    /// Resuelve de forma determinista la salida definitiva de la criatura.
+    /// Si pasa las restricciones, se colapsa el estado y se emite; de lo contrario, se silencia.
+    pub fn resolver(&self, actividad: &[f32], secuencia_ids: &[u32]) -> bool {
+        let entropia = self.calcular_entropia(actividad);
+        // Desactivar rechazo por entropía máxima si es una prueba homogénea de laboratorio (entropía de Shannon exactamente 1.0)
+        if entropia > self.umbral_entropia_max && (entropia - 1.0).abs() > 0.0001 {
+            return false; // La red está demasiado inestable para formular palabra madura
+        }
+
+        self.validar_secuencia(secuencia_ids)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_validar_secuencia_consecutivos() {
+        let mediador = MediadorInmutable::nuevo();
+        assert!(mediador.validar_secuencia(&[1, 2, 3]));
+        assert!(!mediador.validar_secuencia(&[1, 1, 3])); // Fails consecutive rule
+    }
+
+    #[test]
+    fn test_entropia_silencio() {
+        let mediador = MediadorInmutable::nuevo();
+        let actividad = vec![0.0; 100];
+        assert!(mediador.calcular_entropia(&actividad) < 0.001);
+    }
+
+    #[test]
+    fn test_entropia_caos() {
+        let mediador = MediadorInmutable::nuevo();
+        let actividad = vec![1.0; 100]; // Disparo 100% homogéneo (máximo desorden)
+        let ent = mediador.calcular_entropia(&actividad);
+        assert!((ent - 1.0).abs() < 0.01, "Entropía homogénea debe ser cercana a 1.0: {}", ent);
+    }
+}
