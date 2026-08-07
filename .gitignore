@@ -107,8 +107,6 @@ bin/rust_stitch
 **/.cargo/
 brain/
 **/brain/
-trading-portal/
-**/trading-portal/
 # SSH, agentes, configs locales, sesiones
 .ssh/
 **/.ssh/
@@ -223,9 +221,11 @@ core/src/bin/*
 **/src/bin/*
 !**/src/bin/*.rs
 
-# --- Trading portal (código sensible, aislado) ---
-trading-portal/
-**/trading-portal/
+# --- Trading portal: se versiona el código fuente; se excluye solo lo sensible ---
+trading-portal/.vault/
+**/trading-portal/.vault/
+trading-portal/scripts/gestor_credenciales.sh
+**/trading-portal/scripts/gestor_credenciales.sh
 
 # --- Cerebro/mente de NEXUS (sesiones, conocimiento interno, alucinaciones) ---
 brain/

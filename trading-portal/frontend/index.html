@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NEXUS TR — Trading Terminal · Sembrador</title>
+  <link rel="stylesheet" href="/src/design-system.css" />
+  <link rel="stylesheet" href="/src/style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* ═══════════════════════════════════════════════════════════════════════════
+       CYBERPUNK HUD CUSTOM HIGHLIGHTS & HYBRID RESPONSIVENESS
+       ═══════════════════════════════════════════════════════════════════════════ */
+    :root {
+      --neon-cyan: #06b6d4;
+      --neon-green: #10b981;
+      --neon-red: #ef4444;
+      --neon-yellow: #f59e0b;
+      --glow-cyan: 0 0 10px rgba(6, 182, 212, 0.15);
+      --font-display: 'Outfit', sans-serif;
+    }
+
+    /* Pulse wave heartbeat animation */
+    @keyframes heartbeat {
+      0% { transform: scale(1); box-shadow: 0 0 10px rgba(0, 212, 170, 0.2); }
+      50% { transform: scale(1.02); box-shadow: 0 0 25px rgba(0, 212, 170, 0.5); }
+      100% { transform: scale(1); box-shadow: 0 0 10px rgba(0, 212, 170, 0.2); }
+    }
+
+    .pulse-heartbeat {
+      animation: heartbeat 2s infinite ease-in-out;
+    }
+
+    /* Custom Non-Conflicting Position Cards */
+    .nexus-position-card {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      background: #0c1017 !important;
+      border-radius: 12px !important;
+      padding: 12px !important;
+      position: relative !important;
+      overflow: hidden !important;
+      border: 1px solid rgba(255, 255, 255, 0.02) !important;
+      height: 54px !important;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25) !important;
+      transition: all 0.2s ease !important;
+      box-sizing: border-box !important;
+    }
+    .nexus-position-card:hover {
+      background: #111721 !important;
+      border-color: rgba(0, 229, 255, 0.15) !important;
+      box-shadow: 0 4px 16px rgba(0, 229, 255, 0.08) !important;
+      transform: translateY(-1px) !important;
+    }
+
+    /* Banner Engineers */
+    .engineers-banner {
+      font-family: var(--font-display);
+      font-size: 10px;
+      letter-spacing: 2px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      text-align: center;
+      padding: 4px 0;
+      border-bottom: 1px dashed var(--glass-border);
+      background: rgba(0,0,0,0.2);
+    }
+
+    /* ── Indicators bar: jerarquía tipográfica y contraste consistente ── */
+    .indicators-bar {
+      border-top: 1px solid var(--glass-border);
+      background: var(--bg-secondary);
+    }
+    .indicator {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      padding: 6px 10px;
+      min-width: 0;
+    }
+    .ind-label {
+      font-size: 8px !important;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-muted);
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .ind-value {
+      font-family: var(--font-mono);
+      font-size: 12px !important;
+      font-weight: 700;
+      color: var(--text-primary, #e6edf3);
+      white-space: nowrap;
+    }
+
+    /* Botón DISEÑO: borde visible y hover claro */
+    #btnToggleLayout {
+      border: 1px solid rgba(6, 182, 212, 0.35);
+      border-radius: 6px;
+      background: rgba(6, 182, 212, 0.06);
+      transition: all 0.2s ease;
+      box-sizing: border-box;
+    }
+    #btnToggleLayout:hover {
+      border-color: var(--neon-cyan);
+      background: rgba(6, 182, 212, 0.12);
+      box-shadow: 0 0 12px rgba(6, 182, 212, 0.25);
+    }
+
+    /* Mobile Bottom Navigation Bar (Hidden on Desktop) */
+    .mobile-nav-bar {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background: rgba(8, 14, 24, 0.95);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid var(--glass-border);
+      z-index: 999;
+      justify-content: space-around;
+      align-items: center;
+    }
+
+    .mob-nav-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 20px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      width: 50px;
+      height: 50px;
+      transition: all 0.2s;
+    }
+
+    .mob-nav-btn.active {
+      color: var(--neon-cyan);
+      text-shadow: 0 0 10px rgba(0, 212, 170, 0.5);
+    }
+
+    .mob-nav-label {
+      font-size: 8px;
+      text-transform: uppercase;
+      font-family: var(--font-sans);
+    }
+
+    /* Responsiveness settings */
+    @media (max-width: 900px) {
+      .main-grid {
+        grid-template-columns: 1fr !important;
+        grid-template-rows: auto auto auto !important;
+        overflow-y: auto !important;
+        padding-bottom: 70px !important;
+      }
+      .col-telemetry, .col-console, .col-chart {
+        overflow-y: visible !important;
+        height: auto !important;
+      }
+      .header-center {
+        display: none !important;
+      }
+      .mobile-nav-bar {
+        display: flex;
+      }
+      body {
+        overflow-y: auto !important;
+      }
+    }
+  </style>
+</head>
+<body class="theme-binance">
+
+  <!-- 🛠️ ENGENEERS SIGNATURE BANNER (MINIMIZADO) -->
+  <div class="engineers-banner" style="border-bottom: 1px solid var(--glass-border); opacity: 0.6; font-size: 9px;">
+    NEXUS TRADER v2.0 • Sovereign Engineering Core • Arquitecto Cris
+  </div>
+
+  <!-- ═══ HEADER ═══ -->
+  <header class="header">
+    <div class="header-left">
+      <span class="logo" style="font-family: var(--font-display); font-weight: 800;">⚡NEXUS_<span style="color: var(--neon-cyan);">TRADER</span></span>
+      <span class="header-subtitle" style="color: var(--neon-cyan); font-weight: 700; font-size: 10px; font-family: var(--font-mono);">
+        ONLINE // SYNC_ACTIVE
+      </span>
+    </div>
+    
+    
+    <div class="header-right">
+      <!-- KPIs in top bar -->
+      <span style="font-family: var(--font-mono); font-size: 10px; color: var(--orange); border: 1px solid rgba(255,160,26,0.3); padding: 2px 6px; border-radius: 4px; font-weight: 600;">
+        SOLAR_KPI: 3.5
+      </span>
+      <span style="font-family: var(--font-mono); font-size: 10px; color: var(--green); border: 1px solid rgba(0,255,136,0.3); padding: 2px 6px; border-radius: 4px; font-weight: 600;">
+        SENTINEL_AUTO: ACTIVE [24/7]
+      </span>
+
+      <nav class="tab-nav" style="display: none;">
+        <button class="tab-btn active" data-tab="trading">📊 Trading</button>
+        <button class="tab-btn" data-tab="identidades">🧬 Sembrador</button>
+      </nav>
+
+      <button class="btn-mode simulated" id="btnTradingMode" title="Alternar entre cuenta simulada y real">
+        💼 <span id="modeLabel">SIMULACIÓN</span>
+      </button>
+      <button class="btn-mode" id="btnAuto" title="Auto-trading MANUAL — Tú decides. Clic para activar el algoritmo." style="cursor:pointer;">
+        🤖 <span id="autoLabel">MANUAL</span>
+      </button>
+      <!-- 🛑 KILL SWITCH: Parada de Emergencia Total -->
+      <button id="killSwitch" title="PARADA DE EMERGENCIA: detiene auto-trading, cancela órdenes abiertas y corta el feed en vivo"
+              style="cursor:pointer; background: var(--neon-red); color:#001; border:none; border-radius:6px; padding:8px 14px; font-family:var(--font-mono); font-size:11px; font-weight:800; letter-spacing:0.5px; box-shadow:0 0 12px rgba(255,0,60,0.5); transition: all 0.15s;">
+        🛑 KILL SWITCH
+      </button>
+      <!-- 🎯 Control de límite de operaciones (1-500) -->
+      <div style="display: flex; align-items: center; gap: 6px; padding: 4px 8px; border: 1px solid var(--glass-border); border-radius: 6px; background: var(--bg-secondary);">
+        <span style="font-family: var(--font-mono); font-size: 10px; color: var(--text-muted);">OPS</span>
+        <input type="number" id="limiteOps" min="1" max="500" step="1" value="60"
+               style="width: 64px; background: transparent; border: 1px solid rgba(0,255,136,0.3); color: var(--green); font-family: var(--font-mono); font-size: 12px; text-align: center; border-radius: 4px; padding: 3px;">
+        <button id="btnSetLimite" title="Configurar límite de operaciones (1-500)"
+                style="cursor:pointer; background: var(--green); color: #001; border: none; border-radius: 4px; padding: 4px 10px; font-family: var(--font-mono); font-size: 10px; font-weight: 700;">
+          APLICAR
+        </button>
+      </div>
+      <div class="connection-status" id="connStatus" style="font-family: var(--font-mono); font-size: 9px; color: var(--neon-cyan);">● SIMULADOR_ACTIVE</div>
+    </div>
+  </header>
+
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <!-- TAB 1: TRADING                                                        -->
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <div class="tab-content active" id="tab-trading">
+    <div class="main-grid">
+      <!-- COLUMNA 1: TELEMETRÍA Y CARTERA -->
+      <div class="col-telemetry">
+        <!-- 🔱 INDICADOR DE ESTADO DEL MODELO -->
+        <div class="panel" style="background: var(--bg-secondary); border: 1px solid var(--glass-border); margin-bottom: 12px; border-radius: 8px;">
+          <div style="padding: 12px; display: flex; flex-direction: column; gap: 4px;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <span style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;">Estado del Modelo</span>
+              <span id="agentLed" class="led-indicator led-green" style="font-size: 10px; font-weight: 700;">● ACTIVO</span>
+            </div>
+            <div style="font-family: var(--font-display); font-size: 14px; font-weight: 700; color: var(--neon-cyan);">
+              ⚡ MODO CENTINELA ACTIVO
+            </div>
+            <div style="font-size: 10px; color: var(--text-secondary); font-family: var(--font-mono);">
+              Confianza: 98% | Inyección: Activa
+            </div>
+          </div>
+        </div>
+
+        <!-- 🪙 CARTERA VIRTUAL -->
+        <div class="panel portfolio-panel">
+          <div class="panel-header">🪙 GESTIÓN DE ACTIVOS</div>
+          <div class="portfolio-content">
+            <div class="port-value-main" style="text-align: center; padding: 8px 0;">
+              <span class="port-label" style="font-size: 9px; color: var(--text-muted); text-transform: uppercase;">Balance Total Estimado</span>
+              <span class="port-value" id="portTotalUsd" style="font-size: 22px; font-weight: 800; display: block; margin-top: 4px;">$20.00 <span class="usd-currency" style="font-size: 12px; color: var(--text-muted);">USD</span></span>
+            </div>
+            <div class="port-assets-grid" style="grid-template-columns: 1fr; border-top: 1px solid var(--glass-border); padding-top: 12px;">
+              <div class="port-asset-card" style="text-align: center; display: flex; flex-direction: column; gap: 4px;">
+                <span class="asset-label" style="font-size: 10px; color: var(--text-muted);">Disponible (Efectivo)</span>
+                <span class="asset-val" id="portUsd" style="font-family: var(--font-mono); font-weight: 600; color: var(--neon-cyan);">$20.00 USD</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 🛡️ PARÁMETROS DE RIESGO -->
+        <div class="panel" style="background: rgba(255,160,26,0.05); border: 1px solid rgba(255,160,26,0.15); margin-bottom: 12px; border-radius: 8px;">
+          <div class="panel-header" style="background: rgba(255,160,26,0.1); color: var(--orange); font-size: 9px;">🛡️ CONTROL DE RIESGO</div>
+          <div style="padding: 12px; display: flex; flex-direction: column; gap: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 10px; color: var(--text-secondary);">Riesgo por Posición:</span>
+              <span id="riskValueDisplay" style="font-family: var(--font-mono); font-size: 11px; font-weight: 700; color: var(--orange);">2.0%</span>
+            </div>
+            
+            <input type="range" id="riskSlider" min="0.1" max="10" step="0.1" value="2.0" style="width: 100%; accent-color: var(--orange); cursor: pointer; background: rgba(0,0,0,0.2); height: 4px; border-radius: 2px; -webkit-appearance: none;">
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
+              <span style="font-size: 10px; color: var(--text-secondary);">Monto Max. Entry:</span>
+              <span id="maxEntryAmount" style="font-family: var(--font-mono); font-size: 11px; font-weight: 700; color: #fff;">$0.00</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 📊 TELEMETRÍA DEL AGENTE -->
+        <div class="panel telemetry-panel">
+          <div class="panel-header">🤖 ESTADO DE NEXUS AGENT</div>
+          <div class="telemetry-content">
+            <div class="telemetry-row">
+              <span class="telemetry-label">LED de Operación:</span>
+              <span id="agentLed" class="led-indicator led-green">● OPERANDO</span>
+            </div>
+            <div class="telemetry-row">
+              <span class="telemetry-label">Posición Activa:</span>
+              <span id="activePosition" class="position-badge neutral">NEUTRAL</span>
+            </div>
+            <div class="telemetry-row">
+              <span class="telemetry-label">Tasa de Acierto (Win Rate):</span>
+              <span id="telemetryWinRate" class="telemetry-value">--%</span>
+            </div>
+            <div class="telemetry-row">
+              <span class="telemetry-label">Operaciones Totales:</span>
+              <span id="telemetryTotalTrades" class="telemetry-value">0</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 💰 PnL DEL DÍA — LO QUE IMPORTA -->
+        <div class="panel" style="flex-shrink: 0;">
+          <div class="panel-header">💰 RENDIMIENTO DEL DÍA</div>
+          <div style="padding: 14px; display: flex; flex-direction: column; gap: 12px;">
+            <!-- PnL Total Grande -->
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap;">
+              <div style="min-width: 0; flex: 1 1 auto;">
+                <div style="font-size: 10px; color: var(--text-muted); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px;">Ganancia Neta Hoy</div>
+                <div id="pnlTotal" style="font-family: var(--font-mono); font-size: 24px; font-weight: 800; color: var(--green); text-shadow: 0 0 20px rgba(14,203,129,0.4); white-space: nowrap;">+$0.00</div>
+              </div>
+              <div style="text-align: right; flex-shrink: 0;">
+                <div style="font-size: 10px; color: var(--text-muted); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px;">% del Capital</div>
+                <div id="pnlPct" style="font-family: var(--font-mono); font-size: 14px; font-weight: 700; color: var(--green); white-space: nowrap;">+0.00%</div>
+              </div>
+            </div>
+
+            <!-- Métricas en fila -->
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
+              <div style="background: rgba(255,255,255,0.02); border-radius: 8px; padding: 8px; text-align: center;">
+                <div style="font-size: 9px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px;">Win Rate</div>
+                <div id="pnlWinRate" style="font-family: var(--font-mono); font-size: 14px; font-weight: 700; color: var(--cyan);">--%</div>
+              </div>
+              <div style="background: rgba(255,255,255,0.02); border-radius: 8px; padding: 8px; text-align: center;">
+                <div style="font-size: 9px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px;">Ops Hoy</div>
+                <div id="pnlOpsHoy" style="font-family: var(--font-mono); font-size: 14px; font-weight: 700; color: var(--cyan);">0</div>
+              </div>
+              <div style="background: rgba(255,255,255,0.02); border-radius: 8px; padding: 8px; text-align: center;">
+                <div style="font-size: 9px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px;">Mejor Op</div>
+                <div id="pnlBestTrade" style="font-family: var(--font-mono); font-size: 14px; font-weight: 700; color: var(--green);">—</div>
+              </div>
+            </div>
+
+            <!-- Mini curva de equity SVG -->
+            <div style="border-top: 1px solid rgba(255,255,255,0.04); padding-top: 10px;">
+              <div style="font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">Curva de Capital (sesión)</div>
+              <svg id="equityCurve" viewBox="0 0 220 50" style="width: 100%; height: 50px; --curve-color: #0ecb81;">
+                <defs>
+                  <linearGradient id="eqGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="var(--curve-color)" stop-opacity="0.4"/>
+                    <stop offset="100%" stop-color="var(--curve-color)" stop-opacity="0"/>
+                  </linearGradient>
+                </defs>
+                <path id="equityPath" d="M0,40 L220,40" stroke="var(--curve-color)" stroke-width="1.5" fill="none"/>
+                <path id="equityFill" d="M0,40 L220,40 L220,50 L0,50 Z" fill="url(#eqGrad)"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- 🧠 ÚLTIMAS DECISIONES AUTÓNOMAS DEL AGENTE -->
+        <div class="panel" style="flex: 1; display: flex; flex-direction: column; min-height: 0; overflow: hidden;">
+          <div class="panel-header">🧠 DECISIONES AUTÓNOMAS</div>
+          <div id="agentDecisions" style="flex: 1; overflow-y: auto; padding: 8px; display: flex; flex-direction: column; gap: 6px;">
+            <div style="padding: 10px; text-align: center; color: var(--text-muted); font-size: 11px;">El agente aún no ha ejecutado operaciones.</div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- COLUMNA 2: PANEL DE CONTROL Y GRÁFICOS -->
+      <div class="col-chart" style="display: flex; flex-direction: column;">
+        <!-- 🎴 TICKERS COMPACTOS -->
+        <div class="stock-cards-grid" id="stockCardsGrid" style="display: flex; gap: 4px; padding: 4px; background: var(--bg-secondary); border-bottom: 1px solid var(--glass-border); overflow-x: auto; scrollbar-width: none;">
+          <!-- NVDA -->
+          <div class="stock-card active" data-symbol="NVDA" style="flex: 1; min-width: 100px; padding: 6px 10px; border-radius: 6px; background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border); cursor:pointer;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+              <span style="font-size: 9px; font-weight: 800; color: #fff;">NVDA</span>
+              <span style="font-size: 8px; color: var(--green);" id="cardProfit-NVDA">+0.00%</span>
+            </div>
+            <div id="cardPrice-NVDA" style="font-family: var(--font-mono); font-size: 11px; font-weight: 700; color: var(--neon-cyan);">$135.00</div>
+          </div>
+          <!-- AAPL -->
+          <div class="stock-card" data-symbol="AAPL" style="flex: 1; min-width: 100px; padding: 6px 10px; border-radius: 6px; background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border); cursor:pointer;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+              <span style="font-size: 9px; font-weight: 800; color: #fff;">AAPL</span>
+              <span style="font-size: 8px; color: var(--green);" id="cardProfit-AAPL">+0.00%</span>
+            </div>
+            <div id="cardPrice-AAPL" style="font-family: var(--font-mono); font-size: 11px; font-weight: 700; color: var(--neon-cyan);">$240.00</div>
+          </div>
+          <!-- MSFT -->
+          <div class="stock-card" data-symbol="MSFT" style="flex: 1; min-width: 100px; padding: 6px 10px; border-radius: 6px; background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border); cursor:pointer;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+              <span style="font-size: 9px; font-weight: 800; color: #fff;">MSFT</span>
+              <span style="font-size: 8px; color: var(--green);" id="cardProfit-MSFT">+0.00%</span>
+            </div>
+            <div id="cardPrice-MSFT" style="font-family: var(--font-mono); font-size: 11px; font-weight: 700; color: var(--neon-cyan);">$420.00</div>
+          </div>
+          <!-- AMZN -->
+          <div class="stock-card" data-symbol="AMZN" style="flex: 1; min-width: 100px; padding: 6px 10px; border-radius: 6px; background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border); cursor:pointer;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+              <span style="font-size: 9px; font-weight: 800; color: #fff;">AMZN</span>
+              <span style="font-size: 8px; color: var(--green);" id="cardProfit-AMZN">+0.00%</span>
+            </div>
+            <div id="cardPrice-AMZN" style="font-family: var(--font-mono); font-size: 11px; font-weight: 700; color: var(--neon-cyan);">$190.00</div>
+          </div>
+          <!-- META -->
+          <div class="stock-card" data-symbol="META" style="flex: 1; min-width: 100px; padding: 6px 10px; border-radius: 6px; background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border); cursor:pointer;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+              <span style="font-size: 9px; font-weight: 800; color: #fff;">META</span>
+              <span style="font-size: 8px; color: var(--green);" id="cardProfit-META">+0.00%</span>
+            </div>
+            <div id="cardPrice-META" style="font-family: var(--font-mono); font-size: 11px; font-weight: 700; color: var(--neon-cyan);">$560.00</div>
+          </div>
+          <!-- TSLA -->
+          <div class="stock-card" data-symbol="TSLA" style="flex: 1; min-width: 100px; padding: 6px 10px; border-radius: 6px; background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border); cursor:pointer;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+              <span style="font-size: 9px; font-weight: 800; color: #fff;">TSLA</span>
+              <span style="font-size: 8px; color: var(--green);" id="cardProfit-TSLA">+0.00%</span>
+            </div>
+            <div id="cardPrice-TSLA" style="font-family: var(--font-mono); font-size: 11px; font-weight: 700; color: var(--neon-cyan);">$260.00</div>
+          </div>
+        </div>
+
+        <!-- 🖥️ CONTENEDOR MULTI-GRÁFICO -->
+        <div class="chart-container" id="chartCanvasContainer" style="padding:0; display: flex; flex-direction: column; overflow: hidden; min-height: 0;">
+          <!-- Vista Unificada (Default) -->
+          <iframe 
+            id="tradingviewWidget"
+            src="https://s.tradingview.com/widgetembed/?frameElementId=tradingview_aZwB7TbH&symbol=NASDAQ%3ANVDA&interval=1&theme=dark&hidesidetoolbar=0&symboledit=1&saveimage=1&toolbarbg=f1f3f6&studies=%5B%5D&timezone=America%2FAsuncion" 
+            style="width: 100%; height: 100%; border: none; display: block;"
+            allowfullscreen>
+          </iframe>
+
+          <!-- Vista Multi-Gráfico (Hidden por defecto) -->
+          <div id="multiChartGrid" style="display: none; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); width: 100%; height: 100%; gap: 4px; padding: 4px; background: #03060a; overflow: hidden;">
+            <iframe src="https://s.tradingview.com/widgetembed/?symbol=NASDAQ%3ANVDA&interval=1&theme=dark&hidesidetoolbar=1" style="width:100%; height:100%; border:none;"></iframe>
+            <iframe src="https://s.tradingview.com/widgetembed/?symbol=NASDAQ%3AAAPL&interval=1&theme=dark&hidesidetoolbar=1" style="width:100%; height:100%; border:none;"></iframe>
+            <iframe src="https://s.tradingview.com/widgetembed/?symbol=NASDAQ%3AMSFT&interval=1&theme=dark&hidesidetoolbar=1" style="width:100%; height:100%; border:none;"></iframe>
+            <iframe src="https://s.tradingview.com/widgetembed/?symbol=NASDAQ%3AAMZN&interval=1&theme=dark&hidesidetoolbar=1" style="width:100%; height:100%; border:none;"></iframe>
+            <iframe src="https://s.tradingview.com/widgetembed/?symbol=NASDAQ%3AMETA&interval=1&theme=dark&hidesidetoolbar=1" style="width:100%; height:100%; border:none;"></iframe>
+            <iframe src="https://s.tradingview.com/widgetembed/?symbol=NASDAQ%3ATSLA&interval=1&theme=dark&hidesidetoolbar=1" style="width:100%; height:100%; border:none;"></iframe>
+          </div>
+        </div>
+
+        <div class="indicators-bar">
+          <div class="indicator" style="cursor:pointer;" id="btnToggleLayout" title="Cambiar entre ver 1 gráfico o los 6 en paralelo">
+            <span class="ind-label">DISEÑO</span>
+            <span class="ind-value" id="layoutModeLabel" style="color:var(--yellow)">🖥️ MULTI-GRÁFICO</span>
+          </div>
+          <div class="indicator">
+            <span class="ind-label">Activo</span>
+            <span class="ind-value" id="indCcy">—</span>
+          </div>
+          <div class="indicator">
+            <span class="ind-label">Alto 24h</span>
+            <span class="ind-value" id="indHigh">—</span>
+          </div>
+          <div class="indicator">
+            <span class="ind-label">Bajo 24h</span>
+            <span class="ind-value" id="indLow">—</span>
+          </div>
+          <div class="indicator">
+            <span class="ind-label">Spread</span>
+            <span class="ind-value" id="indSpread">—</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- COLUMNA 3: POSICIONES EN TIEMPO REAL -->
+      <div class="col-console" style="display: flex; flex-direction: column; height: 100%; overflow: hidden;">
+        <div class="panel positions-panel" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0;">
+          <div class="panel-header">📋 POSICIONES EN TIEMPO REAL</div>
+          <div class="positions-table-wrapper" style="flex:1; overflow-y:auto; padding: 0;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 11px; text-align: left;">
+              <thead style="position: sticky; top: 0; background: var(--bg-secondary); color: var(--text-muted); text-transform: uppercase; font-size: 9px; letter-spacing: 0.5px;">
+                <tr>
+                  <th style="padding: 10px 12px; border-bottom: 1px solid var(--glass-border);">Activo</th>
+                  <th style="padding: 10px 12px; border-bottom: 1px solid var(--glass-border);">Lado</th>
+                  <th style="padding: 10px 12px; border-bottom: 1px solid var(--glass-border); text-align: right;">P&L (%)</th>
+                  <th style="padding: 10px 12px; border-bottom: 1px solid var(--glass-border); text-align: right; width: 92px;">Acción</th>
+                </tr>
+              </thead>
+              <tbody id="positionsList">
+                <!-- Se llena dinámicamente -->
+                <tr>
+                  <td colspan="4" style="padding: 40px 20px; text-align: center; color: var(--text-muted);">
+                    Esperando señales de trading compatibles...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Active Orders table -->
+    <div class="bottom-panel" style="display: none;">
+      <div class="panel-header">📋 Órdenes Activas</div>
+      <div class="orders-table-wrapper">
+        <table class="orders-table" id="ordersTable">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Par</th>
+              <th>Lado</th>
+              <th>Tipo</th>
+              <th>Cantidad</th>
+              <th>Precio</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody id="ordersBody">
+            <tr><td colspan="7" class="empty-state">Sin órdenes activas</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <!-- TAB 2: SEMBRADOR (IDENTIDADES)                                        -->
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <div class="tab-content" id="tab-identidades">
+    <div class="identity-layout">
+      <!-- Panel de control -->
+      <div class="identity-controls">
+        <div class="panel-header">🧬 Sembrador OMEGA — Generador de Identidades</div>
+        <div class="control-row">
+          <select id="identityTypeSelect" class="identity-select">
+            <option value="temporal">⏳ Temporal (mail.tm)</option>
+            <option value="gmail">📧 Gmail (Chrome)</option>
+            <option value="proton">🔒 Proton Mail</option>
+            <option value="facebook">📘 Facebook</option>
+            <option value="twitter">🐦 Twitter / X</option>
+            <option value="sintetico">🧬 Sintético (local)</option>
+          </select>
+          <button class="btn-nexus" id="btnCreateIdentity">🌱 Sembrar</button>
+        </div>
+        <div class="stats-bar" id="identityStats">
+          <div class="stat-card"><div class="stat-value">—</div><div class="stat-label">Cargando...</div></div>
+        </div>
+      </div>
+
+      <!-- Grid: Lista + Detalle -->
+      <div class="identity-grid">
+        <div class="identity-list-panel">
+          <div class="panel-header">📋 Identidades <span id="identityCount">(0)</span></div>
+          <div class="identity-list" id="identityList">
+            <div class="empty-identities">
+              <div class="empty-icon">🧬</div>
+              <div>Ninguna identidad sembrada aún</div>
+              <div class="empty-hint">Usa "Sembrar" para generar tu primera identidad</div>
+            </div>
+          </div>
+        </div>
+        <div class="identity-detail-panel">
+          <div class="panel-header">📊 Reporte</div>
+          <pre class="identity-json" id="identityReport">{}</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ MODAL CONFIGURACIÓN BINANCE ═══ -->
+  <div class="modal-overlay" id="binanceModal" style="display:none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 style="margin:0;color:var(--text-bright);">🔑 API Binance (Spot Principal)</h3>
+        <button class="modal-close" id="btnCloseBinance" style="background:none;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;">&times;</button>
+      </div>
+      <div class="modal-body" style="padding-top:15px;">
+        <p style="font-size:11px;color:var(--text-muted);margin:0 0 15px 0;line-height:1.4;">
+          Las llaves se guardarán localmente en el archivo <code style="color:var(--neon-green)">.env</code> del sistema. Habilita solo permisos de lectura y trading (NUNCA habilites retiros).
+        </p>
+        <div style="margin-bottom:12px;">
+          <label style="display:block;font-size:11px;color:var(--text-muted);margin-bottom:4px;">API Key</label>
+          <input type="password" id="inputApiKey" placeholder="Ingresa Binance API Key" style="width:100%;box-sizing:border-box;padding:8px;background:#05080c;border:1px solid #1e2329;border-radius:4px;color:#eaecef;" />
+        </div>
+        <div style="margin-bottom:12px;">
+          <label style="display:block;font-size:11px;color:var(--text-muted);margin-bottom:4px;">Secret Key</label>
+          <input type="password" id="inputSecretKey" placeholder="Ingresa Binance Secret Key" style="width:100%;box-sizing:border-box;padding:8px;background:#05080c;border:1px solid #1e2329;border-radius:4px;color:#eaecef;" />
+        </div>
+        <div style="margin-top:20px;display:flex;justify-content:flex-end;">
+          <button class="btn-nexus" id="btnSaveBinance" style="padding:8px 16px;background:var(--neon-green);border:none;border-radius:4px;color:#05080c;font-weight:bold;cursor:pointer;">Guardar Claves</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 📱 MOBILE BOTTOM NAVIGATION BAR -->
+  <div class="mobile-nav-bar">
+    <button class="mob-nav-btn active" id="mobTabTrading" onclick="switchMobileTab('trading')">
+      <span>📊</span>
+      <span class="mob-nav-label">Trading</span>
+    </button>
+    <button class="mob-nav-btn" id="mobTabSembrador" onclick="switchMobileTab('sembrador')">
+      <span>🧬</span>
+      <span class="mob-nav-label">Sembrar</span>
+    </button>
+    <button class="mob-nav-btn" onclick="toggleAutoTrading()">
+      <span>🤖</span>
+      <span class="mob-nav-label">Auto</span>
+    </button>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+  <script type="module" src="/src/identidades.js"></script>
+  <script>
+    // NOTA: El cálculo de riesgo (Monto Max. Entry = Balance × Riesgo%) vive
+    // en main.js → actualizarCalculoRiesgo(). Esta es la única fuente de verdad.
+
+    // Tab switching for mobile layout
+    window.switchMobileTab = function(tabName) {
+      document.querySelectorAll('.mob-nav-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+      if (tabName === 'trading') {
+        document.getElementById('mobTabTrading').classList.add('active');
+        document.getElementById('tab-trading').classList.add('active');
+      } else if (tabName === 'sembrador') {
+        document.getElementById('mobTabSembrador').classList.add('active');
+        document.getElementById('tab-identidades').classList.add('active');
+      }
+    };
+  </script>
+</body>
+</html>

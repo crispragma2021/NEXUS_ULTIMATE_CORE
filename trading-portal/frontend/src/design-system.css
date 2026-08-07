@@ -1,0 +1,231 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   DESIGN SYSTEM — NEXUS TR (Figma + Exchange élite fusion)
+   Generado por NEXUS el 2026-06-23
+   ═══════════════════════════════════════════════════════════════════════════
+   Capa base de diseño. style.css importa estas variables.
+   Para actualizar: node trading-portal/scripts/figma_absorb.cjs <figma_url>
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ─── Colores base (HUD Espacial Élite) ─── */
+  --bg-primary:     #05080c;
+  --bg-secondary:   rgba(10, 18, 30, 0.45);
+  --bg-tertiary:    rgba(16, 26, 42, 0.6);
+  --bg-hover:       rgba(0, 229, 255, 0.12);
+
+  --text-primary:   #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-muted:     #94a3b8;
+
+  --green:          #10b981;
+  --green-bg:       rgba(16, 185, 129, 0.1);
+  --red:            #ef4444;
+  --red-bg:         rgba(239, 68, 68, 0.1);
+  --yellow:         #0ea5e9; /* Reemplazado amarillo por Azul Cielo Profundo */
+  --blue:           #3b82f6;
+  --orange:         #f59e0b;
+
+  /* ─── Glassmorphism Tokens ─── */
+  --glass-bg:       rgba(15, 23, 42, 0.7);
+  --glass-border:   rgba(255, 255, 255, 0.05);
+  --glass-blur:     blur(12px);
+  --glass-shadow:   0 8px 32px 0 rgba(0, 0, 0, 0.5);
+
+  /* ─── Tipografía élite ─── */
+  --font-sans:  'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-mono:  'SF Mono', 'Fira Code', 'Cascadia Code', 'JetBrains Mono', monospace;
+
+  --font-size-xs:    10px;
+  --font-size-sm:    11px;
+  --font-size-base:  12px;
+  --font-size-md:    13px;
+  --font-size-lg:    14px;
+  --font-size-xl:    18px;
+  --font-size-2xl:   24px;
+  --font-size-3xl:   32px;
+
+  /* ─── Espaciado ─── */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-6:  24px;
+  --space-8:  32px;
+
+  /* ─── Bordes ─── */
+  --radius-sm:   4px;
+  --radius-md:   6px;
+  --radius-lg:   12px;
+  --radius-full: 9999px;
+
+  --border:       rgba(0, 229, 255, 0.08);
+  --border-light: rgba(0, 255, 136, 0.12);
+
+  /* ─── Sombras ─── */
+  --shadow-sm:   0 2px 4px rgba(0,0,0,0.5);
+  --shadow-md:   0 8px 16px rgba(0,0,0,0.6);
+  --shadow-lg:   0 16px 32px rgba(0,0,0,0.7);
+
+  /* ─── Transiciones ─── */
+  --transition-fast: 0.1s ease;
+  --transition-base: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 0.4s ease;
+
+  /* ─── Colores de Exchange de Referencia ─── */
+  --tradingview-bg: #090d14;
+  --binance-bg:     #05080c;
+  --kraken-bg:      #070a12;
+  --coinbase-bg:    #040508;
+  --bybit-bg:       #080b12;
+  --kucoin-bg:      #06080d;
+}
+
+/* ─── Exchange Selector Theme ─── */
+.theme-tradingview { --bg-primary: var(--tradingview-bg); }
+.theme-binance     { --bg-primary: var(--binance-bg); }
+.theme-kraken      { --bg-primary: var(--kraken-bg); }
+.theme-coinbase    { --bg-primary: var(--coinbase-bg); }
+.theme-bybit       { --bg-primary: var(--bybit-bg); }
+.theme-kucoin      { --bg-primary: var(--kucoin-bg); }
+
+/* ─── Layout canónico de Exchange ─── */
+.exchange-grid {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  grid-template-rows: 48px minmax(0, 1fr) 280px;
+  gap: 1px;
+  height: 100vh;
+  background: var(--border);
+}
+
+/* ─── Componentes Atómicos ─── */
+
+/* Botones */
+.btn-exchange {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.btn-exchange-primary { background: var(--blue); color: white; border-color: var(--blue); }
+.btn-exchange-primary:hover { opacity: 0.85; }
+
+.btn-exchange-green { background: var(--green); color: white; border-color: var(--green); }
+.btn-exchange-green:hover { opacity: 0.85; }
+
+.btn-exchange-red { background: var(--red); color: white; border-color: var(--red); }
+.btn-exchange-red:hover { opacity: 0.85; }
+
+.btn-exchange-ghost {
+  background: transparent;
+  color: var(--text-secondary);
+  border-color: transparent;
+}
+.btn-exchange-ghost:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+/* Inputs */
+.input-exchange {
+  width: 100%;
+  padding: 6px 8px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-md);
+  outline: none;
+  transition: border var(--transition-fast);
+}
+.input-exchange:focus { border-color: var(--blue); }
+.input-exchange::placeholder { color: var(--text-muted); }
+
+/* Tabs estilo exchange */
+.tabs-exchange {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+}
+.tab-exchange {
+  padding: 8px 16px;
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all var(--transition-fast);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.tab-exchange:hover { color: var(--text-primary); }
+.tab-exchange.active {
+  color: var(--blue);
+  border-bottom-color: var(--blue);
+}
+
+/* Tooltips */
+.tooltip-exchange {
+  position: relative;
+}
+.tooltip-exchange::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 8px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  color: var(--text-primary);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition-fast);
+}
+.tooltip-exchange:hover::after { opacity: 1; }
+
+/* Cards/Panels */
+.panel-exchange {
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+.panel-exchange-header {
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+/* Badge / Tag */
+.badge-exchange {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.badge-green { background: var(--green-bg); color: var(--green); }
+.badge-red   { background: var(--red-bg); color: var(--red); }
+.badge-blue  { background: rgba(30, 128, 255, 0.12); color: var(--blue); }
