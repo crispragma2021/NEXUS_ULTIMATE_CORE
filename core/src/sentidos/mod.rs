@@ -9,6 +9,9 @@ pub mod vision_omega;
 pub mod vision_sentinel;
 pub mod vision_viva;
 
+// --- 👁️ OCR/VISIÓN — Ojos para el SLM local y DeepSeek ---
+pub mod ocr_vision;
+
 // --- 👻 VISIÓN FANTASMA (Sigilo Stealth) ---
 pub mod vision_fantasma;
 

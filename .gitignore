@@ -302,3 +302,12 @@ cookies/
 **/cookies/
 *session_cookies*
 **/*session_cookies*
+
+# --- Backups de credenciales (nunca subir — contienen llaves vivas) ---
+.env.bak*
+**/.env.bak*
+config.toml.bak*
+**/config.toml.bak*
+*.env.bak
+**/*.env.bak
+>>> REPLACE

@@ -34,6 +34,10 @@ use nexus_ultimate_core::memoria::memoria_semantica::MemoriaSemantica;
 use nexus_ultimate_core::procesos::fusion_selectiva::{Capacidad, FusionSelectiva};
 use nexus_ultimate_core::procesos::resource_governor::ResourceGovernorDaemon;
 use nexus_ultimate_core::procesos::sistema_inmune::SistemaInmune;
+use nexus_ultimate_core::sentidos::ocr_vision::{
+    analizar_imagen, analizar_video, detectar_motores_externos, listar_modelos_vision, MotorVision,
+    ModoVision, MODELO_VISION_LOCAL_DEFAULT,
+};
 use nexus_ultimate_core::sentidos::propiocepcion::Propiocepcion;
 use rusqlite::Connection;
 use serde_json::{json, Value};
@@ -212,6 +216,41 @@ fn herramientas_completas() -> Value {
                 "properties": {
                     "url": { "type": "string", "description": "URL a capturar. Default: http://localhost:5173" }
                 }
+            }
+        }),
+        // 👁️ OCR/VISIÓN — Ojos para el SLM local y la nube
+        json!({
+            "name": "nexus_ocr",
+            "description": "👁️ Da OJOS a NEXUS: analiza una imagen (archivo o pantalla) transcribiendo, describiendo o extrayendo estructura (Markdown/tablas). Motor 'local' = SLM con visión nativa vía Ollama (modelo elegible con 'modelo_local', default qwen2.5vl:7b, 100% soberano sin nube); motor 'nube' = Gemini multimodal (visión nativa, GEMINI_API_KEY del entorno); motor 'deepseek' = OCR front-end (Tesseract/PaddleOCR/GOT-OCR) + DeepSeek para razonar; 'auto' = nube si hay internet, local si no. Con 'listar_motores' devuelve qué OCRs externos están instalados y con 'listar_modelos' qué modelos de visión hay en Ollama.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "origen": { "type": "string", "description": "'pantalla' para capturar el monitor (xcap), o ruta de archivo de imagen (ej: /tmp/nexus_vision_latest.png, o un PDF)" },
+                    "motor": { "type": "string", "description": "'local' = SLM elegible vía Ollama (sin nube), 'nube' = Gemini multimodal, 'deepseek' = OCR front-end + DeepSeek, 'auto' = nube si hay internet, local si no. Default: 'auto'", "enum": ["auto", "local", "nube", "deepseek"] },
+                    "modo": { "type": "string", "description": "'transcribir' = extraer todo el texto (OCR puro), 'describir' = qué hay en la imagen, 'estructura' = Markdown/tablas. Default: 'transcribir'", "enum": ["transcribir", "describir", "estructura"] },
+                    "modelo_local": { "type": "string", "description": "Modelo Ollama para el modo local (ej: qwen2.5vl:7b, qwen2.5vl:3b, gemma3:4b). Default: qwen2.5vl:7b" },
+                    "listar_motores": { "type": "boolean", "description": "Si true, devuelve qué motores OCR externos (PaddleOCR, GOT-OCR, Marker, Nougat) están instalados. Default: false" },
+                    "listar_modelos": { "type": "boolean", "description": "Si true, devuelve qué modelos con capacidad de visión hay instalados en Ollama. Default: false" }
+                },
+                "required": ["origen"]
+            }
+        }),
+        // 🎬 VIDEO STREAMING — ojos que ven movimiento (frames múltiples)
+        json!({
+            "name": "nexus_video",
+            "description": "🎬 Da VISIÓN EN MOVIMIENTO a NEXUS: analiza un video (archivo mp4/webm/mkv/avi con ffmpeg, o stream en vivo desde pantalla) transcribiendo, describiendo o extrayendo estructura. Envía múltiples FRAMES al motor elegido: 'local' = SLM de visión vía Ollama (modelo elegible con 'modelo_local', default qwen2.5vl:7b); 'nube' = Gemini multimodal (GEMINI_API_KEY del entorno); 'deepseek' = OCR de cada frame + DeepSeek resume la secuencia; 'auto' = nube si hay internet, local si no. 'fps' controla cuántos frames por segundo se capturan/extran. 'duracion_seg' es solo para stream en vivo. Con 'listar_modelos' ves qué modelos de visión hay en Ollama.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "origen": { "type": "string", "description": "Ruta de archivo de video (ej: /tmp/clase.mp4), o 'stream'/'live'/'pantalla' para capturar en vivo desde el monitor (xcap)" },
+                    "motor": { "type": "string", "description": "'local' = SLM elegible vía Ollama (sin nube), 'nube' = Gemini multimodal, 'deepseek' = OCR por frame + DeepSeek, 'auto' = nube si hay internet, local si no. Default: 'auto'", "enum": ["auto", "local", "nube", "deepseek"] },
+                    "modo": { "type": "string", "description": "'transcribir' = extraer todo el texto, 'describir' = qué ocurre en la secuencia, 'estructura' = Markdown/tablas. Default: 'transcribir'", "enum": ["transcribir", "describir", "estructura"] },
+                    "modelo_local": { "type": "string", "description": "Modelo Ollama para el modo local (ej: qwen2.5vl:7b). Default: qwen2.5vl:7b" },
+                    "fps": { "type": "integer", "description": "Frames por segundo a extraer/capturar (default 2, máx 10). Más fps = más detalle temporal, más costo" },
+                    "duracion_seg": { "type": "integer", "description": "Solo para stream en vivo: duración de la captura en segundos (default 5)" },
+                    "listar_modelos": { "type": "boolean", "description": "Si true, devuelve qué modelos con capacidad de visión hay instalados en Ollama. Default: false" }
+                },
+                "required": ["origen"]
             }
         }),
         json!({
@@ -1150,6 +1189,149 @@ async fn handle_vision_capture(params: &Value) -> Value {
     }
 }
 
+/// 👁️ OCR/VISIÓN — Da ojos al SLM local (modelo elegible), a Gemini (nube)
+/// y a DeepSeek (OCR front-end + razonamiento)
+async fn handle_nexus_ocr(params: &Value) -> Value {
+    // Modo diagnóstico: listar motores OCR externos instalados
+    if params["listar_motores"].as_bool().unwrap_or(false) {
+        let motores = detectar_motores_externos();
+        let detalle: Vec<Value> = motores
+            .iter()
+            .map(|(nombre, disponible)| {
+                json!({
+                    "motor": nombre,
+                    "disponible": disponible
+                })
+            })
+            .collect();
+        return json!({
+            "type": "text",
+            "text": format!(
+                "🔎 MOTORES OCR DETECTADOS\n\n{}\n\nSugerencia:\n  - Local SLM: qwen2.5vl:7b (ya instalado, visión nativa)\n  - Nube: Gemini multimodal (gemini-2.5-flash)\n  - DeepSeek: usa Tesseract spa+eng como base, y PaddleOCR/GOT-OCR/Marker para mejor precisión",
+                serde_json::to_string_pretty(&detalle).unwrap_or_default()
+            )
+        });
+    }
+
+    // Modo diagnóstico: listar modelos con visión instalados en Ollama
+    if params["listar_modelos"].as_bool().unwrap_or(false) {
+        let modelos = listar_modelos_vision().await;
+        let lista = if modelos.is_empty() {
+            "⚠️ No se encontraron modelos de visión en Ollama.\nInstala uno: ollama pull qwen2.5vl:7b".to_string()
+        } else {
+            modelos.join("\n")
+        };
+        return json!({
+            "type": "text",
+            "text": format!(
+                "👁️ MODELOS DE VISIÓN EN OLLAMA\n\n{}\n\nPara usar uno en modo local, pasa su nombre en 'modelo_local'.",
+                lista
+            )
+        });
+    }
+
+    let origen = params["origen"].as_str().unwrap_or("");
+    if origen.is_empty() {
+        return json!({
+            "type": "text",
+            "text": "👁️ NEXUS OCR\n\nError: Debes indicar 'origen' (pantalla o ruta de archivo).\n\nEjemplos:\n  origen: pantalla, motor: local, modelo_local: qwen2.5vl:7b, modo: transcribir\n  origen: /tmp/nexus_vision_latest.png, motor: nube, modo: describir\n  origen: factura.pdf, motor: deepseek, modo: transcribir\n  listar_motores: true (para ver qué OCRs están instalados)\n  listar_modelos: true (para ver modelos de visión en Ollama)",
+            "isError": true
+        });
+    }
+
+    let motor = match params["motor"].as_str().unwrap_or("auto") {
+        "local" => MotorVision::LocalSlm,
+        "nube" => MotorVision::Nube,
+        "deepseek" => MotorVision::DeepSeek,
+        _ => MotorVision::Auto,
+    };
+    let modo = ModoVision::parsear(params["modo"].as_str().unwrap_or("transcribir"));
+    let modelo_local = params["modelo_local"]
+        .as_str()
+        .unwrap_or(MODELO_VISION_LOCAL_DEFAULT);
+
+    match analizar_imagen(origen, motor, modo, modelo_local).await {
+        Ok(resultado) => {
+            let output = format!(
+                "👁️ RESULTADO VISUAL\n\nMotor: {}\nOrigen: {}\nLatencia: {} ms\n\n{}",
+                resultado.motor, resultado.origen, resultado.latencia_ms, resultado.texto
+            );
+            json!({
+                "type": "text",
+                "text": output
+            })
+        }
+        Err(e) => {
+            json!({
+                "type": "text",
+                "text": format!("👁️ NEXUS OCR\n\n{}", e),
+                "isError": true
+            })
+        }
+    }
+}
+
+/// 🎬 VIDEO STREAMING — ojos que ven movimiento (frames múltiples)
+async fn handle_nexus_video(params: &Value) -> Value {
+    if params["listar_modelos"].as_bool().unwrap_or(false) {
+        let modelos = listar_modelos_vision().await;
+        let lista = if modelos.is_empty() {
+            "⚠️ No se encontraron modelos de visión en Ollama.\nInstala uno: ollama pull qwen2.5vl:7b".to_string()
+        } else {
+            modelos.join("\n")
+        };
+        return json!({
+            "type": "text",
+            "text": format!(
+                "👁️ MODELOS DE VISIÓN EN OLLAMA\n\n{}\n\nPara usarlos en modo local, pasa su nombre en 'modelo_local'.",
+                lista
+            )
+        });
+    }
+
+    let origen = params["origen"].as_str().unwrap_or("");
+    if origen.is_empty() {
+        return json!({
+            "type": "text",
+            "text": "🎬 NEXUS VIDEO\n\nError: Debes indicar 'origen' (ruta de video o 'stream').\n\nEjemplos:\n  origen: /tmp/clase.mp4, motor: local, modo: transcribir\n  origen: stream, motor: nube, modo: describir, duracion_seg: 10\n  origen: /tmp/clase.mp4, motor: deepseek, fps: 2",
+            "isError": true
+        });
+    }
+
+    let motor = match params["motor"].as_str().unwrap_or("auto") {
+        "local" => MotorVision::LocalSlm,
+        "nube" => MotorVision::Nube,
+        "deepseek" => MotorVision::DeepSeek,
+        _ => MotorVision::Auto,
+    };
+    let modo = ModoVision::parsear(params["modo"].as_str().unwrap_or("transcribir"));
+    let modelo_local = params["modelo_local"]
+        .as_str()
+        .unwrap_or(MODELO_VISION_LOCAL_DEFAULT);
+    let fps = params["fps"].as_u64().unwrap_or(2).clamp(1, 10) as u32;
+    let duracion_seg = params["duracion_seg"].as_u64().unwrap_or(5);
+
+    match analizar_video(origen, motor, modo, modelo_local, fps, duracion_seg).await {
+        Ok(resultado) => {
+            let output = format!(
+                "🎬 RESULTADO DE VIDEO\n\nMotor: {}\nOrigen: {}\nLatencia: {} ms\n\n{}",
+                resultado.motor, resultado.origen, resultado.latencia_ms, resultado.texto
+            );
+            json!({
+                "type": "text",
+                "text": output
+            })
+        }
+        Err(e) => {
+            json!({
+                "type": "text",
+                "text": format!("🎬 NEXUS VIDEO\n\n{}", e),
+                "isError": true
+            })
+        }
+    }
+}
+
 /// Propiocepcion: Escaneo biométrico del sistema
 fn handle_propiocepcion_scan(params: &Value) -> Value {
     let tipo = params["tipo"].as_str().unwrap_or("full");
@@ -1746,6 +1928,8 @@ async fn main() -> Result<()> {
                     // ══════════════════════════════════════════════════
                     "sentinel_diagnostic" => handle_sentinel_diagnostic(&params).await,
                     "vision_capture" => handle_vision_capture(&params).await,
+                    "nexus_ocr" => handle_nexus_ocr(&params).await,
+                    "nexus_video" => handle_nexus_video(&params).await,
                     "propiocepcion_scan" => handle_propiocepcion_scan(&params),
                     "sistema_inmune_patrol" => handle_sistema_inmune_patrol(&params),
                     "resource_governor" => handle_resource_governor(&params).await,

@@ -37,16 +37,22 @@ No agregues comentarios ni markdown. Solo el JSON."#.to_string();
             accum_error
         );
 
-        // Invocar Zenith Pool (que gestiona de forma inteligente Gemini, DeepSeek, Groq, Vertex)
+        // Invocar Zenith Pool (que gestiona de forma inteligente OpenRouter, DeepSeek, Groq, Vertex y AI Studio como último respaldo)
         let full_prompt = format!("{}\n\nUser:\n{}", system_prompt, prompt);
-        let cloud_output = self.zenith.cerebro_gemini(&full_prompt, "gemini-2.0-pro").await;
+        let cloud_output = self.zenith.responder_estrategico(&full_prompt, "escalacion_nube").await;
 
-        if cloud_output.is_empty() || cloud_output.contains("Sin energía") {
-            // Intentar con DeepSeek como backup alternativo
-            tracing::warn!("⚠️ Falló Gemini en la nube. Intentando fallback secundario con DeepSeek...");
+        if cloud_output.is_empty()
+            || cloud_output.contains("Sin energía")
+            || cloud_output.contains("Cuota agotada")
+            || cloud_output.contains("Todos los proveedores fallaron")
+        {
+            // Intentar con DeepSeek como backup alternativo directo
+            tracing::warn!("⚠️ Falló la cadena nube. Intentando fallback directo con DeepSeek...");
             let ds_output = self.zenith.ejecutor_deepseek(&full_prompt).await;
             if ds_output.is_empty() {
-                return Err(anyhow!("Ambos modelos nube (Gemini y DeepSeek) fallaron al resolver la escalación"));
+                return Err(anyhow!(
+                    "Todos los motores nube (OpenRouter/DeepSeek/Groq/Vertex/AI Studio) fallaron al resolver la escalación"
+                ));
             }
             return Ok(ToolResponse {
                 success: true,

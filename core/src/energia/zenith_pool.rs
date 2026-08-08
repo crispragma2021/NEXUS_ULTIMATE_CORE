@@ -811,21 +811,42 @@ impl ZenithPool {
     // Cadena de fallback completa: Gemini → Vertex AI → DeepSeek → OpenRouter → Groq
 
     pub async fn responder_estrategico(&self, prompt: &str, _contexto: &str) -> String {
-        // 1. Prioridad Absoluta: Vertex AI (Infraestructura de Grado Producción)
-        info!("🔄 [ZENITH] Utilizando motor primario: Vertex AI...");
+        // 1. Motor Primario: OpenRouter (1 llave, 100+ modelos, sin bloqueo por cuenta)
+        info!("🔄 [ZENITH] Utilizando motor primario: OpenRouter...");
+        let respuesta_openrouter = self.ejecutor_openrouter(prompt).await;
+        if !respuesta_openrouter.is_empty() {
+            return respuesta_openrouter;
+        }
+
+        // 2. Fallback 1: DeepSeek (razonamiento fuerte, llave viva)
+        warn!("⚠️ [ZENITH] OpenRouter falló o no disponible. Probando DeepSeek...");
+        let respuesta_deepseek = self.ejecutor_deepseek(prompt).await;
+        if !respuesta_deepseek.is_empty() {
+            return respuesta_deepseek;
+        }
+
+        // 3. Fallback 2: Groq LPU (rápido y gratuito)
+        warn!("⚠️ [ZENITH] DeepSeek falló o no disponible. Probando Groq LPU...");
+        let respuesta_groq = self.ejecutor_groq(prompt).await;
+        if !respuesta_groq.is_empty() {
+            return respuesta_groq;
+        }
+
+        // 4. Fallback 3: Vertex AI (Cuenta GCP $300)
+        warn!("⚠️ [ZENITH] Groq falló o no disponible. Probando Vertex AI...");
         let respuesta_vertex = self.ejecutor_vertex(prompt).await;
         if !respuesta_vertex.is_empty() && !respuesta_vertex.contains("Error") {
             return respuesta_vertex;
         }
 
-        // 2. Fallback 1: Gemini AI Studio (Célula gratuita)
-        warn!("⚠️ [ZENITH] Vertex AI falló o no disponible. Probando AI Studio...");
+        // 5. Último respaldo nube: Gemini AI Studio (solo si todo lo demás falló)
+        warn!("⚠️ [ZENITH] Vertex AI falló o no disponible. Probando AI Studio (último respaldo)...");
         let respuesta_studio = self.cerebro_gemini(prompt, "gemini-3-flash-preview").await;
         if !respuesta_studio.contains("Cuota agotada") && !respuesta_studio.is_empty() {
             return respuesta_studio;
         }
 
-        // 3. Cadena de fallbacks finales (DeepSeek, etc.)
+        // 6. Cadena de fallbacks finales (Córtex nativo, Ollama, etc.)
         self.cadena_fallbacks(prompt).await
     }
 
@@ -871,6 +892,14 @@ impl ZenithPool {
         let respuesta = self.ejecutor_groq(prompt).await;
         if !respuesta.is_empty() {
             info!("✅ [ZENITH] Fallback Groq LPU exitoso");
+            return respuesta;
+        }
+
+        // Cierre Soberano: Ollama local (modo sin nube, 100% soberano)
+        info!("🔄 [ZENITH] Intentando cierre soberano: Ollama local");
+        let respuesta = self.ejecutor_ollama(prompt, "qwen2.5:7b").await;
+        if !respuesta.is_empty() {
+            info!("✅ [ZENITH] Cierre soberano Ollama exitoso");
             return respuesta;
         }
 

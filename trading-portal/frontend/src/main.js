@@ -22,6 +22,9 @@ const STATE = {
   symbol: 'NVDA',
   lastPrice: null,
   isBalanceFixed: false, // <-- Add this line
+  futuresLoop: { activo: false, status: 'stopped', symbol: 'BTCUSDT', cvd: 0, decision: '—', razon: '' },
+  modoReal: false,
+  keysConfigured: false,
 };
 
 // ─── DOM References ────────────────────────────────────────────────────────
@@ -74,6 +77,8 @@ const DOM = {
   equityFill: $('equityFill'),
   equityCurve: $('equityCurve'),
   agentDecisions: $('agentDecisions'),
+  // 🧠 Señales ML (Motor 1 — Spot ML Day-Trader)
+  mlSignalsList: $('mlSignalsList'),
 };
 
 // ─── Utilidades ────────────────────────────────────────────────────────────
@@ -428,6 +433,44 @@ async function cargarSenales() {
   }
 }
 
+// ─── Render Señales ML (Motor 1 — Spot ML Day-Trader) ──────────────────────
+function renderSenales() {
+  const container = DOM.mlSignalsList;
+  if (!container) return;
+  const senales = STATE.signals || [];
+
+  if (senales.length === 0) {
+    container.innerHTML = `
+      <div style="padding: 10px; text-align: center; color: var(--text-muted); font-size: 11px;">
+        Sin señales ML todavía. El motor analiza precio, volumen y sentimiento en cada tick.
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = senales.slice(-12).reverse().map(s => {
+    const esCompra = (s.accion || '').toUpperCase() === 'COMPRA';
+    const color = esCompra ? 'var(--green)' : 'var(--red)';
+    const accionTxt = esCompra ? 'COMPRA' : 'VENTA';
+    const conf = (Number(s.confianza) || 0) * 100;
+    const confTxt = conf > 0 ? `${conf.toFixed(1)}%` : '—';
+    const sl = s.precio_stop_loss != null ? `$${fmtPrice(s.precio_stop_loss, 2)}` : '—';
+    const tp = s.precio_take_profit != null ? `$${fmtPrice(s.precio_take_profit, 2)}` : '—';
+    const hora = fmtTime(s.timestamp);
+    const razon = (s.razonamiento || '').replace(/^🧠 NEXUS-ML: /, '');
+
+    return `
+      <div style="background: rgba(255,255,255,0.02); border-left: 2px solid ${color}; border-radius: 6px; padding: 7px 9px; display: flex; flex-direction: column; gap: 3px;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 11px; font-weight: 800; color: #fff;">${s.simbolo}</span>
+          <span style="font-size: 9px; font-family: var(--font-mono); font-weight: 800; color: ${color}; border: 1px solid ${color}44; padding: 1px 5px; border-radius: 3px;">${accionTxt}</span>
+          <span style="font-size: 9px; color: var(--text-muted); font-family: var(--font-mono);">${hora}</span>
+        </div>
+        <div style="font-size: 10px; color: var(--text-secondary); font-family: var(--font-mono);">Conf: <b style="color: var(--neon-cyan);">${confTxt}</b> · SL ${sl} · TP ${tp}</div>
+        <div style="font-size: 9px; color: var(--text-muted); line-height: 1.35;">${razon}</div>
+      </div>`;
+  }).join('');
+}
+
 function renderOrdenes() {
   if (STATE.chart) {
     STATE.chart.setOrders(STATE.orders);
@@ -723,6 +766,275 @@ document.querySelectorAll('.ticker-item').forEach(item => {
   });
 });
 
+// ═══════════════════════════════════════════════════════════════════════════
+// ⚡ FUTURES CVD SCALPER — Motor 2 (Derivados USDT-M)
+// ═══════════════════════════════════════════════════════════════════════════
+const DOM_FUTURES = {
+  btnStart: $('btnCvdStart'),
+  btnStop: $('btnCvdStop'),
+  btnLev: $('btnCvdLeverageApply'),
+  symbol: $('cvdSymbol'),
+  umbral: $('cvdUmbral'),
+  intervalo: $('cvdIntervalo'),
+  leverage: $('cvdLeverage'),
+  qty: $('cvdQty'),
+  status: $('cvdStatus'),
+  delta: $('cvdDelta'),
+  decision: $('cvdDecision'),
+  razon: $('cvdRazon'),
+  llm: $('cvdLlm'),
+  futuresPositions: $('futuresPositions'),
+};
+
+function pintarCvdDelta(valor) {
+  const el = DOM_FUTURES.delta;
+  if (!el) return;
+  const v = Number(valor) || 0;
+  el.textContent = v.toFixed(4);
+  el.style.color = v >= 0 ? 'var(--green)' : 'var(--red)';
+}
+
+async function cargarFuturesEstado() {
+  try {
+    const res = await fetch('/api/futures/loop/estado');
+    const data = await res.json();
+    STATE.futuresLoop = {
+      activo: !!data.loop_activo,
+      status: data.status || 'stopped',
+      symbol: data.symbol || 'BTCUSDT',
+      cvd: Number(data.cvd_delta) || 0,
+      decision: data.ultima_decision || '—',
+      razon: data.ultima_razon || '',
+    };
+    actualizarVistaFutures();
+    pintarCvdDelta(data.cvd_delta);
+  } catch (e) {
+    console.error('Error al leer estado futures:', e);
+  }
+}
+
+function actualizarVistaFutures() {
+  const fl = STATE.futuresLoop;
+  if (DOM_FUTURES.status) {
+    const activo = fl.activo && fl.status !== 'stopped';
+    DOM_FUTURES.status.textContent = activo ? `● ACTIVO · ${fl.symbol}` : '○ DETENIDO';
+    DOM_FUTURES.status.style.color = activo ? 'var(--green)' : 'var(--text-muted)';
+  }
+  if (DOM_FUTURES.decision) {
+    DOM_FUTURES.decision.textContent = fl.decision;
+    const esLong = fl.decision.toUpperCase() === 'LONG';
+    const esShort = fl.decision.toUpperCase() === 'SHORT';
+    DOM_FUTURES.decision.style.color = esLong ? 'var(--green)' : (esShort ? 'var(--red)' : 'var(--text-muted)');
+  }
+  if (DOM_FUTURES.razon) {
+    DOM_FUTURES.razon.textContent = fl.razon || 'Esperando inicio del orquestador...';
+  }
+  if (DOM_FUTURES.llm && fl.llm_backend) {
+    DOM_FUTURES.llm.textContent = `LLM: ${fl.llm_backend}`;
+  }
+}
+
+async function iniciarFuturesLoop() {
+  const symbol = (DOM_FUTURES.symbol?.value || 'BTCUSDT').trim().toUpperCase();
+  const umbral = parseFloat(DOM_FUTURES.umbral?.value) || 50;
+  const intervalo = parseInt(DOM_FUTURES.intervalo?.value, 10) || 2;
+  const leverage = parseInt(DOM_FUTURES.leverage?.value, 10) || 5;
+  const qty = parseFloat(DOM_FUTURES.qty?.value) || 0.001;
+
+  // Aplicar leverage y configurar cliente si es posible
+  try {
+    await fetch('/api/futures/configurar', { method: 'POST' });
+    await fetch('/api/futures/leverage', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ symbol, leverage: Math.max(1, Math.min(125, leverage)) }),
+    });
+  } catch (e) { /* continuar: el loop validará el cliente */ }
+
+  try {
+    const res = await fetch('/api/futures/loop', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        accion: 'start',
+        symbol,
+        umbral_cvd: umbral,
+        intervalo_seg: Math.max(1, intervalo),
+      }),
+    });
+    const data = await res.json();
+    console.log(`⚡ [FUTURES] ${data.mensaje || data.status}`);
+    await cargarFuturesEstado();
+  } catch (e) {
+    console.error('Error al iniciar loop futures:', e);
+    if (DOM_FUTURES.status) {
+      DOM_FUTURES.status.textContent = '✖ ERROR DE INICIO';
+      DOM_FUTURES.status.style.color = 'var(--neon-red)';
+    }
+  }
+}
+
+async function detenerFuturesLoop() {
+  try {
+    const res = await fetch('/api/futures/loop', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ accion: 'stop' }),
+    });
+    const data = await res.json();
+    console.log(`⚡ [FUTURES] ${data.mensaje || data.status}`);
+    await cargarFuturesEstado();
+  } catch (e) {
+    console.error('Error al detener loop futures:', e);
+  }
+}
+
+async function aplicarLeverageFutures() {
+  const symbol = (DOM_FUTURES.symbol?.value || 'BTCUSDT').trim().toUpperCase();
+  const leverage = parseInt(DOM_FUTURES.leverage?.value, 10) || 5;
+  try {
+    await fetch('/api/futures/configurar', { method: 'POST' });
+    const res = await fetch('/api/futures/leverage', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ symbol, leverage: Math.max(1, Math.min(125, leverage)) }),
+    });
+    const data = await res.json();
+    console.log(`💱 [FUTURES] Leverage ${symbol} → ${JSON.stringify(data.leverage)}`);
+  } catch (e) {
+    console.error('Error al aplicar leverage:', e);
+  }
+}
+
+async function cargarPosicionesFutures() {
+  const container = DOM_FUTURES.futuresPositions;
+  if (!container) return;
+  try {
+    const res = await fetch('/api/futures/posiciones');
+    const data = await res.json();
+    if (data.status !== 'ok' || !data.posiciones || data.posiciones.length === 0) {
+      container.innerHTML = `<div style="padding: 8px; text-align: center; color: var(--text-muted); font-size: 10px;">Sin posiciones futures abiertas.</div>`;
+      return;
+    }
+    container.innerHTML = data.posiciones.map(p => {
+      const amt = parseFloat(p.position_amt) || 0;
+      const esLong = amt > 0;
+      const color = esLong ? 'var(--green)' : 'var(--red)';
+      const lado = esLong ? 'LONG' : 'SHORT';
+      const pnl = parseFloat(p.unrealized_profit) || 0;
+      const pnlColor = pnl >= 0 ? 'var(--green)' : 'var(--red)';
+      const entry = parseFloat(p.entry_price) || 0;
+      const mark = parseFloat(p.mark_price) || 0;
+      const pnlPct = entry > 0 ? ((mark - entry) / entry) * 100 * (esLong ? 1 : -1) : 0;
+      const lev = p.leverage || '—';
+      return `
+        <div style="background: rgba(255,255,255,0.02); border-left: 2px solid ${color}; border-radius: 6px; padding: 6px 9px; display: flex; justify-content: space-between; align-items: center;">
+          <div style="display: flex; flex-direction: column; gap: 1px;">
+            <span style="font-size: 11px; font-weight: 800; color: #fff;">${p.symbol}</span>
+            <span style="font-size: 8px; color: var(--text-muted); font-family: var(--font-mono);">${Math.abs(amt).toFixed(3)} @ $${fmtPrice(entry, 2)} · Lev ${lev}x</span>
+          </div>
+          <div style="display: flex; flex-direction: column; align-items: flex-end;">
+            <span style="font-size: 10px; font-weight: 800; color: ${color}; font-family: var(--font-mono);">${lado}</span>
+            <span style="font-size: 10px; font-family: var(--font-mono); color: ${pnlColor};">${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)} · ${pnlPct >= 0 ? '+' : ''}${pnlPct.toFixed(2)}%</span>
+          </div>
+        </div>`;
+    }).join('');
+  } catch (e) {
+    console.error('Error al cargar posiciones futures:', e);
+    container.innerHTML = `<div style="padding: 8px; text-align: center; color: var(--text-muted); font-size: 10px;">Futures no configurado.</div>`;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 🔋 ESTADO ENERGÉTICO — Cadena maestra
+// ═══════════════════════════════════════════════════════════════════════════
+const CADENA_ENERGIA = [
+  { clave: 'OPENROUTER_API_KEY', nombre: 'OpenRouter', pos: 'PRIMARIO', icono: '⚡', modelo: 'Gemini 2.5 Flash' },
+  { clave: 'DEEPSEEK_API_KEY', nombre: 'DeepSeek', pos: 'RESPALDO 1', icono: '🌊', modelo: 'DeepSeek R1/V3' },
+  { clave: 'GROQ_API_KEY', nombre: 'Groq LPU', pos: 'RESPALDO 2', icono: '🧠', modelo: 'Llama 70B' },
+  { clave: 'VERTEX_TOKEN', nombre: 'Vertex AI', pos: 'RESPALDO 3', icono: '🏔️', modelo: 'Gemini Pro' },
+  { clave: 'GEMINI_API_KEY', nombre: 'Gemini AI Studio', pos: 'ÚLTIMO RESPALDO', icono: '🔵', modelo: 'Gemini 2.5' },
+  { clave: 'OLLAMA', nombre: 'Ollama Local', pos: 'MODO OFFLINE', icono: '🤖', modelo: 'qwen2.5:7b' },
+];
+
+async function cargarEstadoEnergia() {
+  const container = document.getElementById('energyChain');
+  if (!container) return;
+  try {
+    const res = await fetch('/api/energia/estado');
+    const data = await res.json();
+    const motores = data.motores || [];
+    container.innerHTML = motores.map(m => {
+      const ok = !!m.configurado;
+      const color = ok ? 'var(--green)' : 'var(--text-muted)';
+      const estadoTxt = ok ? '✓ CONFIGURADO' : '✗ SIN KEY';
+      return `
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 6px;">
+          <span style="font-size: 9px; color: var(--text-secondary); font-family: var(--font-mono); flex: 1;">
+            ${m.icono || '🔌'} <b style="color: ${ok ? '#fff' : 'var(--text-muted)'};">${m.nombre}</b>
+            <span style="color: var(--text-muted);">· ${m.pos}</span>
+          </span>
+          <span style="font-size: 8px; color: var(--text-muted); font-family: var(--font-mono);">${m.modelo || ''}</span>
+          <span style="font-size: 8px; font-family: var(--font-mono); font-weight: 700; color: ${color};">${estadoTxt}</span>
+        </div>`;
+    }).join('');
+  } catch (e) {
+    container.innerHTML = `<div style="display: flex; justify-content: space-between; align-items: center; font-size: 10px; color: var(--text-secondary);">
+      <span>Panel energético no disponible.</span><span style="font-size: 8px;">backend sin endpoint</span></div>`;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// KPIs reales de cabecera
+// ═══════════════════════════════════════════════════════════════════════════
+async function actualizarKPIs() {
+  try {
+    const res = await fetch('/api/auto-trading/estado');
+    const data = await res.json();
+    const opsEl = document.getElementById('kpiOps');
+    if (opsEl) {
+      const txt = data.auto_trading
+        ? `AUTO: ${data.operaciones_realizadas}/${data.max_operaciones}`
+        : 'AUTO: MANUAL';
+      opsEl.textContent = txt;
+      opsEl.style.color = data.auto_trading ? 'var(--green)' : 'var(--orange)';
+    }
+  } catch (e) { /* ignorar */ }
+
+  try {
+    const res = await fetch('/api/prediccion/reporte');
+    const data = await res.json();
+    const motorEl = document.getElementById('kpiMotor');
+    if (motorEl && data.reportes) {
+      const activos = Object.keys(data.reportes).length;
+      const listos = Object.values(data.reportes).filter(r => r.motor_ml && r.motor_ml.listo).length;
+      const precs = Object.values(data.reportes)
+        .map(r => r.motor_ml && Number(r.motor_ml.precision))
+        .filter(v => Number.isFinite(v) && v > 0);
+      const prom = precs.length > 0 ? (precs.reduce((a, b) => a + b, 0) / precs.length) : null;
+      const txt = prom != null
+        ? `⚡ ML: ${(prom * 100).toFixed(0)}% · ${listos}/${activos}`
+        : (activos > 0 ? `⚡ ML: calibrando (${activos})` : '⚡ ML: --');
+      motorEl.textContent = txt;
+      motorEl.style.color = prom != null && prom >= 0.5 ? 'var(--green)' : (activos > 0 ? 'var(--orange)' : 'var(--text-muted)');
+    }
+  } catch (e) { /* ignorar */ }
+
+  try {
+    const res = await fetch('/api/futures/loop/estado');
+    const data = await res.json();
+    const cvdEl = document.getElementById('kpiCvd');
+    if (cvdEl) {
+      const v = Number(data.cvd_delta) || 0;
+      const activo = data.loop_activo === true || data.status === 'running';
+      cvdEl.textContent = activo
+        ? `CVD: ${v >= 0 ? '+' : ''}${v.toFixed(2)} · LOOP`
+        : 'CVD: -- · INICIAR';
+      cvdEl.style.color = activo ? (v >= 0 ? 'var(--green)' : 'var(--red)') : 'var(--orange)';
+    }
+  } catch (e) { /* ignorar */ }
+}
+
 async function cargarCartera() {
   try {
     const res = await fetch('/api/cartera');
@@ -947,6 +1259,10 @@ async function init() {
   await cargarPensamientos();
   await checkRealStatus();
   await cargarAutoTrading(); // Lee estado real del auto-trading (sin invertirlo)
+  await cargarSenales();     // 🧠 Señales ML en panel de decisiones
+  await cargarFuturesEstado(); // ⚡ Estado del orquestador futures CVD
+  await cargarPosicionesFutures(); // ⚡ Posiciones futures
+  await cargarEstadoEnergia(); // 🔋 Cadena energética maestra
   
   setInterval(cargarOrdenes, 5000);
   setInterval(cargarCartera, 2000);
@@ -954,6 +1270,10 @@ async function init() {
   setInterval(cargarPensamientos, 1000);
   setInterval(actualizarPnLPanel, 2000);  // Actualizar panel de ganancias del día
   setInterval(actualizarTelemetriaConexion, 1000); // Telemetría de conexión + auditoría Sentinel
+  setInterval(cargarSenales, 3000);     // 🧠 Señales ML en vivo
+  setInterval(cargarFuturesEstado, 2000); // ⚡ CVD en vivo
+  setInterval(cargarPosicionesFutures, 5000); // ⚡ Posiciones futures
+  setInterval(actualizarKPIs, 4000);    // 📊 KPIs de cabecera reales
 
   // Resize chart
   window.addEventListener('resize', () => {
@@ -1013,6 +1333,17 @@ async function init() {
   const btnSetLimite = document.getElementById('btnSetLimite');
   if (btnSetLimite) {
     btnSetLimite.addEventListener('click', configurarLimiteOperaciones);
+  }
+
+  // ⚡ FUTURES CVD SCALPER — Controles
+  if (DOM_FUTURES.btnStart) {
+    DOM_FUTURES.btnStart.addEventListener('click', iniciarFuturesLoop);
+  }
+  if (DOM_FUTURES.btnStop) {
+    DOM_FUTURES.btnStop.addEventListener('click', detenerFuturesLoop);
+  }
+  if (DOM_FUTURES.btnLev) {
+    DOM_FUTURES.btnLev.addEventListener('click', aplicarLeverageFutures);
   }
   const inputLimite = document.getElementById('limiteOps');
   if (inputLimite) {

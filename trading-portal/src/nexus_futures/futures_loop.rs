@@ -9,6 +9,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use tokio::sync::{mpsc, Mutex};
 use tokio::time::{sleep, Duration};
+use chrono::Utc;
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -157,6 +158,8 @@ pub struct FuturesOrchestrator {
     /// Leverage por defecto (1-125)
     pub leverage_default: u32,
     pub llm: LlmBackend,
+    /// 📡 Telemetría compartida publicada en vivo para el dashboard
+    pub telemetry: Arc<Mutex<Value>>,
 }
 
 impl FuturesOrchestrator {
@@ -166,6 +169,17 @@ impl FuturesOrchestrator {
         delta_threshold: f64,
         check_interval_secs: u64,
     ) -> Self {
+        Self::with_telemetry(client, symbol, delta_threshold, check_interval_secs, Arc::new(Mutex::new(Value::Null)))
+    }
+
+    /// Constructor con estado de telemetría compartido (dashboard)
+    pub fn with_telemetry(
+        client: Arc<FuturesClient>,
+        symbol: String,
+        delta_threshold: f64,
+        check_interval_secs: u64,
+        telemetry: Arc<Mutex<Value>>,
+    ) -> Self {
         Self {
             client,
             symbol,
@@ -174,6 +188,7 @@ impl FuturesOrchestrator {
             qty_default: 0.001,
             leverage_default: 5,
             llm: LlmBackend::autodetect(),
+            telemetry,
         }
     }
 
@@ -187,6 +202,25 @@ impl FuturesOrchestrator {
         let (tx, mut rx) = mpsc::unbounded_channel::<Value>();
         let shutdown = Arc::new(AtomicBool::new(false));
         let cvd = Arc::new(Mutex::new(CvdTracker::new()));
+
+        // Publicar telemetría inicial para el dashboard
+        {
+            let mut tel = self.telemetry.lock().await;
+            *tel = serde_json::json!({
+                "status": "running",
+                "symbol": self.symbol,
+                "umbral_cvd": self.delta_threshold,
+                "intervalo_seg": self.check_interval_secs,
+                "qty_default": self.qty_default,
+                "leverage_default": self.leverage_default,
+                "llm_backend": self.llm_label(),
+                "cvd_delta": 0.0,
+                "ultima_decision": "—",
+                "ultima_razon": "Esperando acumulación de CVD...",
+                "ultima_accion": "idle",
+                "ts": Utc::now().timestamp_millis(),
+            });
+        }
 
         // ── Tarea 1: consumir stream y alimentar CvdTracker ──
         let cvd_feed = Arc::clone(&cvd);
@@ -223,6 +257,23 @@ impl FuturesOrchestrator {
 
             let current_cvd = cvd.lock().await.delta;
             println!("[FUTURES LOOP] CVD delta ({}): {:.4}", self.symbol, current_cvd);
+
+            // 📡 Publicar CVD en vivo al dashboard
+            {
+                let mut tel = self.telemetry.lock().await;
+                if tel.is_null() {
+                    *tel = serde_json::json!({});
+                }
+                tel["status"] = serde_json::json!("running");
+                tel["symbol"] = serde_json::json!(self.symbol);
+                tel["umbral_cvd"] = serde_json::json!(self.delta_threshold);
+                tel["intervalo_seg"] = serde_json::json!(self.check_interval_secs);
+                tel["qty_default"] = serde_json::json!(self.qty_default);
+                tel["leverage_default"] = serde_json::json!(self.leverage_default);
+                tel["llm_backend"] = serde_json::json!(self.llm_label());
+                tel["cvd_delta"] = serde_json::json!(current_cvd);
+                tel["ts"] = serde_json::json!(Utc::now().timestamp_millis());
+            }
 
             if current_cvd.abs() >= self.delta_threshold {
                 println!(
@@ -287,6 +338,31 @@ impl FuturesOrchestrator {
 
         let decision = LlmTradingDecision::parse(&respuesta)?;
         println!("[FUTURES DECISION] {} | {}", decision.accion, decision.razon);
+
+        // 📡 Publicar la decisión del LLM en la telemetría compartida
+        {
+            let mut tel = self.telemetry.lock().await;
+            if tel.is_null() {
+                *tel = serde_json::json!({});
+            }
+            tel["status"] = serde_json::json!("running");
+            tel["symbol"] = serde_json::json!(self.symbol);
+            tel["cvd_delta"] = serde_json::json!(cvd_delta);
+            tel["llm_backend"] = serde_json::json!(self.llm_label());
+            tel["ultima_decision"] = serde_json::json!(decision.accion.to_uppercase());
+            tel["ultima_razon"] = serde_json::json!(decision.razon);
+            tel["ultima_qty"] = serde_json::json!(decision.qty.unwrap_or(self.qty_default));
+            tel["ultimo_leverage"] = serde_json::json!(decision.leverage.unwrap_or(self.leverage_default).clamp(1, 125));
+            tel["ultimo_sl"] = decision.sl.map(|v| serde_json::json!(v)).unwrap_or(serde_json::Value::Null);
+            tel["ultimo_tp"] = decision.tp.map(|v| serde_json::json!(v)).unwrap_or(serde_json::Value::Null);
+            tel["ultima_accion"] = serde_json::json!(match decision.accion.to_uppercase().as_str() {
+                "LONG" => "open_long",
+                "SHORT" => "open_short",
+                "CLOSE" => "close",
+                _ => "hold",
+            });
+            tel["ts"] = serde_json::json!(Utc::now().timestamp_millis());
+        }
 
         let qty = decision.qty.unwrap_or(self.qty_default);
         let lev = decision.leverage.unwrap_or(self.leverage_default).clamp(1, 125);

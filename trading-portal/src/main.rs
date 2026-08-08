@@ -128,6 +128,10 @@ struct AppState {
     futures_modo: Mutex<bool>,
     /// 🔄 Orquestador autónomo (futures_loop) activo
     futures_loop_activo: Mutex<bool>,
+    /// 📡 Telemetría compartida del orquestador futures (CVD, decisiones, LLM)
+    futures_loop_telemetry: Mutex<Option<Arc<tokio::sync::Mutex<serde_json::Value>>>>,
+    /// 🌐 Feed global de mercado (real o simulado) vivo 24/7 — difunde a clientes WS
+    mercado_broadcast: tokio::sync::broadcast::Sender<String>,
 }
 
 #[derive(Clone)]
@@ -162,6 +166,11 @@ impl AppStateArc {
                 futures_client: Mutex::new(None),
                 futures_modo: Mutex::new(false),
                 futures_loop_activo: Mutex::new(false),
+                futures_loop_telemetry: Mutex::new(None),
+                mercado_broadcast: {
+                    let (tx, _rx) = tokio::sync::broadcast::channel::<String>(512);
+                    tx
+                },
             }),
         }
     }
@@ -1491,6 +1500,66 @@ async fn api_futures_modo(
     }))
 }
 
+/// GET /api/futures/loop/estado — Telemetría en vivo del orquestador futures
+async fn api_futures_loop_estado(state: axum::extract::State<AppStateArc>) -> Json<serde_json::Value> {
+    let activo = *state.inner.futures_loop_activo.lock().await;
+    let tel_opt = state.inner.futures_loop_telemetry.lock().await;
+    let tel = match tel_opt.as_ref() {
+        Some(t) => t.lock().await.clone(),
+        None => serde_json::Value::Null,
+    };
+    let mut base = if tel.is_object() {
+        tel
+    } else {
+        serde_json::json!({
+            "status": if activo { "starting" } else { "stopped" },
+            "symbol": "BTCUSDT",
+            "cvd_delta": 0.0,
+            "ultima_decision": "—",
+            "ultima_razon": "Orquestador no iniciado todavía.",
+            "ultima_accion": "idle",
+        })
+    };
+    base["loop_activo"] = serde_json::json!(activo);
+    base["ts"] = serde_json::json!(Utc::now().timestamp_millis());
+    Json(base)
+}
+
+/// GET /api/energia/estado — Cadena energética maestra (estado de cada motor)
+/// Orden: OpenRouter (PRIMARIO) → DeepSeek → Groq → Vertex → Gemini AI Studio (ÚLTIMO) → Ollama Local
+async fn api_energia_estado() -> Json<serde_json::Value> {
+    let env_path = "/home/soberano/NEXUS_ULTIMATE_CORE/.env";
+    let mut claves: std::collections::HashMap<String, bool> = std::collections::HashMap::new();
+    if let Ok(content) = std::fs::read_to_string(env_path) {
+        for line in content.lines() {
+            let line = line.trim();
+            if line.is_empty() || line.starts_with('#') {
+                continue;
+            }
+            if let Some(eq) = line.find('=') {
+                let k = line[..eq].trim().to_string();
+                let v = line[eq + 1..].trim();
+                let v_limpio = v.trim_matches(|c| c == '"' || c == '\'');
+                claves.insert(k, !v_limpio.is_empty());
+            }
+        }
+    }
+    let key_ok = |k: &str| claves.get(k).copied().unwrap_or(false);
+    let motores = vec![
+        serde_json::json!({"nombre":"OpenRouter","pos":"PRIMARIO","icono":"⚡","modelo":"Gemini 2.5 Flash","configurado": key_ok("OPENROUTER_API_KEY")}),
+        serde_json::json!({"nombre":"DeepSeek","pos":"RESPALDO 1","icono":"🌊","modelo":"DeepSeek R1/V3","configurado": key_ok("DEEPSEEK_API_KEY")}),
+        serde_json::json!({"nombre":"Groq LPU","pos":"RESPALDO 2","icono":"🧠","modelo":"Llama 70B","configurado": key_ok("GROQ_API_KEY")}),
+        serde_json::json!({"nombre":"Vertex AI","pos":"RESPALDO 3","icono":"🏔️","modelo":"Gemini Pro","configurado": key_ok("VERTEX_TOKEN")}),
+        serde_json::json!({"nombre":"Gemini AI Studio","pos":"ÚLTIMO RESPALDO","icono":"🔵","modelo":"Gemini 2.5","configurado": key_ok("GEMINI_API_KEY")}),
+        serde_json::json!({"nombre":"Ollama Local","pos":"MODO OFFLINE","icono":"🤖","modelo":"qwen2.5:7b","configurado": key_ok("NEXUS_LOCAL_KEY") || key_ok("OLLAMA_KEEP_ALIVE")}),
+    ];
+    Json(serde_json::json!({
+        "status": "ok",
+        "motores": motores,
+        "ts": Utc::now().timestamp_millis(),
+    }))
+}
+
 /// POST /api/futures/loop — Iniciar/detener el orquestador autónomo
 /// Body: {"symbol":"BTCUSDT","umbral_cvd":50.0,"intervalo_seg":2,"accion":"start"|"stop"}
 /// El loop escucha aggTrade por WS, alimenta CvdTracker y cuando el delta cruza
@@ -1504,6 +1573,14 @@ async fn api_futures_loop(
 
     if accion == "stop" {
         *activo = false;
+        // Marcar la telemetría como detenida
+        if let Some(tel) = state.inner.futures_loop_telemetry.lock().await.as_ref() {
+            let mut guard = tel.lock().await;
+            if guard.is_object() {
+                guard["status"] = serde_json::json!("stopped");
+                guard["ultima_razon"] = serde_json::json!("Orquestador detenido manualmente.");
+            }
+        }
         return Json(serde_json::json!({
             "status":"ok",
             "mensaje":"Orquestador detenido. El loop se cancelará en el próximo ciclo."
@@ -1554,12 +1631,17 @@ async fn api_futures_loop(
     let run_client = client.clone();
     let symbol_run = symbol.clone();
 
+    // 📡 Telemetría compartida del orquestador para el dashboard
+    let telemetry = Arc::new(tokio::sync::Mutex::new(serde_json::Value::Null));
+    *state.inner.futures_loop_telemetry.lock().await = Some(Arc::clone(&telemetry));
+
     tokio::spawn(async move {
-        let orquestador = nexus_futures::FuturesOrchestrator::new(
+        let orquestador = nexus_futures::FuturesOrchestrator::with_telemetry(
             run_client,
             symbol_run,
             umbral,
             intervalo,
+            telemetry,
         );
         orquestador.run().await;
         flag_loop.store(false, std::sync::atomic::Ordering::Relaxed);
@@ -1593,67 +1675,55 @@ async fn ws_handler(
     ws.on_upgrade(move |socket| manejar_ws(socket, state.inner.clone()))
 }
 
-async fn manejar_ws(mut socket: WebSocket, state: Arc<AppState>) {
-    info!("🔌 [WS] Cliente frontend conectado");
-    let (sender, mut receiver) = socket.split();
-    let (binance_tx, mut binance_rx) = tokio::sync::mpsc::unbounded_channel::<String>();
+/// Procesa cada tick del mercado global: actualiza precio_actual y alimenta el
+/// motor ML SIEMPRE (Fase B). Las órdenes solo se ejecutan en modo auto.
+async fn procesar_tick_mercado(state: &Arc<AppState>, msg: &str) {
+    let Ok(data) = serde_json::from_str::<serde_json::Value>(msg) else { return };
+    let Some(precio_str) = data.get("p").and_then(|v| v.as_str()) else { return };
+    let Ok(precio) = precio_str.parse::<f64>() else { return };
 
-    // Lanzar tareas del simulador local para las 6 acciones del S&P 500 en paralelo
-    let simbolos_acciones = vec!["NVDA", "AAPL", "MSFT", "AMZN", "META", "TSLA"];
-    for simbolo in simbolos_acciones {
-        let tx = binance_tx.clone();
-        let sym_str = simbolo.to_string();
-        tokio::spawn(async move {
-            loop {
-                conectar_binance_ws(&sym_str, tx.clone()).await;
-                tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
-            }
-        });
+    let simbolo_evento = data.get("s").and_then(|v| v.as_str()).unwrap_or("NVDA").to_string();
+    let tick = TickMercado {
+        simbolo: simbolo_evento.clone(),
+        precio,
+        volumen: data.get("q").and_then(|v| v.as_str())
+            .and_then(|v| v.parse().ok()).unwrap_or(0.0),
+        timestamp: data.get("T").and_then(|v| v.as_i64()).unwrap_or(0),
+        compra: data.get("b").and_then(|v| v.as_str())
+            .and_then(|v| v.parse().ok()).unwrap_or(precio * 0.999),
+        venta: data.get("a").and_then(|v| v.as_str())
+            .and_then(|v| v.parse().ok()).unwrap_or(precio * 1.001),
+    };
+
+    {
+        let mut precios = state.precio_actual.lock().await;
+        precios.insert(simbolo_evento.clone(), tick.clone());
     }
 
-    let state_clone = state.clone();
-    let mut sender_clone = sender;
+    // Alimentar el analizador ML SIEMPRE (independiente del modo auto)
+    if let Some(senal) = analizar_nexus(&tick, state).await {
+        let auto = *state.modo_auto.lock().await;
+        {
+            let mut senales = state.senales.lock().await;
+            senales.push(senal.clone());
+        }
+        if auto {
+            ejecutar_orden_automatica(state.clone(), &senal).await;
+        }
+    }
+}
+
+async fn manejar_ws(mut socket: WebSocket, state: Arc<AppState>) {
+    info!("🔌 [WS] Cliente frontend conectado");
+    let (mut sender, mut receiver) = socket.split();
+
+    // Suscribirse al feed global de mercado (24/7, ya alimenta el motor ML)
+    let mut broadcast_rx = state.mercado_broadcast.subscribe();
 
     let forward_task = tokio::spawn(async move {
-        while let Some(msg) = binance_rx.recv().await {
-            if let Ok(data) = serde_json::from_str::<serde_json::Value>(&msg) {
-                if let Some(precio_str) = data.get("p").and_then(|v| v.as_str()) {
-                    if let Ok(precio) = precio_str.parse::<f64>() {
-                        let mut precios = state_clone.precio_actual.lock().await;
-                        let simbolo_evento = data.get("s").and_then(|v| v.as_str()).unwrap_or("NVDA");
-                        
-                        let tick = TickMercado {
-                            simbolo: simbolo_evento.to_string(),
-                            precio,
-                            volumen: data.get("q").and_then(|v| v.as_str())
-                                .and_then(|v| v.parse().ok()).unwrap_or(0.0),
-                            timestamp: data.get("T").and_then(|v| v.as_i64()).unwrap_or(0),
-                            compra: data.get("b").and_then(|v| v.as_str())
-                                .and_then(|v| v.parse().ok()).unwrap_or(precio * 0.999),
-                            venta: data.get("a").and_then(|v| v.as_str())
-                                .and_then(|v| v.parse().ok()).unwrap_or(precio * 1.001),
-                        };
-                        precios.insert(simbolo_evento.to_string(), tick.clone());
-
-                        let auto = *state_clone.modo_auto.lock().await;
-                        if auto {
-                            if let Some(senal) = analizar_nexus(&tick, &state_clone).await {
-                                {
-                                    let mut senales = state_clone.senales.lock().await;
-                                    senales.push(senal.clone());
-                                }
-                                ejecutar_orden_automatica(state_clone.clone(), &senal).await;
-                            }
-                        }
-
-                        let _ = sender_clone.send(AxumMessage::Text(
-                            serde_json::to_string(&tick).unwrap()
-                        )).await;
-                    }
-                }
-                if data.get("bids").is_some() || data.get("asks").is_some() {
-                    let _ = sender_clone.send(AxumMessage::Text(msg)).await;
-                }
+        while let Ok(msg) = broadcast_rx.recv().await {
+            if sender.send(AxumMessage::Text(msg)).await.is_err() {
+                break;
             }
         }
     });
@@ -1687,6 +1757,49 @@ async fn main() {
     info!("🤖 [NEXUS-TR v2.0] Trading Portal + Sembrador OMEGA");
 
     let state = AppStateArc::new();
+
+    // ═══ Fase A — Mercado vivo 24/7 (independiente de clientes WS) ═══
+    {
+        let (mercado_tx, mut mercado_rx) = tokio::sync::mpsc::unbounded_channel::<String>();
+        let simbolos = vec!["NVDA", "AAPL", "MSFT", "AMZN", "META", "TSLA", "BTCUSDT"];
+        for simbolo in simbolos {
+            let tx = mercado_tx.clone();
+            let sym = simbolo.to_string();
+            tokio::spawn(async move {
+                loop {
+                    conectar_binance_ws(&sym, tx.clone()).await;
+                    tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
+                }
+            });
+        }
+        // Worker central: alimenta el motor ML SIEMPRE (Fase B) y difunde a clientes WS
+        let state_feed = state.inner.clone();
+        let broadcast_tx = state_feed.mercado_broadcast.clone();
+        tokio::spawn(async move {
+            while let Some(msg) = mercado_rx.recv().await {
+                procesar_tick_mercado(&state_feed, &msg).await;
+                let _ = broadcast_tx.send(msg);
+            }
+        });
+    }
+
+    // ═══ Fase C — Auto-inicialización del cliente futures si hay claves reales ═══
+    {
+        let (api, sec) = load_binance_keys();
+        if let (Some(api), Some(sec)) = (api, sec) {
+            if !api.starts_with("YOUR_") && !sec.starts_with("YOUR_") {
+                let client = nexus_futures::FuturesClient::new(api, sec);
+                *state.inner.futures_client.lock().await = Some(client);
+                *state.inner.futures_modo.lock().await = true;
+                info!("🚀 [FUTURES] Cliente auto-inicializado al arrancar (claves reales presentes).");
+            } else {
+                warn!("⚠️ [FUTURES] Claves detectadas como marcador de prueba (YOUR_*). El cliente real NO se inicializó. Re-ingresa tus claves reales en el modal 💼.");
+            }
+        } else {
+            info!("ℹ️ [FUTURES] Sin claves en .env. El cliente se conectará cuando configures el exchange.");
+        }
+    }
+
     let addr = SocketAddr::from(([0, 0, 0, 0], 42210));
 
     let app = Router::new()
@@ -1708,6 +1821,8 @@ async fn main() {
         // ─── Predicción ML (NEXUS v3.0) ───
         .route("/api/prediccion/reporte", get(api_prediccion_reporte))
         .route("/api/prediccion/analizar", get(api_prediccion_analizar))
+        // ─── Energía (cadena maestra) ───
+        .route("/api/energia/estado", get(api_energia_estado))
         // ─── Identidades (Sembrador OMEGA) ───
         .route("/api/identidades/sembrar", get(api_sembrar))
         .route("/api/identidades", get(api_listar_identidades))
@@ -1728,6 +1843,7 @@ async fn main() {
         .route("/api/futures/trades/{symbol}", get(api_futures_trades))
         .route("/api/futures/snapshot/{symbol}", get(api_futures_snapshot))
         .route("/api/futures/loop", post(api_futures_loop))
+        .route("/api/futures/loop/estado", get(api_futures_loop_estado))
         // ─── WebSocket ───
         .route("/ws", get(ws_handler))
         // ─── Frontend estático ───
