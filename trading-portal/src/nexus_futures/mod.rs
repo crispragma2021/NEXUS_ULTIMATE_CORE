@@ -10,8 +10,12 @@ pub mod types;
 pub mod client;
 pub mod ws;
 pub mod futures_loop;
+pub mod simulacion;
+pub mod backend;
 
 pub use types::*;
 pub use client::FuturesClient;
 pub use ws::{FuturesMarketWs, FuturesUserWs};
 pub use futures_loop::{FuturesOrchestrator, LlmBackend, LlmTradingDecision};
+pub use simulacion::FuturesSimulator;
+pub use backend::{FuturesBackend, como_trait_object};

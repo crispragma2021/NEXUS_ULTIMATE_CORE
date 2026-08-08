@@ -14,7 +14,7 @@ use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use super::client::FuturesClient;
+use super::backend::FuturesBackend;
 use super::types::{
     FuturesOrderRequest, OrderSide, OrderType, PositionSide, TimeInForce, WorkingType,
 };
@@ -149,7 +149,8 @@ impl LlmBackend {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 pub struct FuturesOrchestrator {
-    pub client: Arc<FuturesClient>,
+    /// Backend intercambiable: API real o simulador paper trading
+    pub client: Arc<dyn FuturesBackend>,
     pub symbol: String,
     pub delta_threshold: f64,
     pub check_interval_secs: u64,
@@ -160,11 +161,13 @@ pub struct FuturesOrchestrator {
     pub llm: LlmBackend,
     /// 📡 Telemetría compartida publicada en vivo para el dashboard
     pub telemetry: Arc<Mutex<Value>>,
+    /// true → paper trading (sin WS real de Binance, se usan los precios del feed local)
+    pub simulado: bool,
 }
 
 impl FuturesOrchestrator {
     pub fn new(
-        client: Arc<FuturesClient>,
+        client: Arc<dyn FuturesBackend>,
         symbol: String,
         delta_threshold: f64,
         check_interval_secs: u64,
@@ -174,7 +177,7 @@ impl FuturesOrchestrator {
 
     /// Constructor con estado de telemetría compartido (dashboard)
     pub fn with_telemetry(
-        client: Arc<FuturesClient>,
+        client: Arc<dyn FuturesBackend>,
         symbol: String,
         delta_threshold: f64,
         check_interval_secs: u64,
@@ -189,7 +192,29 @@ impl FuturesOrchestrator {
             leverage_default: 5,
             llm: LlmBackend::autodetect(),
             telemetry,
+            simulado: false,
         }
+    }
+
+    /// Construye el orquestador a partir de un backend concreto (real o sim).
+    pub fn con_backend<T: FuturesBackend + 'static>(
+        client: std::sync::Arc<T>,
+        symbol: String,
+        delta_threshold: f64,
+        check_interval_secs: u64,
+    ) -> Self {
+        Self::new(
+            client as std::sync::Arc<dyn FuturesBackend>,
+            symbol,
+            delta_threshold,
+            check_interval_secs,
+        )
+    }
+
+    /// Marca el orquestador como paper trading (feed local, sin WS de Binance).
+    pub fn modo_simulado(mut self, simulado: bool) -> Self {
+        self.simulado = simulado;
+        self
     }
 
     /// Inicia el bucle de trading autónomo:
@@ -234,21 +259,31 @@ impl FuturesOrchestrator {
         });
 
         // ── Tarea 2: conectar WS de mercado (auto-reconnect) ──
+        // En modo simulado el feed lo alimenta procesar_tick_mercado del portal,
+        // así que aquí no abrimos WS real.
         let ws_symbol = self.symbol.clone();
         let ws_tx = tx;
         let ws_shutdown = Arc::clone(&shutdown);
+        let simulado = self.simulado;
         let _ws_task = tokio::spawn(async move {
-            FuturesMarketWs::subscribe(
-                &ws_symbol,
-                vec![
-                    MarketStream::AggTrade,
-                    MarketStream::MarkPrice,
-                    MarketStream::BookTicker,
-                ],
-                ws_tx,
-                ws_shutdown,
-            )
-            .await;
+            if simulado {
+                // En paper trading el CvdTracker se alimenta desde el snapshot
+                // de precios del portal; dejamos el canal abierto por si se
+                // quisiera inyectar ticks manualmente en el futuro.
+                let _ = ws_shutdown.load(Ordering::Relaxed);
+            } else {
+                FuturesMarketWs::subscribe(
+                    &ws_symbol,
+                    vec![
+                        MarketStream::AggTrade,
+                        MarketStream::MarkPrice,
+                        MarketStream::BookTicker,
+                    ],
+                    ws_tx,
+                    ws_shutdown,
+                )
+                .await;
+            }
         });
 
         // ── Loop principal: evaluación y disparo ──
@@ -275,11 +310,21 @@ impl FuturesOrchestrator {
                 tel["ts"] = serde_json::json!(Utc::now().timestamp_millis());
             }
 
-            if current_cvd.abs() >= self.delta_threshold {
+            // En paper trading no hay CVD (no hay WS real): decidimos siempre que
+            // el simulador ya tenga un mark price alimentado por el feed local.
+            let disparar = if self.simulado {
+                match self.client.market_snapshot(&self.symbol).await {
+                    Ok(s) => s.mark_price > 0.0,
+                    Err(_) => false,
+                }
+            } else {
+                current_cvd.abs() >= self.delta_threshold
+            };
+
+            if disparar {
                 println!(
-                    "[FUTURES TRIGGER] Umbral alcanzado ({:.4} >= {:.4}). Consultando LLM...",
-                    current_cvd.abs(),
-                    self.delta_threshold
+                    "[FUTURES TRIGGER] Disparo (simulado={}, CVD={:.4}, umbral={}). Consultando LLM...",
+                    self.simulado, current_cvd, self.delta_threshold
                 );
                 match self.evaluar_y_ejecutar(current_cvd).await {
                     Ok(()) => {

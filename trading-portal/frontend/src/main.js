@@ -945,6 +945,100 @@ async function cargarPosicionesFutures() {
   }
 }
 
+// 🧪 SIMULACIÓN FUTURES — Paper trading sin API
+// ═══════════════════════════════════════════════════════════════════════════
+const DOM_SIM = {
+  status: document.getElementById('simStatus'),
+  balance: document.getElementById('simBalance'),
+  pnl: document.getElementById('simPnl'),
+  trades: document.getElementById('simTrades'),
+  balanceInput: document.getElementById('simBalanceInput'),
+  btnStart: document.getElementById('btnSimStart'),
+  btnStop: document.getElementById('btnSimStop'),
+  btnReset: document.getElementById('btnSimReset'),
+};
+
+function pintarSimPnl(valor) {
+  const el = DOM_SIM.pnl;
+  if (!el) return;
+  const v = Number(valor) || 0;
+  el.textContent = `${v >= 0 ? '+' : ''}$${v.toFixed(2)}`;
+  el.style.color = v >= 0 ? 'var(--green)' : 'var(--red)';
+}
+
+async function cargarEstadoSimulacion() {
+  try {
+    const res = await fetch('/api/futures/simulacion');
+    const data = await res.json();
+    if (data.modo === 'simulacion') {
+      const activo = !!data.activo;
+      if (DOM_SIM.status) {
+        DOM_SIM.status.textContent = activo ? '● ACTIVA' : '○ DETENIDA';
+        DOM_SIM.status.style.color = activo ? '#ffa01a' : 'var(--text-muted)';
+      }
+      if (DOM_SIM.balance) DOM_SIM.balance.textContent = `$${fmtPrice(Number(data.wallet_balance) || 0, 2)}`;
+      pintarSimPnl(data.pnl_realizado_total);
+      if (DOM_SIM.trades) DOM_SIM.trades.textContent = String(data.trades_total || 0);
+    } else {
+      if (DOM_SIM.status) {
+        DOM_SIM.status.textContent = '○ SIN SIMULADOR';
+        DOM_SIM.status.style.color = 'var(--text-muted)';
+      }
+    }
+  } catch (e) {
+    console.error('Error al leer estado de simulación:', e);
+  }
+}
+
+async function iniciarSimulacion() {
+  const balance = parseFloat(DOM_SIM.balanceInput?.value) || 10000;
+  try {
+    const res = await fetch('/api/futures/simulacion', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ accion: 'start', balance: Math.max(100, balance) }),
+    });
+    const data = await res.json();
+    console.log(`🧪 [SIM] ${data.mensaje || data.status}`);
+    await cargarEstadoSimulacion();
+    await cargarPosicionesFutures();
+  } catch (e) {
+    console.error('Error al iniciar simulación:', e);
+  }
+}
+
+async function detenerSimulacion() {
+  try {
+    const res = await fetch('/api/futures/simulacion', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ accion: 'stop' }),
+    });
+    const data = await res.json();
+    console.log(`🧪 [SIM] ${data.mensaje || data.status}`);
+    await cargarEstadoSimulacion();
+  } catch (e) {
+    console.error('Error al detener simulación:', e);
+  }
+}
+
+async function resetearSimulacion() {
+  const balance = parseFloat(DOM_SIM.balanceInput?.value) || 10000;
+  try {
+    const res = await fetch('/api/futures/simulacion', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ accion: 'reset', balance: Math.max(100, balance) }),
+    });
+    const data = await res.json();
+    console.log(`🧪 [SIM] ${data.mensaje || data.status}`);
+    await cargarEstadoSimulacion();
+    await cargarPosicionesFutures();
+  } catch (e) {
+    console.error('Error al resetear simulación:', e);
+  }
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // 🔋 ESTADO ENERGÉTICO — Cadena maestra
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1262,6 +1356,7 @@ async function init() {
   await cargarSenales();     // 🧠 Señales ML en panel de decisiones
   await cargarFuturesEstado(); // ⚡ Estado del orquestador futures CVD
   await cargarPosicionesFutures(); // ⚡ Posiciones futures
+  await cargarEstadoSimulacion(); // 🧪 Estado de la simulación paper
   await cargarEstadoEnergia(); // 🔋 Cadena energética maestra
   
   setInterval(cargarOrdenes, 5000);
@@ -1273,6 +1368,7 @@ async function init() {
   setInterval(cargarSenales, 3000);     // 🧠 Señales ML en vivo
   setInterval(cargarFuturesEstado, 2000); // ⚡ CVD en vivo
   setInterval(cargarPosicionesFutures, 5000); // ⚡ Posiciones futures
+  setInterval(cargarEstadoSimulacion, 3000); // 🧪 Estado simulación paper
   setInterval(actualizarKPIs, 4000);    // 📊 KPIs de cabecera reales
 
   // Resize chart
@@ -1350,6 +1446,17 @@ async function init() {
     inputLimite.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') configurarLimiteOperaciones();
     });
+  }
+
+  // 🧪 SIMULACIÓN FUTURES — Controles paper trading
+  if (DOM_SIM.btnStart) {
+    DOM_SIM.btnStart.addEventListener('click', iniciarSimulacion);
+  }
+  if (DOM_SIM.btnStop) {
+    DOM_SIM.btnStop.addEventListener('click', detenerSimulacion);
+  }
+  if (DOM_SIM.btnReset) {
+    DOM_SIM.btnReset.addEventListener('click', resetearSimulacion);
   }
 
   console.log('✅ [NEXUS-TR] Terminal lista. NEXUS es tu mano derecha.');

@@ -491,6 +491,37 @@
         </div>
       </div>
 
+      <!-- 🧪 MODO SIMULACIÓN (Paper Trading sin API) -->
+      <div class="panel" style="background: rgba(255,160,26,0.05); border: 1px solid rgba(255,160,26,0.25); border-radius: 8px;">
+        <div class="panel-header" style="background: rgba(255,160,26,0.12); color: #ffa01a; font-size: 9px;">🧪 SIMULACIÓN FUTURES · PAPER TRADING</div>
+        <div style="padding: 12px; display: flex; flex-direction: column; gap: 8px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 10px; color: var(--text-secondary);">Estado:</span>
+            <span id="simStatus" style="font-family: var(--font-mono); font-size: 11px; font-weight: 700; color: var(--text-muted);">○ INACTIVA</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 10px; color: var(--text-secondary);">Balance (sim):</span>
+            <span id="simBalance" style="font-family: var(--font-mono); font-size: 13px; font-weight: 800; color: #ffa01a;">$0.00</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 10px; color: var(--text-secondary);">PnL realizado:</span>
+            <span id="simPnl" style="font-family: var(--font-mono); font-size: 12px; font-weight: 800; color: var(--text-muted);">$0.00</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 10px; color: var(--text-secondary);">Trades:</span>
+            <span id="simTrades" style="font-family: var(--font-mono); font-size: 11px; font-weight: 700; color: var(--text-secondary);">0</span>
+          </div>
+          <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+            <input type="number" id="simBalanceInput" value="10000" min="100" step="100" title="Balance inicial de simulación"
+                   style="width: 92px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,160,26,0.35); color: #ffa01a; font-family: var(--font-mono); font-size: 10px; text-align: center; border-radius: 4px; padding: 5px;">
+            <button id="btnSimStart" style="cursor:pointer; background: #ffa01a; color: #001; border: none; border-radius: 4px; padding: 6px 10px; font-family: var(--font-mono); font-size: 10px; font-weight: 800;">▶ SIMULAR</button>
+            <button id="btnSimStop" style="cursor:pointer; background: rgba(255,60,60,0.85); color: #001; border: none; border-radius: 4px; padding: 6px 10px; font-family: var(--font-mono); font-size: 10px; font-weight: 800;">■ DETENER</button>
+            <button id="btnSimReset" style="cursor:pointer; background: rgba(255,160,26,0.15); color: #ffa01a; border: 1px solid rgba(255,160,26,0.4); border-radius: 4px; padding: 6px 10px; font-family: var(--font-mono); font-size: 10px; font-weight: 700;">↺ RESET</button>
+          </div>
+          <div style="font-size: 8px; color: var(--text-muted); font-family: var(--font-mono); line-height: 1.4;">Sin API · Con el feed en vivo · SL/TP y PnL realistas · El orquestador opera en PAPER.</div>
+        </div>
+      </div>
+
       <!-- 🔋 ESTADO ENERGÉTICO — Cadena maestra -->
       <div class="panel" style="background: rgba(16,185,129,0.04); border: 1px solid rgba(16,185,129,0.15); border-radius: 8px;">
         <div class="panel-header" style="background: rgba(16,185,129,0.08); color: var(--neon-green); font-size: 9px;">🔋 CADENA ENERGÉTICA MAESTRA</div>

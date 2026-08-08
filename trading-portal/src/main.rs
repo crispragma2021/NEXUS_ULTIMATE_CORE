@@ -123,7 +123,11 @@ struct AppState {
     /// 🧠 Analizador Completo NEXUS — ML + multi-fuente
     analizador: Mutex<std::collections::HashMap<String, prediccion::AnalizadorCompleto>>,
     /// 💱 Cliente de Binance Futures USDT-M (lazy init)
-    futures_client: Mutex<Option<nexus_futures::FuturesClient>>,
+    futures_client: Mutex<Option<Arc<nexus_futures::FuturesClient>>>,
+    /// 🧪 Simulador de futuros (paper trading, sin API)
+    futures_sim: Mutex<Option<Arc<nexus_futures::FuturesSimulator>>>,
+    /// 🧪 Modo simulación activo (true → los endpoints usan el simulador)
+    futures_sim_activo: Mutex<bool>,
     /// 📈 Modo futures habilitado
     futures_modo: Mutex<bool>,
     /// 🔄 Orquestador autónomo (futures_loop) activo
@@ -164,6 +168,8 @@ impl AppStateArc {
                 max_operaciones: Mutex::new(MAX_OPERACIONES_DEFECTO),
                 analizador: Mutex::new(std::collections::HashMap::new()),
                 futures_client: Mutex::new(None),
+                futures_sim: Mutex::new(Some(Arc::new(nexus_futures::FuturesSimulator::new(10_000.0)))),
+                futures_sim_activo: Mutex::new(false),
                 futures_modo: Mutex::new(false),
                 futures_loop_activo: Mutex::new(false),
                 futures_loop_telemetry: Mutex::new(None),
@@ -1185,18 +1191,41 @@ async fn api_prediccion_analizar(
 // 🚀 API DE FUTURES — Binance Futures USDT-M
 // ═══════════════════════════════════════════════════════════════════════════════
 
-/// POST /api/futures/configurar — Inicializa el cliente de futures
+/// Devuelve el backend de futuros activo: simulador si está activo,
+/// sino el cliente real (si está configurado).
+async fn futures_backend_activo(
+    state: &Arc<AppState>,
+) -> Option<Arc<dyn nexus_futures::FuturesBackend>> {
+    if *state.futures_sim_activo.lock().await {
+        return state
+            .futures_sim
+            .lock()
+            .await
+            .as_ref()
+            .map(|s| s.clone() as Arc<dyn nexus_futures::FuturesBackend>);
+    }
+    state
+        .futures_client
+        .lock()
+        .await
+        .as_ref()
+        .map(|c| c.clone() as Arc<dyn nexus_futures::FuturesBackend>)
+}
+
+/// POST /api/futures/configurar — Inicializa el cliente de futures (modo real)
 async fn api_futures_configurar(
     state: axum::extract::State<AppStateArc>,
 ) -> Json<serde_json::Value> {
     let (api_key, secret_key) = load_binance_keys();
     match (api_key, secret_key) {
         (Some(api), Some(sec)) => {
-            let client = nexus_futures::FuturesClient::new(api, sec);
+            let client = Arc::new(nexus_futures::FuturesClient::new(api, sec));
             let mut fc = state.inner.futures_client.lock().await;
             *fc = Some(client);
+            // Configurar la API real desactiva la simulación
+            *state.inner.futures_sim_activo.lock().await = false;
             *state.inner.futures_modo.lock().await = true;
-            info!("🚀 [FUTURES] Cliente inicializado en fapi.binance.com");
+            info!("🚀 [FUTURES] Cliente inicializado en fapi.binance.com (modo real)");
             Json(serde_json::json!({
                 "status": "ok",
                 "mensaje": "Futures client conectado a fapi.binance.com. Largo/corto, leverage, SL/TP listos."
@@ -1214,13 +1243,12 @@ async fn api_futures_orden(
     state: axum::extract::State<AppStateArc>,
     Json(body): Json<serde_json::Value>,
 ) -> Json<serde_json::Value> {
-    let mut fc_guard = state.inner.futures_client.lock().await;
-    let fc = match fc_guard.as_mut() {
+    let fc = match futures_backend_activo(&state.inner).await {
         Some(c) => c,
         None => {
             return Json(serde_json::json!({
                 "status": "error",
-                "mensaje": "Futures no configurado. Usa POST /api/futures/configurar primero."
+                "mensaje": "Futures no configurado. Usa POST /api/futures/configurar o activa la simulación con /api/futures/simulacion."
             }));
         }
     };
@@ -1317,9 +1345,8 @@ async fn api_futures_cerrar_posicion(
     state: axum::extract::State<AppStateArc>,
     Json(body): Json<serde_json::Value>,
 ) -> Json<serde_json::Value> {
-    let mut fc_guard = state.inner.futures_client.lock().await;
-    let fc = match fc_guard.as_mut() {
-        Some(c) => c, None => return Json(serde_json::json!({"status":"error","mensaje":"Futures no configurado."})),
+    let fc = match futures_backend_activo(&state.inner).await {
+        Some(c) => c, None => return Json(serde_json::json!({"status":"error","mensaje":"Futures no configurado o simulación inactiva."})),
     };
     let symbol = body["symbol"].as_str().unwrap_or("BTCUSDT");
     let position_side = body["positionSide"].as_str().map(|ps| {
@@ -1350,9 +1377,8 @@ async fn api_futures_posiciones(
     state: axum::extract::State<AppStateArc>,
     Query(params): Query<std::collections::HashMap<String, String>>,
 ) -> Json<serde_json::Value> {
-    let mut fc_guard = state.inner.futures_client.lock().await;
-    let fc = match fc_guard.as_mut() {
-        Some(c) => c, None => return Json(serde_json::json!({"status":"error","mensaje":"Futures no configurado."})),
+    let fc = match futures_backend_activo(&state.inner).await {
+        Some(c) => c, None => return Json(serde_json::json!({"status":"error","mensaje":"Futures no configurado o simulación inactiva."})),
     };
     let symbol = params.get("symbol").map(|s| s.as_str());
     match fc.positions(symbol).await {
@@ -1370,9 +1396,8 @@ async fn api_futures_posiciones(
 async fn api_futures_balance(
     state: axum::extract::State<AppStateArc>,
 ) -> Json<serde_json::Value> {
-    let mut fc_guard = state.inner.futures_client.lock().await;
-    let fc = match fc_guard.as_mut() {
-        Some(c) => c, None => return Json(serde_json::json!({"status":"error","mensaje":"Futures no configurado."})),
+    let fc = match futures_backend_activo(&state.inner).await {
+        Some(c) => c, None => return Json(serde_json::json!({"status":"error","mensaje":"Futures no configurado o simulación inactiva."})),
     };
     match fc.account_info().await {
         Ok(info) => Json(serde_json::json!({
@@ -1391,9 +1416,8 @@ async fn api_futures_leverage(
     state: axum::extract::State<AppStateArc>,
     Json(body): Json<serde_json::Value>,
 ) -> Json<serde_json::Value> {
-    let mut fc_guard = state.inner.futures_client.lock().await;
-    let fc = match fc_guard.as_mut() {
-        Some(c) => c, None => return Json(serde_json::json!({"status":"error","mensaje":"Futures no configurado."})),
+    let fc = match futures_backend_activo(&state.inner).await {
+        Some(c) => c, None => return Json(serde_json::json!({"status":"error","mensaje":"Futures no configurado o simulación inactiva."})),
     };
     let symbol = body["symbol"].as_str().unwrap_or("BTCUSDT");
     let leverage = body["leverage"].as_u64().unwrap_or(1).clamp(1, 125) as u32;
@@ -1408,9 +1432,8 @@ async fn api_futures_modo_hedge(
     state: axum::extract::State<AppStateArc>,
     Json(body): Json<serde_json::Value>,
 ) -> Json<serde_json::Value> {
-    let mut fc_guard = state.inner.futures_client.lock().await;
-    let fc = match fc_guard.as_mut() {
-        Some(c) => c, None => return Json(serde_json::json!({"status":"error","mensaje":"Futures no configurado."})),
+    let fc = match futures_backend_activo(&state.inner).await {
+        Some(c) => c, None => return Json(serde_json::json!({"status":"error","mensaje":"Futures no configurado o simulación inactiva."})),
     };
     let dual = body["dual"].as_bool().unwrap_or(true);
     match fc.set_position_mode(dual).await {
@@ -1424,9 +1447,8 @@ async fn api_futures_cancelar_todas(
     state: axum::extract::State<AppStateArc>,
     Query(params): Query<std::collections::HashMap<String, String>>,
 ) -> Json<serde_json::Value> {
-    let mut fc_guard = state.inner.futures_client.lock().await;
-    let fc = match fc_guard.as_mut() {
-        Some(c) => c, None => return Json(serde_json::json!({"status":"error","mensaje":"Futures no configurado."})),
+    let fc = match futures_backend_activo(&state.inner).await {
+        Some(c) => c, None => return Json(serde_json::json!({"status":"error","mensaje":"Futures no configurado o simulación inactiva."})),
     };
     let symbol = params.get("symbol").map(|s| s.as_str()).unwrap_or("BTCUSDT");
     match fc.cancel_all_orders(symbol).await {
@@ -1440,9 +1462,8 @@ async fn api_futures_ordenes_abiertas(
     state: axum::extract::State<AppStateArc>,
     Query(params): Query<std::collections::HashMap<String, String>>,
 ) -> Json<serde_json::Value> {
-    let mut fc_guard = state.inner.futures_client.lock().await;
-    let fc = match fc_guard.as_mut() {
-        Some(c) => c, None => return Json(serde_json::json!({"status":"error","mensaje":"Futures no configurado."})),
+    let fc = match futures_backend_activo(&state.inner).await {
+        Some(c) => c, None => return Json(serde_json::json!({"status":"error","mensaje":"Futures no configurado o simulación inactiva."})),
     };
     let symbol = params.get("symbol").map(|s| s.as_str());
     match fc.open_orders(symbol).await {
@@ -1457,9 +1478,8 @@ async fn api_futures_trades(
     axum::extract::Path(symbol): axum::extract::Path<String>,
     Query(params): Query<std::collections::HashMap<String, String>>,
 ) -> Json<serde_json::Value> {
-    let mut fc_guard = state.inner.futures_client.lock().await;
-    let fc = match fc_guard.as_mut() {
-        Some(c) => c, None => return Json(serde_json::json!({"status":"error","mensaje":"Futures no configurado."})),
+    let fc = match futures_backend_activo(&state.inner).await {
+        Some(c) => c, None => return Json(serde_json::json!({"status":"error","mensaje":"Futures no configurado o simulación inactiva."})),
     };
     let limit = params.get("limit").and_then(|l| l.parse::<u32>().ok()).unwrap_or(50);
     match fc.trade_history_v2(&symbol, Some(limit)).await {
@@ -1476,9 +1496,8 @@ async fn api_futures_snapshot(
     state: axum::extract::State<AppStateArc>,
     axum::extract::Path(symbol): axum::extract::Path<String>,
 ) -> Json<serde_json::Value> {
-    let mut fc_guard = state.inner.futures_client.lock().await;
-    let fc = match fc_guard.as_mut() {
-        Some(c) => c, None => return Json(serde_json::json!({"status":"error","mensaje":"Futures no configurado."})),
+    let fc = match futures_backend_activo(&state.inner).await {
+        Some(c) => c, None => return Json(serde_json::json!({"status":"error","mensaje":"Futures no configurado o simulación inactiva."})),
     };
     match fc.market_snapshot(&symbol).await {
         Ok(snapshot) => Json(serde_json::json!({"status":"ok","snapshot":snapshot})),
@@ -1594,29 +1613,15 @@ async fn api_futures_loop(
         }));
     }
 
-    // Cliente futures desde el estado (configurado en /api/futures/configurar)
-    let client = {
-        let fc = state.inner.futures_client.lock().await;
-        match fc.as_ref() {
-            Some(_) => {
-                // Necesitamos un Arc; reconstruimos desde keys guardadas
-                let (api, sec) = load_binance_keys();
-                match (api, sec) {
-                    (Some(a), Some(s)) => Arc::new(nexus_futures::FuturesClient::new(a, s)),
-                    _ => {
-                        return Json(serde_json::json!({
-                            "status":"error",
-                            "mensaje":"API keys no disponibles. Configura primero con /api/futures/configurar."
-                        }));
-                    }
-                }
-            }
-            None => {
-                return Json(serde_json::json!({
-                    "status":"error",
-                    "mensaje":"Cliente futures no inicializado. Usa POST /api/futures/configurar primero."
-                }));
-            }
+    // Backend activo: simulador (si está activo) o cliente real configurado
+    let sim_activo = *state.inner.futures_sim_activo.lock().await;
+    let client = match futures_backend_activo(&state.inner).await {
+        Some(c) => c,
+        None => {
+            return Json(serde_json::json!({
+                "status":"error",
+                "mensaje":"Futures no inicializado. Configura la API real o activa la simulación con /api/futures/simulacion."
+            }));
         }
     };
 
@@ -1642,7 +1647,8 @@ async fn api_futures_loop(
             umbral,
             intervalo,
             telemetry,
-        );
+        )
+        .modo_simulado(sim_activo);
         orquestador.run().await;
         flag_loop.store(false, std::sync::atomic::Ordering::Relaxed);
     });
@@ -1664,6 +1670,83 @@ async fn api_futures_loop(
         "intervalo_seg":intervalo,
         "mensaje":"Orquestador autónomo activo: WS aggTrade → CvdTracker → LLM → orden con SL/TP nativos."
     }))
+}
+
+// ─── Simulación (paper trading sin API) ──────────────────────────────────────
+
+/// POST /api/futures/simulacion  {"accion":"start"|"stop"|"reset"|"estado","balance":10000}
+/// GET  /api/futures/simulacion  → estado del simulador
+async fn api_futures_simulacion(
+    state: axum::extract::State<AppStateArc>,
+    body: Option<Json<serde_json::Value>>,
+) -> Json<serde_json::Value> {
+    let body = body.map(|j| j.0).unwrap_or_else(|| serde_json::json!({}));
+    let accion = body["accion"].as_str().unwrap_or("estado").to_lowercase();
+
+    match accion.as_str() {
+        "start" => {
+            let balance = body["balance"].as_f64().unwrap_or(10_000.0).max(100.0);
+            let sim = Arc::new(nexus_futures::FuturesSimulator::new(balance));
+            *state.inner.futures_sim.lock().await = Some(Arc::clone(&sim));
+            *state.inner.futures_sim_activo.lock().await = true;
+            *state.inner.futures_modo.lock().await = true;
+            info!("🧪 [FUTURES SIM] Simulación iniciada con balance ${:.2}", balance);
+            Json(serde_json::json!({
+                "status":"ok",
+                "accion":"start",
+                "balance":balance,
+                "activo":true,
+                "mensaje":"Simulación activa. El portal opera en PAPER TRADING sin tocar tu API real."
+            }))
+        }
+        "stop" => {
+            *state.inner.futures_sim_activo.lock().await = false;
+            info!("🧪 [FUTURES SIM] Simulación detenida. Volviendo al backend real (si existe).");
+            Json(serde_json::json!({
+                "status":"ok",
+                "accion":"stop",
+                "activo":false,
+                "mensaje":"Simulación detenida. Los endpoints vuelven al cliente real si estaba configurado."
+            }))
+        }
+        "reset" => {
+            let balance = body["balance"].as_f64().unwrap_or(10_000.0).max(100.0);
+            let sim_opt = state.inner.futures_sim.lock().await.clone();
+            match sim_opt {
+                Some(sim) => {
+                    sim.reset(balance);
+                    *state.inner.futures_sim_activo.lock().await = true;
+                    *state.inner.futures_modo.lock().await = true;
+                    info!("🧪 [FUTURES SIM] Reiniciada con balance ${:.2}", balance);
+                    Json(serde_json::json!({
+                        "status":"ok",
+                        "accion":"reset",
+                        "balance":balance,
+                        "activo":true,
+                        "mensaje":"Simulación reiniciada con balance limpio."
+                    }))
+                }
+                None => Json(serde_json::json!({
+                    "status":"error",
+                    "accion":"reset",
+                    "mensaje":"No hay simulador inicializado. Usa {\"accion\":\"start\"}."
+                })),
+            }
+        }
+        _ => {
+            let estado = match state.inner.futures_sim.lock().await.as_ref() {
+                Some(sim) => sim.estado_json(),
+                None => serde_json::json!({"error":"simulador_no_inicializado"}),
+            };
+            let activo = *state.inner.futures_sim_activo.lock().await;
+            let mut resp = estado;
+            if resp.is_object() {
+                resp["activo"] = serde_json::json!(activo);
+                resp["backend_actual"] = serde_json::json!(if activo { "simulador" } else { "cliente_real" });
+            }
+            Json(resp)
+        }
+    }
 }
 
 // ─── WebSocket handler ────────────────────────────────────────────────────────
@@ -1698,6 +1781,23 @@ async fn procesar_tick_mercado(state: &Arc<AppState>, msg: &str) {
     {
         let mut precios = state.precio_actual.lock().await;
         precios.insert(simbolo_evento.clone(), tick.clone());
+    }
+
+    // 🧪 Alimentar el simulador de futuros (paper trading) si está activo
+    // Solo símbolos USDT tienen mercado de futuros en el simulador.
+    if simbolo_evento.ends_with("USDT") {
+        if let Some(sim) = state.futures_sim.lock().await.clone() {
+            let trades = sim.actualizar_precio(&simbolo_evento, precio);
+            if !trades.is_empty() {
+                info!(
+                    "🧪 [FUTURES SIM] {} ejecutados: {} trade(s) @ ${:.2} (pnl_total=${:.2})",
+                    simbolo_evento,
+                    trades.len(),
+                    precio,
+                    sim.estado_json()["pnl_realizado_total"].as_f64().unwrap_or(0.0)
+                );
+            }
+        }
     }
 
     // Alimentar el analizador ML SIEMPRE (independiente del modo auto)
@@ -1783,20 +1883,57 @@ async fn main() {
         });
     }
 
-    // ═══ Fase C — Auto-inicialización del cliente futures si hay claves reales ═══
+    // ═══ Fase C — Auto-inicialización del backend futures ═══
+    // 1) Si hay claves reales válidas → cliente real (modo live).
+    // 2) Si NO hay claves (o son marcador YOUR_*) → activa automáticamente el
+    //    SIMULADOR (paper trading) para que el portal funcione sin API.
     {
         let (api, sec) = load_binance_keys();
-        if let (Some(api), Some(sec)) = (api, sec) {
-            if !api.starts_with("YOUR_") && !sec.starts_with("YOUR_") {
-                let client = nexus_futures::FuturesClient::new(api, sec);
-                *state.inner.futures_client.lock().await = Some(client);
-                *state.inner.futures_modo.lock().await = true;
-                info!("🚀 [FUTURES] Cliente auto-inicializado al arrancar (claves reales presentes).");
-            } else {
-                warn!("⚠️ [FUTURES] Claves detectadas como marcador de prueba (YOUR_*). El cliente real NO se inicializó. Re-ingresa tus claves reales en el modal 💼.");
+        let claves_presentes = api.is_some() && sec.is_some();
+        if claves_presentes {
+            let client = Arc::new(nexus_futures::FuturesClient::new(
+                api.clone().unwrap_or_default(),
+                sec.clone().unwrap_or_default(),
+            ));
+            // Verificación REAL de la clave: si falla (-2015, IP no permitida, etc.)
+            // activamos automáticamente el SIMULADOR para que el portal funcione.
+            let verif = tokio::time::timeout(
+                std::time::Duration::from_secs(5),
+                client.account_info(),
+            )
+            .await;
+            match verif {
+                Ok(Ok(_)) => {
+                    *state.inner.futures_client.lock().await = Some(client);
+                    *state.inner.futures_sim_activo.lock().await = false;
+                    *state.inner.futures_modo.lock().await = true;
+                    info!("🚀 [FUTURES] Cliente real VERIFICADO al arrancar (API válida).");
+                }
+                Ok(Err(e)) => {
+                    info!("⚠️ [FUTURES] Claves presentes pero API inválida: {}. Activando SIMULADOR paper.", e);
+                    let sim = Arc::new(nexus_futures::FuturesSimulator::new(10_000.0));
+                    *state.inner.futures_sim.lock().await = Some(Arc::clone(&sim));
+                    *state.inner.futures_sim_activo.lock().await = true;
+                    *state.inner.futures_modo.lock().await = true;
+                    info!("🧪 [FUTURES] SIMULADOR activado con $10,000.00 de paper trading (claves inválidas).");
+                }
+                Err(_) => {
+                    info!("⚠️ [FUTURES] Tiempo agotado verificando API. Activando SIMULADOR paper.");
+                    let sim = Arc::new(nexus_futures::FuturesSimulator::new(10_000.0));
+                    *state.inner.futures_sim.lock().await = Some(Arc::clone(&sim));
+                    *state.inner.futures_sim_activo.lock().await = true;
+                    *state.inner.futures_modo.lock().await = true;
+                }
             }
         } else {
-            info!("ℹ️ [FUTURES] Sin claves en .env. El cliente se conectará cuando configures el exchange.");
+            // Sin API real → activar el simulador para que todo funcione
+            let sim = Arc::new(nexus_futures::FuturesSimulator::new(10_000.0));
+            *state.inner.futures_sim.lock().await = Some(Arc::clone(&sim));
+            *state.inner.futures_sim_activo.lock().await = true;
+            *state.inner.futures_modo.lock().await = true;
+            info!("🧪 [FUTURES] Sin API real (o marcador YOUR_*): SIMULADOR activado con $10,000.00 de paper trading.");
+            info!("   → Puedes alternar a live configurando tus claves en /api/futures/configurar");
+            info!("   → Detener/ajustar simulación con POST /api/futures/simulacion y accion=start|stop|reset");
         }
     }
 
@@ -1844,6 +1981,7 @@ async fn main() {
         .route("/api/futures/snapshot/{symbol}", get(api_futures_snapshot))
         .route("/api/futures/loop", post(api_futures_loop))
         .route("/api/futures/loop/estado", get(api_futures_loop_estado))
+        .route("/api/futures/simulacion", get(api_futures_simulacion).post(api_futures_simulacion))
         // ─── WebSocket ───
         .route("/ws", get(ws_handler))
         // ─── Frontend estático ───
