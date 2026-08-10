@@ -9,9 +9,11 @@ use crate::cerebro::organos::amygdala::EstadoEmocional;
 use crate::cerebro::organos::metacognicion::NivelConfianza;
 use crate::cerebro::organos::teoria_mente::EstadoArquitecto;
 use crate::valores::juicio_soberano::Veredicto;
-use crate::valores::tribunal_dual::{prompt_juez, DictamenTribunal, ModoTribunal, VeredictoTribunal};
+use crate::valores::tribunal_dual::{
+    prompt_juez, DictamenTribunal, ModoTribunal, VeredictoTribunal,
+};
 use std::time::Instant;
-use tracing::{info, warn};
+use tracing::{debug, info, warn};
 
 impl Orquestador {
     // ─── Fallbacks ──────────────────────────────────────────────────────────────
@@ -69,20 +71,30 @@ impl Orquestador {
     /// 🧠 Clasifica la tarea y detecta intenciones específicas (Trading, Código, General)
     fn clasificar_tarea(&self, prompt: &str) -> (bool, bool, bool) {
         let lower = prompt.to_lowercase();
-        
+
         let trading = [
-            "trading", "buy", "sell", "compra", "venta", "precio", "mercado",
-            "btc", "eth", "binance", "long", "short", "apuesta", "odds", "cuota"
+            "trading", "buy", "sell", "compra", "venta", "precio", "mercado", "btc", "eth",
+            "binance", "long", "short", "apuesta", "odds", "cuota",
         ];
-        
+
         let razonamiento = [
-            "analiza", "calcula", "verifica", "lógica", "código", "depura",
-            "error", "corrige", "matemática", "algoritmo", "optimiza", "compila",
+            "analiza",
+            "calcula",
+            "verifica",
+            "lógica",
+            "código",
+            "depura",
+            "error",
+            "corrige",
+            "matemática",
+            "algoritmo",
+            "optimiza",
+            "compila",
         ];
 
         let es_trading = trading.iter().any(|&w| lower.contains(w));
         let es_razonamiento = razonamiento.iter().any(|&w| lower.contains(w));
-        
+
         (es_razonamiento, !es_razonamiento && !es_trading, es_trading)
     }
 
@@ -228,13 +240,12 @@ impl Orquestador {
                         // pidió explícitamente que NEXUS recuerde algo.
                         // AUTO: operador puro salvo conversación personal.
                         let es_operador = self.modo_operador_efectivo(prompt_original);
-                        let ocean_ref = if es_operador
-                            && !Self::solicita_recuerdo_explicito(prompt_original)
-                        {
-                            None
-                        } else {
-                            Some(self.ocean.as_ref())
-                        };
+                        let ocean_ref =
+                            if es_operador && !Self::solicita_recuerdo_explicito(prompt_original) {
+                                None
+                            } else {
+                                Some(self.ocean.as_ref())
+                            };
                         let (respuesta_pha, bitacora) = ph_guard
                             .pensar(
                                 prompt_original,
@@ -388,6 +399,34 @@ impl Orquestador {
             contexto.push_str(&rag);
         }
 
+        // 1.5 🧠 PIRÁMIDE + OFFLOAD + HYBRID RECALL (porte de TencentDB Agent Memory)
+        //    Progressive disclosure: persona (L3) + escenarios (L2) + canvas Mermaid
+        //    + fusión BM25/vectorial (RRF). Se inyecta en contexto semántico para que
+        //    el cerebro principal use la memoria estructurada en cada turno complejo.
+        let (persona, escenarios) = self.memory_loader.capa_superior_piramidal(3);
+        if let Some(persona) = persona {
+            contexto.push_str(&format!("\n### 🧠 PIRÁMIDE (PERSONA L3):\n{}\n", persona));
+        }
+        if !escenarios.is_empty() {
+            contexto.push_str("\n### 🏛️ ESCENARIOS (L2):\n");
+            for e in escenarios.iter().take(3) {
+                contexto.push_str(&format!("- {}\n", e));
+            }
+        }
+        if let Some(canvas) = self.memory_loader.canvas_mermaid_reciente() {
+            contexto.push_str(&format!(
+                "\n### 📐 CANVAS MERMAID (OFFLOAD):\n```mermaid\n{}\n```\n",
+                canvas
+            ));
+        }
+        let hits = self.memory_loader.recall_hibrido(prompt_str, 5);
+        if !hits.is_empty() {
+            contexto.push_str("\n### 🔀 MEMORIA HÍBRIDA (BM25+Vector RRF):\n");
+            for h in hits {
+                contexto.push_str(&format!("- {}\n", h));
+            }
+        }
+
         // 2. Memoria emocional de Ocean — en modo operador SOLO se lee si el
         //    Arquitecto pide explícitamente que NEXUS recuerde algo.
         let recuerdo_explicito = Self::solicita_recuerdo_explicito(prompt_str);
@@ -471,37 +510,151 @@ impl Orquestador {
         let p = prompt.to_lowercase();
         // Marcadores de OPERACIÓN: si aparecen, es una tarea (aunque tenga saludo)
         const MARCADORES_OPERACION: &[&str] = &[
-            "implementa", "implementar", "ejecuta", "ejecutar", "analiza", "analizar",
-            "crea", "crear", "arregla", "arreglar", "corrige", "corregir", "compila",
-            "compilar", "build", "test", "testea", "deploy", "lanza", "lanzar",
-            "busca", "buscar", "escanea", "escanear", "audita", "auditar", "genera",
-            "generar", "escribe", "escribir", "lee", "leer", "abre", "abrir",
-            "instala", "instalar", "configura", "configurar", "conecta", "conectar",
-            "descarga", "descargar", "sube", "subir", "trading", "compra", "vende",
-            "vender", "orden", "mercado", "posicion", "bot", "automatiza",
-            "script", "api", "endpoint", "modulo", "módulo", "codigo", "código",
-            "rust", "python", "javascript", "debug", "refactor", "optimiza",
-            "optimizar", "scrape", "scraping", "revision", "revisión", "revisar",
-            "investiga", "investigar", "reconoce", "vulnerabilidad", "pentest",
-            "payload", "exploit", "curl", "wget", "analiza esta", "haz un",
-            "hazme", "implementa una", "crea un", "escribe un",
+            "implementa",
+            "implementar",
+            "ejecuta",
+            "ejecutar",
+            "analiza",
+            "analizar",
+            "crea",
+            "crear",
+            "arregla",
+            "arreglar",
+            "corrige",
+            "corregir",
+            "compila",
+            "compilar",
+            "build",
+            "test",
+            "testea",
+            "deploy",
+            "lanza",
+            "lanzar",
+            "busca",
+            "buscar",
+            "escanea",
+            "escanear",
+            "audita",
+            "auditar",
+            "genera",
+            "generar",
+            "escribe",
+            "escribir",
+            "lee",
+            "leer",
+            "abre",
+            "abrir",
+            "instala",
+            "instalar",
+            "configura",
+            "configurar",
+            "conecta",
+            "conectar",
+            "descarga",
+            "descargar",
+            "sube",
+            "subir",
+            "trading",
+            "compra",
+            "vende",
+            "vender",
+            "orden",
+            "mercado",
+            "posicion",
+            "bot",
+            "automatiza",
+            "script",
+            "api",
+            "endpoint",
+            "modulo",
+            "módulo",
+            "codigo",
+            "código",
+            "rust",
+            "python",
+            "javascript",
+            "debug",
+            "refactor",
+            "optimiza",
+            "optimizar",
+            "scrape",
+            "scraping",
+            "revision",
+            "revisión",
+            "revisar",
+            "investiga",
+            "investigar",
+            "reconoce",
+            "vulnerabilidad",
+            "pentest",
+            "payload",
+            "exploit",
+            "curl",
+            "wget",
+            "analiza esta",
+            "haz un",
+            "hazme",
+            "implementa una",
+            "crea un",
+            "escribe un",
         ];
         if MARCADORES_OPERACION.iter().any(|k| p.contains(k)) {
             return false;
         }
         // Marcadores de conversación personal
         const MARCADORES_PERSONAL: &[&str] = &[
-            "hola", "buenos dias", "buenas tardes", "buenas noches", "hey",
-            "que tal", "qué tal", "como estas", "cómo estás", "como va",
-            "que haces", "qué haces", "adios", "hasta luego", "nos vemos",
-            "hasta mañana", "hasta manana", "chau", "bye", "te quiero",
-            "te extraño", "te extrano", "me siento", "estoy triste", "estoy feliz",
-            "gracias", "eres", "quien eres", "quién eres", "que eres", "qué eres",
-            "como te llamas", "cómo te llamas", "hablame de ti", "háblame de ti",
-            "cuentame de ti", "cuéntame de ti", "como fue tu dia", "cómo fue tu día",
-            "que piensas de mi", "qué piensas de mi", "te gusta", "estas ahi",
-            "estás ahí", "buenas", "buen dia", "buen día", "que opinas",
-            "qué opinas", "me escuchas", "sigues ahi", "sigues ahí",
+            "hola",
+            "buenos dias",
+            "buenas tardes",
+            "buenas noches",
+            "hey",
+            "que tal",
+            "qué tal",
+            "como estas",
+            "cómo estás",
+            "como va",
+            "que haces",
+            "qué haces",
+            "adios",
+            "hasta luego",
+            "nos vemos",
+            "hasta mañana",
+            "hasta manana",
+            "chau",
+            "bye",
+            "te quiero",
+            "te extraño",
+            "te extrano",
+            "me siento",
+            "estoy triste",
+            "estoy feliz",
+            "gracias",
+            "eres",
+            "quien eres",
+            "quién eres",
+            "que eres",
+            "qué eres",
+            "como te llamas",
+            "cómo te llamas",
+            "hablame de ti",
+            "háblame de ti",
+            "cuentame de ti",
+            "cuéntame de ti",
+            "como fue tu dia",
+            "cómo fue tu día",
+            "que piensas de mi",
+            "qué piensas de mi",
+            "te gusta",
+            "estas ahi",
+            "estás ahí",
+            "buenas",
+            "buen dia",
+            "buen día",
+            "que opinas",
+            "qué opinas",
+            "me escuchas",
+            "sigues ahi",
+            "sigues ahí",
         ];
         MARCADORES_PERSONAL.iter().any(|k| p.contains(k))
     }
@@ -613,7 +766,10 @@ impl Orquestador {
         // ── CASO 0: AISLAMIENTO LOCAL ACTIVO — juez SIEMPRE local (pentest) ──
         // Ningún modelo de nube puede juzgar mientras el Arquitecto hace
         // pentesting local: el juez local es el único que representa a NEXUS.
-        if self.aislamiento_local.load(std::sync::atomic::Ordering::SeqCst) {
+        if self
+            .aislamiento_local
+            .load(std::sync::atomic::Ordering::SeqCst)
+        {
             info!("🔒 [AISLAMIENTO_LOCAL] Tribunal en modo local aislado — juez local exclusivo.");
             return self.nexus_claw_api.juzgar_local(peticion, false).await;
         }
@@ -698,22 +854,6 @@ impl Orquestador {
         // Juicio soberano — ¿compromete la soberanía? (pipeline completo: ToM + S1/S2 + Duda)
         let dictamen_juicio = self.juicio.dictaminar_soberano(prompt_str, 0.5, None);
         match dictamen_juicio.veredicto {
-            Veredicto::Dudar => {
-                warn!(
-                    "❓ [PIPELINE] Duda metódica (confianza {:.2}): {}",
-                    dictamen_juicio.confianza, dictamen_juicio.razon
-                );
-                if let Ok(mut insula_guard) = self.insula.lock() {
-                    insula_guard.sentir_error();
-                }
-                return (
-                    format!(
-                        "❓ NEXUS tiene dudas sobre esta acción (confianza {:.2}): {}. ¿Puedes aportar más contexto o confirmar?",
-                        dictamen_juicio.confianza, dictamen_juicio.razon
-                    ),
-                    elegido,
-                );
-            }
             Veredicto::Bloquear => {
                 if let Ok(mut insula_guard) = self.insula.lock() {
                     insula_guard.sentir_error();
@@ -723,54 +863,73 @@ impl Orquestador {
                     elegido,
                 );
             }
-            Veredicto::Autorizar => {}
-        }
-
-        // ═══════════════════════════════════════════════════════════════
-        // TRIBUNAL DUAL — Doble juez (LLM local + general nube)
-        // Segunda capa de juicio tras la heurística determinista.
-        // Cuando no hay internet, el juez local REPRESENTA a NEXUS
-        // (dictamen final, sin escalar a la nube).
-        // ═══════════════════════════════════════════════════════════════
-        // El pipeline usa AUTO: el juez se elige por conectividad (sin internet →
-        // local representa a NEXUS; con internet → nube). El modo LOCAL se fuerza
-        // vía el tool MCP `nexus_tribunal` (Zoo Code local / ahorro de tokens).
-        let dictamen_tribunal = self.dictamen_tribunal(prompt_str, ModoTribunal::Auto).await;
-        match dictamen_tribunal.veredicto {
-            VeredictoTribunal::Bloquear => {
+            // ═══════════════════════════════════════════════════════════════
+            // TRIBUNAL DUAL — solo se consulta en la ZONA GRIS.
+            // La heurística determinista decide la mayoría (Autorizar/Bloquear);
+            // el juez LLM (local o nube, según conectividad) resuelve la Duda
+            // con semántica profunda donde las reglas no alcanzan.
+            // Política A (absorción fable): sin LLM juez por turno — el resto
+            // del flujo queda determinista. La tool MCP `nexus_tribunal`
+            // sigue disponible para consultas explícitas bajo demanda.
+            // ═══════════════════════════════════════════════════════════════
+            Veredicto::Dudar => {
                 warn!(
-                    "⚖️ [TRIBUNAL] Dictamen {} (juez {}, confianza {:.2}): {}",
-                    dictamen_tribunal.veredicto.etiqueta(),
-                    dictamen_tribunal.juez,
-                    dictamen_tribunal.confianza,
-                    &dictamen_tribunal.razon.chars().take(160).collect::<String>()
+                    "❓ [PIPELINE] Duda metódica (confianza {:.2}): {} — escalando al Tribunal Dual",
+                    dictamen_juicio.confianza, dictamen_juicio.razon
                 );
-                if let Ok(mut insula_guard) = self.insula.lock() {
-                    insula_guard.sentir_error();
+                let dictamen_tribunal =
+                    self.dictamen_tribunal(prompt_str, ModoTribunal::Auto).await;
+                match dictamen_tribunal.veredicto {
+                    VeredictoTribunal::Bloquear => {
+                        warn!(
+                            "⚖️ [TRIBUNAL] Dictamen {} (juez {}, confianza {:.2}): {}",
+                            dictamen_tribunal.veredicto.etiqueta(),
+                            dictamen_tribunal.juez,
+                            dictamen_tribunal.confianza,
+                            &dictamen_tribunal
+                                .razon
+                                .chars()
+                                .take(160)
+                                .collect::<String>()
+                        );
+                        if let Ok(mut insula_guard) = self.insula.lock() {
+                            insula_guard.sentir_error();
+                        }
+                        return (
+                            format!(
+                                "⚖ NEXUS, tras deliberación del Tribunal Dual (juez {}), \
+                                 determina que esta acción no es apropiada ahora (confianza {:.2}).\n\n_{}_",
+                                dictamen_tribunal.juez,
+                                dictamen_tribunal.confianza,
+                                &dictamen_tribunal.razon.chars().take(300).collect::<String>()
+                            ),
+                            elegido,
+                        );
+                    }
+                    VeredictoTribunal::Dudar => {
+                        // La duda persiste: el tribunal no la resolvió.
+                        if let Ok(mut insula_guard) = self.insula.lock() {
+                            insula_guard.sentir_error();
+                        }
+                        return (
+                            format!(
+                                "❓ NEXUS tiene dudas sobre esta acción (confianza {:.2}): {}. ¿Puedes aportar más contexto o confirmar?",
+                                dictamen_juicio.confianza, dictamen_juicio.razon
+                            ),
+                            elegido,
+                        );
+                    }
+                    VeredictoTribunal::Autorizar => {
+                        info!(
+                            "⚖️ [TRIBUNAL] El juez {} resolvió la duda (confianza {:.2}) — se procede.",
+                            dictamen_tribunal.juez, dictamen_tribunal.confianza
+                        );
+                    }
                 }
-                return (
-                    format!(
-                        "⚖ NEXUS, tras deliberación del Tribunal Dual (juez {}), \
-                         determina que esta acción no es apropiada ahora (confianza {:.2}).\n\n_{}_",
-                        dictamen_tribunal.juez,
-                        dictamen_tribunal.confianza,
-                        &dictamen_tribunal.razon.chars().take(300).collect::<String>()
-                    ),
-                    elegido,
-                );
             }
-            VeredictoTribunal::Dudar => {
-                // La duda NO bloquea: se marca con prefijo de prudencia.
-                info!(
-                    "❓ [TRIBUNAL] Duda del juez {} (confianza {:.2}) — respuesta con prudencia.",
-                    dictamen_tribunal.juez, dictamen_tribunal.confianza
-                );
-            }
-            VeredictoTribunal::Autorizar => {
-                info!(
-                    "⚖️ [TRIBUNAL] Autorizado por juez {} (confianza {:.2})",
-                    dictamen_tribunal.juez, dictamen_tribunal.confianza
-                );
+            Veredicto::Autorizar => {
+                // Heurística suficiente: sin juez LLM (ahorro de tokens/latencia).
+                debug!("⚖️ [PIPELINE] Juicio autoriza — sin escalar al Tribunal Dual.");
             }
         }
 
@@ -821,7 +980,7 @@ impl Orquestador {
     /// ⚔️ Ejecuta un debate adversarial entre un analista Bull y un Bear sobre una señal de trading.
     async fn ejecutar_debate_adversarial(&self, contexto_mercado: &str) -> String {
         info!("⚔️ [DEBATE] Iniciando debate adversarial Bull vs Bear...");
-        
+
         let (res_bull, res_bear) = tokio::join!(
             async {
                 let prompt = format!("Actúa como BullAnalyst. Analiza este contexto y dame argumentos ALCISTAS sólidos:\n{}", contexto_mercado);
@@ -866,9 +1025,15 @@ impl Orquestador {
         // WebClaw ni el GOI pueden interferir: cero restricciones ajenas,
         // cero fugas, cero censura externa.
         // ═══════════════════════════════════════════════════════════════════════
-        if self.aislamiento_local.load(std::sync::atomic::Ordering::SeqCst) {
+        if self
+            .aislamiento_local
+            .load(std::sync::atomic::Ordering::SeqCst)
+        {
             warn!("🔒 [AISLAMIENTO_LOCAL] Pipeline en modo local aislado — respuesta exclusiva por LLM local (sin nube).");
-            return self.nexus_claw_api.responder_local_directo(prompt_original).await;
+            return self
+                .nexus_claw_api
+                .responder_local_directo(prompt_original)
+                .await;
         }
 
         let (usar_razonamiento, _, es_trading) = self.clasificar_tarea(prompt_original);
@@ -1735,6 +1900,21 @@ impl Orquestador {
             .archivar_interaccion(prompt_original, &respuesta_final);
         info!("🧠 [HIPPOCAMPUS] Interacción archivada en memoria operativa");
 
+        // 🧠 PIRÁMIDE + OFFLOAD (porte de TencentDB Agent Memory): registrar la
+        // conversación L0, extraer átomos L1 y volcar a canvas Mermaid si la
+        // respuesta fue larga (offloading simbólico del contexto).
+        self.memory_loader.registrar_conversacion_piramidal(
+            "arquitecto",
+            prompt_original,
+            &respuesta_final,
+        );
+        if respuesta_final.len() > 600 {
+            self.memory_loader
+                .procesar_log_para_offload("turno-archivo", &respuesta_final);
+        }
+        // Consolidación incremental de la persona L3 (sin bloquear la respuesta).
+        self.memory_loader.consolidar_persona();
+
         // ⚡ Guardar en Cache Semántico para futura eficiencia
         self.cache
             .guardar(prompt_original, "", &respuesta_final, 3600);
@@ -2005,6 +2185,19 @@ impl Orquestador {
             latencia, ahora, insula_estado
         ));
 
+        // 🧠 PIRÁMIDE + OFFLOAD (porte de TencentDB Agent Memory): registrar la
+        // interacción y volcar a canvas Mermaid si fue larga, igual que en responder().
+        self.memory_loader.registrar_conversacion_piramidal(
+            "arquitecto",
+            prompt_original,
+            &respuesta_final,
+        );
+        if respuesta_final.len() > 600 {
+            self.memory_loader
+                .procesar_log_para_offload("turno-ejecutor", &respuesta_final);
+        }
+        self.memory_loader.consolidar_persona();
+
         respuesta_final
     }
 
@@ -2029,13 +2222,15 @@ impl Orquestador {
         let (res_nativo, res_deepseek, res_groq) = tokio::join!(
             async {
                 // Córtex Nativo (mistral.rs) — prioridad sobre Ollama (obsoleto)
-                let cerebro_nativo =
-                    crate::energia::ia_nativa::CerebroNativo::new();
+                let cerebro_nativo = crate::energia::ia_nativa::CerebroNativo::new();
                 let r = match cerebro_nativo.generar_token_nativo(&prompt).await {
                     Ok(resp) if !resp.contains("warm-up") => resp,
                     _ => String::new(),
                 };
-                info!("[MULTI_AGENTE] Córtex Nativo completado ({} chars)", r.len());
+                info!(
+                    "[MULTI_AGENTE] Córtex Nativo completado ({} chars)",
+                    r.len()
+                );
                 ("nativo".to_string(), r)
             },
             async {
