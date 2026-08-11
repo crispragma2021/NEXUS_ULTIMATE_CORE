@@ -149,9 +149,7 @@ impl ErrorDataset {
 
     /// Devuelve el code más frecuente y su frecuencia, si existe.
     pub fn error_dominante(&self) -> Option<(String, u32)> {
-        self.top()
-            .first()
-            .map(|e| (e.code.clone(), e.frecuencia))
+        self.top().first().map(|e| (e.code.clone(), e.frecuencia))
     }
 }
 
@@ -283,7 +281,11 @@ pub fn exportar_codesandbox(
         for (name, ver) in deps {
             let version = ver
                 .as_str()
-                .map(|s| s.trim_start_matches('^').trim_start_matches('~').to_string())
+                .map(|s| {
+                    s.trim_start_matches('^')
+                        .trim_start_matches('~')
+                        .to_string()
+                })
                 .unwrap_or_else(|| "latest".to_string());
             dependencies.insert(name.clone(), version);
         }
@@ -297,10 +299,7 @@ pub fn exportar_codesandbox(
 }
 
 /// Exporta el árbol de archivos al payload de proyecto de StackBlitz.
-pub fn exportar_stackblitz(
-    archivos: &[ArchivoGenerado],
-    title: &str,
-) -> PayloadStackBlitz {
+pub fn exportar_stackblitz(archivos: &[ArchivoGenerado], title: &str) -> PayloadStackBlitz {
     let mut files = BTreeMap::new();
     for a in archivos {
         files.insert(a.path.clone(), a.content.clone());
@@ -397,7 +396,10 @@ mod tests {
         let payload = exportar_codesandbox(&gen.files, &gen.entry_point, &gen.package_json);
         assert!(payload.files.contains_key("src/App.tsx"));
         assert_eq!(payload.entry, "src/App.tsx");
-        assert_eq!(payload.dependencies.get("react").map(|s| s.as_str()), Some("18.3.1"));
+        assert_eq!(
+            payload.dependencies.get("react").map(|s| s.as_str()),
+            Some("18.3.1")
+        );
         assert!(payload.files.contains_key("src/index.css"));
     }
 

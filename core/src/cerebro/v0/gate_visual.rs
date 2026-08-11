@@ -30,7 +30,10 @@ impl GateVisual {
     /// Crítica visual determinista sobre el código fuente generado.
     ///
     /// `archivos` es un mapa `ruta → contenido` de archivos .tsx/.ts.
-    pub fn criticar_local(&self, archivos: &std::collections::BTreeMap<String, String>) -> ResultadoGateVisual {
+    pub fn criticar_local(
+        &self,
+        archivos: &std::collections::BTreeMap<String, String>,
+    ) -> ResultadoGateVisual {
         let inicio = Instant::now();
         let mut visual_issues: Vec<MetricaError> = Vec::new();
 
@@ -45,7 +48,9 @@ impl GateVisual {
 
             // Responsividad: el root de la app debe tener max-w o w-full.
             if ruta.contains("App.tsx") {
-                tiene_root = contenido.contains("max-w-") || contenido.contains("w-full") || contenido.contains("mx-auto");
+                tiene_root = contenido.contains("max-w-")
+                    || contenido.contains("w-full")
+                    || contenido.contains("mx-auto");
             }
             // Contenedor principal de la app: cualquier `max-w-*` o `container`
             // indica un layout acotado (el root ya se valida por separado con
@@ -71,7 +76,8 @@ impl GateVisual {
         if !tiene_root {
             visual_issues.push(MetricaError {
                 tipo: "no_responsive_root".into(),
-                message: "App.tsx no define un contenedor responsive (max-w-, w-full o mx-auto)".into(),
+                message: "App.tsx no define un contenedor responsive (max-w-, w-full o mx-auto)"
+                    .into(),
                 stack: String::new(),
             });
         }
@@ -85,7 +91,8 @@ impl GateVisual {
         if usa_color_texto_sobre_fondo_claro {
             visual_issues.push(MetricaError {
                 tipo: "low_contrast".into(),
-                message: "text-white usado sin fondo oscuro: riesgo de contraste insuficiente".into(),
+                message: "text-white usado sin fondo oscuro: riesgo de contraste insuficiente"
+                    .into(),
                 stack: String::new(),
             });
         }
@@ -104,7 +111,10 @@ impl GateVisual {
     }
 
     /// Envoltorio de producción: crítica visual vía Gemini Flash multimodal.
-    pub async fn criticar_visual(&self, archivos: &std::collections::BTreeMap<String, String>) -> ResultadoGateVisual {
+    pub async fn criticar_visual(
+        &self,
+        archivos: &std::collections::BTreeMap<String, String>,
+    ) -> ResultadoGateVisual {
         // Ruta determinista sin red para hermeticidad de tests. Producción
         // inyecta el screenshot + Gemini API.
         self.criticar_local(archivos)
@@ -143,7 +153,9 @@ fn detectar_falta_padding(contenido: &str, ruta: &str, issues: &mut Vec<MetricaE
             let clase = &despues[..fin];
             // Botones/inputs sin padding horizontal y vertical.
             if (clase.contains("btn") || clase.contains("button"))
-                && !clase.contains("px-") && !clase.contains("py-") && !clase.contains("p-")
+                && !clase.contains("px-")
+                && !clase.contains("py-")
+                && !clase.contains("p-")
             {
                 issues.push(MetricaError {
                     tipo: "button_no_padding".into(),
@@ -220,7 +232,11 @@ mod tests {
             "#,
         )]);
         let res = gate.criticar_local(&archivos);
-        assert!(res.result.passed, "debería pasar: {:?}", res.result.visual_issues);
+        assert!(
+            res.result.passed,
+            "debería pasar: {:?}",
+            res.result.visual_issues
+        );
         assert_eq!(res.result.gate, GateKind::Visual);
     }
 
@@ -233,7 +249,11 @@ mod tests {
         )]);
         let res = gate.criticar_local(&archivos);
         assert!(!res.result.passed);
-        assert!(res.result.visual_issues.iter().any(|i| i.tipo == "no_responsive_root"));
+        assert!(res
+            .result
+            .visual_issues
+            .iter()
+            .any(|i| i.tipo == "no_responsive_root"));
     }
 
     #[test]
@@ -247,7 +267,11 @@ mod tests {
         )]);
         let res = gate.criticar_local(&archivos);
         assert!(!res.result.passed);
-        assert!(res.result.visual_issues.iter().any(|i| i.tipo == "low_contrast"));
+        assert!(res
+            .result
+            .visual_issues
+            .iter()
+            .any(|i| i.tipo == "low_contrast"));
     }
 
     #[test]
@@ -260,13 +284,20 @@ mod tests {
             }"#,
         )]);
         let res = gate.criticar_local(&archivos);
-        assert!(!res.result.visual_issues.iter().any(|i| i.tipo == "low_contrast"));
+        assert!(!res
+            .result
+            .visual_issues
+            .iter()
+            .any(|i| i.tipo == "low_contrast"));
     }
 
     #[test]
     fn test_resultado_schema_y_gate_kind() {
         let gate = GateVisual;
-        let archivos = mapa(&[("src/App.tsx", "export default function App(){return <div className='max-w-7xl'>x</div>;}")]);
+        let archivos = mapa(&[(
+            "src/App.tsx",
+            "export default function App(){return <div className='max-w-7xl'>x</div>;}",
+        )]);
         let res = gate.criticar_local(&archivos);
         assert_eq!(res.result.schema, V0_SCHEMA_GATE);
         assert_eq!(res.result.gate, GateKind::Visual);
@@ -276,7 +307,10 @@ mod tests {
     fn test_issue_vacio_cuando_app_ok() {
         let gate = GateVisual;
         let archivos = mapa(&[
-            ("src/App.tsx", "export default function App(){return <div className='max-w-7xl mx-auto'>x</div>;}"),
+            (
+                "src/App.tsx",
+                "export default function App(){return <div className='max-w-7xl mx-auto'>x</div>;}",
+            ),
             ("src/index.css", "@tailwind base;"),
         ]);
         let res = gate.criticar_local(&archivos);

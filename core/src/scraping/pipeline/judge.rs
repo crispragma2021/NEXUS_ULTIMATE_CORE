@@ -85,12 +85,24 @@ impl Judge {
         );
 
         // El Juez pide respuesta JSON pura.
-        let (value, provider) = self.cloud.reason_json(&format!("{JUDGE_SYSTEM_PROMPT}\n\n{prompt}")).await?;
+        let (value, provider) = self
+            .cloud
+            .reason_json(&format!("{JUDGE_SYSTEM_PROMPT}\n\n{prompt}"))
+            .await?;
 
         // Parsear veredicto (con tolerancia a campos faltantes).
-        let faithfulness = value.get("faithfulness").and_then(|v| v.as_f64()).unwrap_or(0.0);
-        let completeness = value.get("completeness").and_then(|v| v.as_f64()).unwrap_or(0.0);
-        let format_compliance = value.get("format_compliance").and_then(|v| v.as_f64()).unwrap_or(0.0);
+        let faithfulness = value
+            .get("faithfulness")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(0.0);
+        let completeness = value
+            .get("completeness")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(0.0);
+        let format_compliance = value
+            .get("format_compliance")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(0.0);
         let reason = value
             .get("reason")
             .and_then(|v| v.as_str())
@@ -166,7 +178,10 @@ mod tests {
         })]);
         let judge = Judge::new(cloud, "mock");
         let verdict = judge
-            .evaluate("<html><body>producto</body></html>", &serde_json::json!({"item": "producto"}))
+            .evaluate(
+                "<html><body>producto</body></html>",
+                &serde_json::json!({"item": "producto"}),
+            )
             .await
             .unwrap();
         assert!(verdict.score > 0.8);

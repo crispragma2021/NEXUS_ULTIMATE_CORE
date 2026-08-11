@@ -65,7 +65,8 @@ impl HealthProbe for ProbeFrontend {
                 }
             }
             Err(e) => {
-                detalles["ui_web"] = serde_json::json!({ "status": "offline", "error": e.to_string() });
+                detalles["ui_web"] =
+                    serde_json::json!({ "status": "offline", "error": e.to_string() });
                 mensaje.push_str(&format!("Dashboard Web (1420): offline ({}). ", e));
             }
         }

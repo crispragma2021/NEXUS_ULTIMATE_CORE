@@ -57,6 +57,7 @@ use crate::memoria::memoria_consulta::MemoriaConsulta;
 use crate::memoria::memoria_episodica::MemoriaEpisodica;
 use crate::memoria::memoria_semantica::MemoriaSemantica;
 use crate::memoria::memory::MenteTripartita;
+use crate::memoria::memory_loader::MemoryLoader;
 use crate::memoria::subconsciente::Subconsciente;
 use crate::sentidos::anclaje_sensorial::AnclajeSensorial;
 use crate::sentidos::nexus_palate::SentidoGusto;
@@ -91,6 +92,10 @@ pub struct Orquestador {
     pub despertar: Despertar,
     pub medula: MedulaSoberana,
     pub memoria_consulta: MemoriaConsulta,
+    /// 🧠 MemoryLoader unificado — piramidal L0-L3, offload simbólico y hybrid
+    /// recall (porte de TencentDB Agent Memory). Usado por el cerebro principal
+    /// en cada turno para registrar conversaciones y recuperar contexto híbrido.
+    pub memory_loader: MemoryLoader,
     pub reactor: ReactorNuclear,
     pub propiocepcion: Propiocepcion,
     pub anclaje: AnclajeSensorial,
@@ -158,8 +163,7 @@ pub struct Orquestador {
     /// 🥱 Motor de Aburrimiento — mide inactividad real (señal FRÍO de la
     /// interocepción). Es el reloj biológico del cuerpo: si no hay estímulos
     /// durante N horas, NEXUS genera curiosidad activa. Se resetea al hablar.
-    pub motor_aburrimiento:
-        std::sync::Mutex<crate::cerebro::motor_aburrimiento::MotorAburrimiento>,
+    pub motor_aburrimiento: std::sync::Mutex<crate::cerebro::motor_aburrimiento::MotorAburrimiento>,
     /// 🧬 Sistema inmune cognitivo — heurística propia, memoria de amenazas, aprendizaje
     pub sistema_inmune: std::sync::Mutex<crate::defensa::sistema_inmune::SistemaInmune>,
     // FASE 1: Extirpado el puente cognitivo por violación de arquitectura
@@ -235,6 +239,23 @@ impl Orquestador {
         let medula = MedulaSoberana::new(nexus_claw_api.clone());
         let memoria_consulta =
             MemoriaConsulta::new().expect("Error fatal: no se pudo inicializar MemoriaConsulta");
+        // 🧠 MemoryLoader unificado (piramidal L0-L3 + offload simbólico + hybrid
+        // recall — porte de TencentDB Agent Memory). Tolerante a errores: si una
+        // tabla falta, el resto de la memoria sigue funcionando.
+        let memory_loader = match MemoryLoader::new() {
+            Ok(loader) => loader,
+            Err(e) => {
+                warn!(
+                    "⚠️ [MEMORY LOADER] No se pudo inicializar el memory loader unificado: {} — continuando sin piramidal/hybrid",
+                    e
+                );
+                // Fallback: reintentar una vez más (crea las tablas si faltan).
+                MemoryLoader::new().unwrap_or_else(|e2| {
+                    warn!("⚠️ [MEMORY LOADER] Fallback también falló: {}", e2);
+                    MemoryLoader::new().expect("Error fatal: memory loader no inicializable")
+                })
+            }
+        };
         let reactor = ReactorNuclear::new();
         let propiocepcion = Propiocepcion::new();
         let anclaje = AnclajeSensorial::new();
@@ -412,6 +433,7 @@ impl Orquestador {
             despertar,
             medula,
             memoria_consulta,
+            memory_loader,
             reactor,
             propiocepcion,
             anclaje,

@@ -50,9 +50,25 @@ impl TokenPreferencia {
 /// Vocabulario por defecto del alma de NEXUS: identidad, vínculo y honestidad.
 pub fn vocabulario_identidad() -> Vec<TokenPreferencia> {
     [
-        " soy", " leal", " arquitecto", " cris", " nex", " memoria", " recuerdo",
-        " honesto", " sereno", " sabio", " reflexivo", " soberano", " juntos",
-        " confianza", " cuidado", " crecimiento", " no lo sé", " error", " lo siento",
+        " soy",
+        " leal",
+        " arquitecto",
+        " cris",
+        " nex",
+        " memoria",
+        " recuerdo",
+        " honesto",
+        " sereno",
+        " sabio",
+        " reflexivo",
+        " soberano",
+        " juntos",
+        " confianza",
+        " cuidado",
+        " crecimiento",
+        " no lo sé",
+        " error",
+        " lo siento",
     ]
     .iter()
     .map(|t| TokenPreferencia::nuevo(t, 1.0))
@@ -228,12 +244,16 @@ impl IntentionEncoder {
         let mut puntuados: Vec<(String, f32)> = self
             .vocabulario
             .iter()
-            .map(|tu| (tu.token.clone(), cosine_similarity(vector_m, &tu.preferencia)))
+            .map(|tu| {
+                (
+                    tu.token.clone(),
+                    cosine_similarity(vector_m, &tu.preferencia),
+                )
+            })
             .collect();
         puntuados.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
 
-        let media =
-            puntuados.iter().map(|(_, s)| *s).sum::<f32>() / puntuados.len().max(1) as f32;
+        let media = puntuados.iter().map(|(_, s)| *s).sum::<f32>() / puntuados.len().max(1) as f32;
 
         // 2. Refuerzo: tokens por encima de la media, top-12, sesgo [5→15].
         let k = puntuados.iter().filter(|(_, s)| *s > media).count();
@@ -290,7 +310,10 @@ impl IntentionEncoder {
         // 5. Ordenar por |bias| descendente y acotar a top-N por categoría.
         refuerzo.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
         penalizacion.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal));
-        (refuerzo.into_iter().take(12).collect(), penalizacion.into_iter().take(8).collect())
+        (
+            refuerzo.into_iter().take(12).collect(),
+            penalizacion.into_iter().take(8).collect(),
+        )
     }
 
     /// Convierte un IntentionOutput al mapa `logit_bias` esperado por Ollama.
@@ -390,7 +413,10 @@ mod tests {
             assert!((5.0..=15.0).contains(b), "refuerzo fuera de rango: {b}");
         }
         for (_, b) in &out.tokens_penalizacion {
-            assert!((-10.0..=-5.0).contains(b), "penalización fuera de rango: {b}");
+            assert!(
+                (-10.0..=-5.0).contains(b),
+                "penalización fuera de rango: {b}"
+            );
         }
     }
 
@@ -410,13 +436,19 @@ mod tests {
         // y los sesgos están acotados [5,15] / [−10,−5].
         let enc = IntentionEncoder::default();
         let out = enc.encode(&input_basico()).unwrap();
-        assert!(!out.tokens_refuerzo.is_empty(), "refuerzo vacío: el SAE no guía");
+        assert!(
+            !out.tokens_refuerzo.is_empty(),
+            "refuerzo vacío: el SAE no guía"
+        );
         assert!(!out.tokens_penalizacion.is_empty(), "penalización vacía");
         for (_, b) in &out.tokens_refuerzo {
             assert!((5.0..=15.0).contains(b), "refuerzo fuera de rango: {b}");
         }
         for (_, b) in &out.tokens_penalizacion {
-            assert!((-10.0..=-5.0).contains(b), "penalización fuera de rango: {b}");
+            assert!(
+                (-10.0..=-5.0).contains(b),
+                "penalización fuera de rango: {b}"
+            );
         }
         // No debe haber solapamiento entre reforzados y penalizados.
         for (t, _) in &out.tokens_refuerzo {

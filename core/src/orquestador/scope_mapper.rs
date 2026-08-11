@@ -136,12 +136,9 @@ impl ScopeMapper {
     pub fn detect_project(&self, user_message: &str) -> Result<Option<String>> {
         let conn = self.conn.lock().unwrap();
         let msg = user_message.to_lowercase();
-        let mut stmt = conn.prepare(
-            "SELECT project_id, alias FROM project_aliases ORDER BY LENGTH(alias) DESC",
-        )?;
-        let rows = stmt.query_map([], |r| {
-            Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?))
-        })?;
+        let mut stmt = conn
+            .prepare("SELECT project_id, alias FROM project_aliases ORDER BY LENGTH(alias) DESC")?;
+        let rows = stmt.query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)))?;
         for row in rows {
             let (project_id, alias) = row?;
             // Priorizar el alias más específico (más largo) ya detectado por ORDER BY.
@@ -162,7 +159,9 @@ impl ScopeMapper {
         let Some(project_id) = self.detect_project(user_message)? else {
             return Ok(None);
         };
-        self.build_scope(&project_id).map(|p| p.build_context()).map(Some)
+        self.build_scope(&project_id)
+            .map(|p| p.build_context())
+            .map(Some)
     }
 
     /// Construye el `ProjectScope` completo desde la DB.
@@ -188,8 +187,7 @@ impl ScopeMapper {
 
         let mut files = Vec::new();
         {
-            let mut stmt =
-                conn.prepare("SELECT path FROM project_files WHERE project_id = ?1")?;
+            let mut stmt = conn.prepare("SELECT path FROM project_files WHERE project_id = ?1")?;
             let rows = stmt.query_map(rusqlite::params![project_id], |r| r.get::<_, String>(0))?;
             for r in rows {
                 files.push(r?);
@@ -229,7 +227,10 @@ mod tests {
             id: "p1".into(),
             name: "Página Trader".into(),
             aliases: vec!["trader".into(), "página trader".into()],
-            files: vec!["projects/trader/main.rs".into(), "projects/trader/config.toml".into()],
+            files: vec![
+                "projects/trader/main.rs".into(),
+                "projects/trader/config.toml".into(),
+            ],
             env_vars: HashMap::new(),
             log_dir: "logs/trader".into(),
         })
@@ -249,7 +250,10 @@ mod tests {
     #[test]
     fn detecta_proyecto_por_alias() {
         let m = sample_mapper();
-        let id = m.detect_project("arregla la página trader por favor").unwrap().unwrap();
+        let id = m
+            .detect_project("arregla la página trader por favor")
+            .unwrap()
+            .unwrap();
         assert_eq!(id, "p1");
     }
 
@@ -257,7 +261,10 @@ mod tests {
     fn prioriza_alias_mas_especifico() {
         let m = sample_mapper();
         // "página trader" es más específico que "trader".
-        let id = m.detect_project("en la página trader falla el login").unwrap().unwrap();
+        let id = m
+            .detect_project("en la página trader falla el login")
+            .unwrap()
+            .unwrap();
         assert_eq!(id, "p1");
     }
 
@@ -270,7 +277,10 @@ mod tests {
     #[test]
     fn contexto_aislado_solo_tiene_datos_del_proyecto() {
         let m = sample_mapper();
-        let ctx = m.resolve_context("revisa el bot telegram").unwrap().unwrap();
+        let ctx = m
+            .resolve_context("revisa el bot telegram")
+            .unwrap()
+            .unwrap();
         assert!(ctx.contains("Bot de Telegram"));
         assert!(ctx.contains("projects/telegram/main.rs"));
         // NO debe contener datos del otro proyecto.

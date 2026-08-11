@@ -6,13 +6,13 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SLMInferenceConfig {
-    pub temperature: f32,          // 0.0 — determinista
-    pub top_p: f32,                // 0.1 — vocabulario muy restringido
-    pub top_k: u32,                // 1 — solo el token más probable
-    pub repeat_penalty: f32,       // 1.1 — evita bucles repetitivos
-    pub max_tokens: u32,           // 512 — suficiente para JSON de tool calls
-    pub stop_tokens: Vec<String>,  // Tokens de parada
-    pub json_mode: bool,           // Forzar modo JSON en Ollama/mistralrs
+    pub temperature: f32,         // 0.0 — determinista
+    pub top_p: f32,               // 0.1 — vocabulario muy restringido
+    pub top_k: u32,               // 1 — solo el token más probable
+    pub repeat_penalty: f32,      // 1.1 — evita bucles repetitivos
+    pub max_tokens: u32,          // 512 — suficiente para JSON de tool calls
+    pub stop_tokens: Vec<String>, // Tokens de parada
+    pub json_mode: bool,          // Forzar modo JSON en Ollama/mistralrs
 }
 
 impl Default for SLMInferenceConfig {

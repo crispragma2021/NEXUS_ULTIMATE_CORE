@@ -74,7 +74,15 @@ impl PromptAssembler {
         let identidad = self.seccion_identidad(context);
         system.push_str(&identidad);
 
-        // 2. MEMORIA OCEAN — si intensidad > 0.4 (ya filtrado en el loader).
+        // 2. PIRÁMIDE L3 (PERSONA) — perfil a largo plazo del Arquitecto.
+        if let Some(persona) = &context.persona {
+            let sec = self.seccion_persona(persona);
+            if self.cabe(&system, &sec) {
+                system.push_str(&sec);
+            }
+        }
+
+        // 3. MEMORIA OCEAN — si intensidad > 0.4 (ya filtrado en el loader).
         if !context.ocean.is_empty() {
             let ocean = self.seccion_ocean(context);
             if self.cabe(&system, &ocean) {
@@ -82,7 +90,7 @@ impl PromptAssembler {
             }
         }
 
-        // 3. MEMORIA SEMÁNTICA — si relevancia > umbral.
+        // 4. MEMORIA SEMÁNTICA — si relevancia > umbral.
         if !context.semanticos.is_empty() {
             let semantica = self.seccion_semantica(context);
             if self.cabe(&system, &semantica) {
@@ -90,7 +98,31 @@ impl PromptAssembler {
             }
         }
 
-        // 4. MEMORIA EPISÓDICA — recuerdos recientes (si cabe).
+        // 5. ESCENARIOS (PIRÁMIDE L2) — contexto de escena reciente.
+        if !context.escenarios.is_empty() {
+            let esc = self.seccion_escenarios(context);
+            if self.cabe(&system, &esc) {
+                system.push_str(&esc);
+            }
+        }
+
+        // 6. CANVAS MERMAID (OFFLOAD) — mapa simbólico ligero de tareas activas.
+        if let Some(canvas) = &context.canvas_mermaid {
+            let sec = self.seccion_canvas(canvas);
+            if self.cabe(&system, &sec) {
+                system.push_str(&sec);
+            }
+        }
+
+        // 7. HITS HÍBRIDOS (BM25+vector+RRF) — recall fusionado.
+        if !context.hits_hibridos.is_empty() {
+            let hits = self.seccion_hits_hibridos(context);
+            if self.cabe(&system, &hits) {
+                system.push_str(&hits);
+            }
+        }
+
+        // 8. MEMORIA EPISÓDICA — recuerdos recientes (si cabe).
         if !context.conversaciones_recientes.is_empty() {
             let episodica = self.seccion_episodica(context);
             if self.cabe(&system, &episodica) {
@@ -98,7 +130,7 @@ impl PromptAssembler {
             }
         }
 
-        // 5. ESTADO LÍMBICO — si R5 está activo.
+        // 9. ESTADO LÍMBICO — si R5 está activo.
         if let Some(l) = limbico {
             let estado = self.seccion_limbica(l);
             if self.cabe(&system, &estado) {
@@ -106,7 +138,7 @@ impl PromptAssembler {
             }
         }
 
-        // 6. VOZ — directriz final de expresión.
+        // 10. VOZ — directriz final de expresión.
         system.push_str(&self.seccion_voz());
 
         // logit_bias derivado del vector de intención M.
@@ -134,6 +166,52 @@ impl PromptAssembler {
             s.push('\n');
         }
         s.push_str("Te diriges a Cris como tu Arquitecto.\n\n");
+        s
+    }
+
+    /// PIRÁMIDE L3: perfil a largo plazo del Arquitecto (cima de la pirámide).
+    fn seccion_persona(&self, persona: &str) -> String {
+        let mut s = String::new();
+        s.push_str("## Lo que sé de ti a largo plazo (perfil)\n");
+        for linea in persona.lines().take(12) {
+            if !linea.trim().is_empty() {
+                s.push_str(&format!("{}\n", linea));
+            }
+        }
+        s.push('\n');
+        s
+    }
+
+    /// PIRÁMIDE L2: escenarios relevantes (bloques de contexto reciente).
+    fn seccion_escenarios(&self, ctx: &MemoryContext) -> String {
+        let mut s = String::new();
+        s.push_str("## Escenarios recientes (contexto de trabajo)\n");
+        for e in &ctx.escenarios {
+            s.push_str(&format!("- {}\n", e));
+        }
+        s.push('\n');
+        s
+    }
+
+    /// OFFLOAD: canvas Mermaid simbólico (inyección ligera de tareas activas).
+    fn seccion_canvas(&self, canvas: &str) -> String {
+        let mut s = String::new();
+        s.push_str("## Mapa simbólico de tareas activas (Mermaid)\n");
+        s.push_str("```mermaid\n");
+        s.push_str(canvas);
+        s.push_str("```\n");
+        s.push_str("Para verificar un detalle, consulta el node_id (drill-down).\n\n");
+        s
+    }
+
+    /// HYBRID RECALL: resultados fusionados BM25+vector+RRF.
+    fn seccion_hits_hibridos(&self, ctx: &MemoryContext) -> String {
+        let mut s = String::new();
+        s.push_str("## Recuerdos relevantes recuperados (fusión semántica + keywords)\n");
+        for h in &ctx.hits_hibridos {
+            s.push_str(&format!("- {}\n", h));
+        }
+        s.push('\n');
         s
     }
 
@@ -251,6 +329,14 @@ mod tests {
                 intensidad: 0.6,
                 embedding: NexusEmbedder::generar("serenidad", &[]),
             }],
+            persona: Some(
+                "## Perfil del Arquitecto\n- Prefiere Rust y arquitecturas soberanas.\n- Valora la trazabilidad.".to_string(),
+            ),
+            escenarios: vec!["ESCENARIO: Stack tecnológico\n- L1:1".to_string()],
+            canvas_mermaid: Some(
+                "graph LR\n    n_1[\"Búsqueda\"] -->|parsea| n_2[\"Extracción\"]\n".to_string(),
+            ),
+            hits_hibridos: vec!["El core de NEXUS usa Rust".to_string()],
         }
     }
 
@@ -264,6 +350,11 @@ mod tests {
         assert!(out.system.contains("NEXUS-SUCESOR"));
         assert!(out.system.contains("memoria ocean"));
         assert!(out.system.contains("Recuerdos recientes"));
+        // Nuevas secciones portadas de TencentDB Agent Memory.
+        assert!(out.system.contains("perfil"));
+        assert!(out.system.contains("Escenarios recientes"));
+        assert!(out.system.contains("Mermaid"));
+        assert!(out.system.contains("fusión semántica"));
         assert_eq!(out.user, "¿Qué recuerdas?");
     }
 

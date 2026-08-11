@@ -263,10 +263,7 @@ mod tests {
     #[test]
     fn general_usa_gemma3() {
         let router = ModelRouter::new();
-        assert_eq!(
-            router.seleccionar_modelo("hola, cómo estás?"),
-            "gemma3:4b"
-        );
+        assert_eq!(router.seleccionar_modelo("hola, cómo estás?"), "gemma3:4b");
     }
 
     #[test]

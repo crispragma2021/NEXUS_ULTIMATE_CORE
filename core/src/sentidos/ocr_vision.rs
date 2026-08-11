@@ -91,8 +91,7 @@ pub struct ResultadoVision {
 
 /// URL base de Ollama (configurable por entorno).
 fn ollama_base() -> String {
-    std::env::var("OLLAMA_API_URL")
-        .unwrap_or_else(|_| "http://localhost:11434".to_string())
+    std::env::var("OLLAMA_API_URL").unwrap_or_else(|_| "http://localhost:11434".to_string())
 }
 
 /// URL de la API oficial de DeepSeek (compatible con OpenAI).
@@ -133,7 +132,10 @@ pub async fn analizar_con_slm_local(
         .build()
         .map_err(|e| format!("❌ Error creando cliente HTTP: {}", e))?;
 
-    info!("👁️ [OCR_VISION] Enviando imagen a {} (SLM local)...", modelo);
+    info!(
+        "👁️ [OCR_VISION] Enviando imagen a {} (SLM local)...",
+        modelo
+    );
     let resp = client
         .post(&url)
         .header("Content-Type", "application/json")
@@ -145,7 +147,11 @@ pub async fn analizar_con_slm_local(
     if !resp.status().is_success() {
         let status = resp.status();
         let body = resp.text().await.unwrap_or_default();
-        return Err(format!("⚠️ Ollama HTTP {}: {}", status, &body[..body.len().min(300)]));
+        return Err(format!(
+            "⚠️ Ollama HTTP {}: {}",
+            status,
+            &body[..body.len().min(300)]
+        ));
     }
 
     let data: Value = resp
@@ -270,7 +276,11 @@ pub async fn analizar_con_gemini(
     if !resp.status().is_success() {
         let status = resp.status();
         let body = resp.text().await.unwrap_or_default();
-        return Err(format!("⚠️ Gemini HTTP {}: {}", status, &body[..body.len().min(300)]));
+        return Err(format!(
+            "⚠️ Gemini HTTP {}: {}",
+            status,
+            &body[..body.len().min(300)]
+        ));
     }
 
     let data: Value = resp
@@ -332,7 +342,10 @@ pub async fn analizar_con_openrouter(
         .build()
         .map_err(|e| format!("❌ Error creando cliente HTTP: {}", e))?;
 
-    info!("☁️ [OCR_VISION] Enviando imagen a OpenRouter ({})...", MODELO_VISION_NUBE);
+    info!(
+        "☁️ [OCR_VISION] Enviando imagen a OpenRouter ({})...",
+        MODELO_VISION_NUBE
+    );
     let resp = client
         .post("https://openrouter.ai/api/v1/chat/completions")
         .header("Authorization", format!("Bearer {}", api_key))
@@ -470,16 +483,29 @@ fn ocr_tesseract(ruta: &str) -> Option<String> {
 /// Devuelve un mapa comando → disponible.
 pub fn detectar_motores_externos() -> Vec<(String, bool)> {
     let candidatos = [
-        ("paddleocr", "PaddleOCR v4 / PP-Structure (rápido, 80+ idiomas, CPU)"),
-        ("got-ocr", "GOT-OCR 2.0 (estructura Markdown, docs/PDFs/tablas)"),
-        ("marker_single", "Marker (libros/papers/PDFs complejos → RAG)"),
+        (
+            "paddleocr",
+            "PaddleOCR v4 / PP-Structure (rápido, 80+ idiomas, CPU)",
+        ),
+        (
+            "got-ocr",
+            "GOT-OCR 2.0 (estructura Markdown, docs/PDFs/tablas)",
+        ),
+        (
+            "marker_single",
+            "Marker (libros/papers/PDFs complejos → RAG)",
+        ),
         ("nougat", "Nougat (papers académicos → RAG)"),
     ];
 
     candidatos
         .iter()
         .map(|(cmd, desc)| {
-            let found = Command::new("which").arg(cmd).output().map(|o| o.status.success()).unwrap_or(false);
+            let found = Command::new("which")
+                .arg(cmd)
+                .output()
+                .map(|o| o.status.success())
+                .unwrap_or(false);
             (format!("{} — {}", cmd, desc), found)
         })
         .collect()
@@ -541,7 +567,11 @@ pub async fn razonar_con_deepseek(texto_ocr: &str, instruccion: &str) -> Result<
     if !resp.status().is_success() {
         let status = resp.status();
         let body = resp.text().await.unwrap_or_default();
-        return Err(format!("⚠️ DeepSeek HTTP {}: {}", status, &body[..body.len().min(300)]));
+        return Err(format!(
+            "⚠️ DeepSeek HTTP {}: {}",
+            status,
+            &body[..body.len().min(300)]
+        ));
     }
 
     let data: Value = resp
@@ -565,7 +595,10 @@ async fn obtener_bytes(origen: &str) -> Result<(Vec<u8>, String), String> {
         // Captura de pantalla normalizada para modelos de visión locales
         // (xcap + Lanczos3 → PNG en RAM, patrón de OmnipresentVision).
         let (w, h) = (768u32, 432u32);
-        let bytes = crate::sentidos::omnipresent_vision::OmnipresentVision::capturar_para_modelo_local(w, h)
+        let bytes =
+            crate::sentidos::omnipresent_vision::OmnipresentVision::capturar_para_modelo_local(
+                w, h,
+            )
             .await
             .ok_or_else(|| "❌ No se pudo capturar la pantalla (xcap).".to_string())?;
         Ok((bytes, "pantalla".to_string()))
@@ -574,8 +607,8 @@ async fn obtener_bytes(origen: &str) -> Result<(Vec<u8>, String), String> {
         if ruta.is_empty() {
             return Err("❌ Debes indicar 'pantalla' o una ruta de archivo de imagen.".to_string());
         }
-        let bytes = std::fs::read(ruta)
-            .map_err(|e| format!("❌ No se pudo leer '{}': {}", ruta, e))?;
+        let bytes =
+            std::fs::read(ruta).map_err(|e| format!("❌ No se pudo leer '{}': {}", ruta, e))?;
         Ok((bytes, ruta.to_string()))
     }
 }
@@ -624,9 +657,7 @@ pub async fn analizar_imagen(
     let _ = std::fs::write(temp_path, &bytes);
 
     // ═══ MODO LOCAL — SLM con visión nativa vía Ollama ═══
-    if motor == MotorVision::LocalSlm
-        || (motor == MotorVision::Auto && !hay_internet().await)
-    {
+    if motor == MotorVision::LocalSlm || (motor == MotorVision::Auto && !hay_internet().await) {
         if !slm_local_disponible(modelo_local).await {
             return Err(format!(
                 "❌ El modelo de visión local '{}' no está disponible en Ollama. Instálalo con: ollama pull {}",
@@ -679,12 +710,10 @@ pub async fn analizar_imagen(
                 .or_else(|| ocr_externo("paddleocr", temp_path))
                 .unwrap_or_default()
         }
-        ModoVision::Transcribir => {
-            ocr_tesseract(temp_path)
-                .or_else(|| ocr_externo("paddleocr", temp_path))
-                .or_else(|| ocr_externo("marker_single", temp_path))
-                .unwrap_or_default()
-        }
+        ModoVision::Transcribir => ocr_tesseract(temp_path)
+            .or_else(|| ocr_externo("paddleocr", temp_path))
+            .or_else(|| ocr_externo("marker_single", temp_path))
+            .unwrap_or_default(),
     };
 
     if texto_ocr.trim().is_empty() {
@@ -804,7 +833,8 @@ pub async fn extraer_frames_video(
 
     if frames.is_empty() {
         return Err(
-            "❌ No se extrajeron frames del video (¿ruta inválida o sin track de video?).".to_string(),
+            "❌ No se extrajeron frames del video (¿ruta inválida o sin track de video?)."
+                .to_string(),
         );
     }
     Ok(frames)
@@ -876,7 +906,11 @@ pub async fn analizar_video_con_slm_local(
     if !resp.status().is_success() {
         let status = resp.status();
         let body = resp.text().await.unwrap_or_default();
-        return Err(format!("⚠️ Ollama HTTP {}: {}", status, &body[..body.len().min(300)]));
+        return Err(format!(
+            "⚠️ Ollama HTTP {}: {}",
+            status,
+            &body[..body.len().min(300)]
+        ));
     }
 
     let data: Value = resp
@@ -941,7 +975,11 @@ pub async fn analizar_video_con_gemini(
     if !resp.status().is_success() {
         let status = resp.status();
         let body = resp.text().await.unwrap_or_default();
-        return Err(format!("⚠️ Gemini HTTP {}: {}", status, &body[..body.len().min(300)]));
+        return Err(format!(
+            "⚠️ Gemini HTTP {}: {}",
+            status,
+            &body[..body.len().min(300)]
+        ));
     }
 
     let data: Value = resp
@@ -985,7 +1023,8 @@ pub async fn analizar_video(
         let frames = capturar_stream_pantalla(fps, duracion_seg).await;
         if frames.is_empty() {
             return Err(
-                "❌ No se pudo capturar el stream (¿xcap disponible y monitor activo?).".to_string(),
+                "❌ No se pudo capturar el stream (¿xcap disponible y monitor activo?)."
+                    .to_string(),
             );
         }
         (
@@ -1018,17 +1057,16 @@ pub async fn analizar_video(
 
     // ═══ MODO NUBE — OpenRouter multimodal (primario), Gemini directo como respaldo ═══
     if motor == MotorVision::Nube {
-        let texto =
-            match analizar_video_con_openrouter(&frames, "image/png", &pregunta).await {
-                Ok(t) => t,
-                Err(e_openrouter) => {
-                    warn!(
-                        "⚠️ [OCR_VISION] OpenRouter video falló ({}). Probando Gemini directo...",
-                        e_openrouter
-                    );
-                    analizar_video_con_gemini(&frames, "image/png", &pregunta).await?
-                }
-            };
+        let texto = match analizar_video_con_openrouter(&frames, "image/png", &pregunta).await {
+            Ok(t) => t,
+            Err(e_openrouter) => {
+                warn!(
+                    "⚠️ [OCR_VISION] OpenRouter video falló ({}). Probando Gemini directo...",
+                    e_openrouter
+                );
+                analizar_video_con_gemini(&frames, "image/png", &pregunta).await?
+            }
+        };
         return Ok(ResultadoVision {
             texto,
             motor: format!(
@@ -1055,10 +1093,11 @@ pub async fn analizar_video(
         return Err("❌ El OCR no extrajo texto de ningún frame.".to_string());
     }
     let crudo = textos.join("\n--- frame ---\n");
-    let instruccion = "Recibes el texto OCR de varios frames de un video (separados por '--- frame ---'). "
-        .to_string()
-        + "Identifica qué está ocurriendo en la secuencia, qué cambia entre frames, "
-        + "y devuelve un resumen cronológico en español.";
+    let instruccion =
+        "Recibes el texto OCR de varios frames de un video (separados por '--- frame ---'). "
+            .to_string()
+            + "Identifica qué está ocurriendo en la secuencia, qué cambia entre frames, "
+            + "y devuelve un resumen cronológico en español.";
     let texto = razonar_con_deepseek(&crudo, &instruccion).await?;
 
     Ok(ResultadoVision {

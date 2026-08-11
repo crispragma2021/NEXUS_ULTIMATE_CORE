@@ -42,12 +42,19 @@ pub enum ResolucionDep {
     /// Paquete rechazado: no está en el allowlist.
     Rechazada { nombre: String, razon: String },
     /// Paquete aceptado pero su versión fue ajustada al rango permitido.
-    Clampada { nombre: String, version_original: String, version_final: String },
+    Clampada {
+        nombre: String,
+        version_original: String,
+        version_final: String,
+    },
 }
 
 impl ResolucionDep {
     pub fn es_aceptada(&self) -> bool {
-        matches!(self, ResolucionDep::Aceptada { .. } | ResolucionDep::Clampada { .. })
+        matches!(
+            self,
+            ResolucionDep::Aceptada { .. } | ResolucionDep::Clampada { .. }
+        )
     }
 }
 
@@ -126,8 +133,8 @@ impl DependencyResolver {
 
     /// Crea un resolutor con el allowlist embebido (constante).
     pub fn con_allowlist_embebido() -> Self {
-        let allowlist = serde_json::from_str(ALLOWLIST_EMBEBIDA)
-            .unwrap_or_else(|_| Allowlist::default());
+        let allowlist =
+            serde_json::from_str(ALLOWLIST_EMBEBIDA).unwrap_or_else(|_| Allowlist::default());
         Self { allowlist }
     }
 
@@ -137,9 +144,7 @@ impl DependencyResolver {
         let allowlist = std::fs::read_to_string(path)
             .ok()
             .and_then(|s| serde_json::from_str(&s).ok())
-            .unwrap_or_else(|| {
-                serde_json::from_str(ALLOWLIST_EMBEBIDA).unwrap_or_default()
-            });
+            .unwrap_or_else(|| serde_json::from_str(ALLOWLIST_EMBEBIDA).unwrap_or_default());
         Self { allowlist }
     }
 
@@ -185,17 +190,16 @@ impl DependencyResolver {
     }
 
     /// Resuelve un mapa completo de dependencias (nombre → versión declarada).
-    pub fn resolver_mapa(
-        &self,
-        declaradas: &BTreeMap<String, String>,
-    ) -> ResultadoResolucion {
+    pub fn resolver_mapa(&self, declaradas: &BTreeMap<String, String>) -> ResultadoResolucion {
         let mut resultado = ResultadoResolucion::default();
 
         for (nombre, version) in declaradas {
             let resolucion = self.resolver_dep(nombre, version);
             match &resolucion {
                 ResolucionDep::Aceptada { nombre, version } => {
-                    resultado.dependencies.insert(nombre.clone(), version.clone());
+                    resultado
+                        .dependencies
+                        .insert(nombre.clone(), version.clone());
                 }
                 ResolucionDep::Clampada {
                     nombre,
@@ -281,7 +285,9 @@ fn version_es_compatible(version: &str, range: &str) -> bool {
     range.split("||").any(|parte| {
         // `trim()` elimina espacios a ambos lados (los rangos OR suelen llevar
         // espacios alrededor de `||`). Sin esto, "18 " no parsea y cae a major 0.
-        let base = parte.trim().trim_start_matches(['^', '~', 'v', '>', '=', '<', ' ']);
+        let base = parte
+            .trim()
+            .trim_start_matches(['^', '~', 'v', '>', '=', '<', ' ']);
         let bb = to_tuple(base);
         // Aceptar cuando el pin del allowlist coincide en major (compatible ^/~).
         vv.0 == bb.0
@@ -301,7 +307,10 @@ mod tests {
     fn test_allowlist_embebida_carga() {
         let r = DependencyResolver::nuevo();
         assert!(r.allowlist().packages.contains_key("react"));
-        assert!(r.allowlist().packages.contains_key("@radix-ui/react-dialog"));
+        assert!(r
+            .allowlist()
+            .packages
+            .contains_key("@radix-ui/react-dialog"));
         assert!(r.allowlist().packages.contains_key("tailwindcss"));
     }
 

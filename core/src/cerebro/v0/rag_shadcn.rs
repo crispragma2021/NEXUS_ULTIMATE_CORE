@@ -47,10 +47,23 @@ impl CatalogoShadcn {
             ComponenteShadcn {
                 nombre: "button".into(),
                 categoria: "primitivas".into(),
-                descripcion: "Botón con variantes de estilo y tamaño via class-variance-authority.".into(),
-                dependencias: vec!["class-variance-authority".into(), "clsx".into(), "tailwind-merge".into(), "lucide-react".into()],
+                descripcion: "Botón con variantes de estilo y tamaño via class-variance-authority."
+                    .into(),
+                dependencias: vec![
+                    "class-variance-authority".into(),
+                    "clsx".into(),
+                    "tailwind-merge".into(),
+                    "lucide-react".into(),
+                ],
                 primitivas: vec!["@radix-ui/react-slot".into()],
-                variantes: vec!["default".into(), "destructive".into(), "outline".into(), "secondary".into(), "ghost".into(), "link".into()],
+                variantes: vec![
+                    "default".into(),
+                    "destructive".into(),
+                    "outline".into(),
+                    "secondary".into(),
+                    "ghost".into(),
+                    "link".into(),
+                ],
                 ejemplo: "<Button variant=\"outline\">Outline</Button>".into(),
             },
         );
@@ -156,9 +169,18 @@ impl CatalogoShadcn {
                 nombre: "badge".into(),
                 categoria: "data-display".into(),
                 descripcion: "Etiqueta pequeña para estados, contadores o clasificación.".into(),
-                dependencias: vec!["class-variance-authority".into(), "clsx".into(), "tailwind-merge".into()],
+                dependencias: vec![
+                    "class-variance-authority".into(),
+                    "clsx".into(),
+                    "tailwind-merge".into(),
+                ],
                 primitivas: vec![],
-                variantes: vec!["default".into(), "secondary".into(), "destructive".into(), "outline".into()],
+                variantes: vec![
+                    "default".into(),
+                    "secondary".into(),
+                    "destructive".into(),
+                    "outline".into(),
+                ],
                 ejemplo: "<Badge variant=\"secondary\">Nuevo</Badge>".into(),
             },
         );
@@ -428,9 +450,13 @@ mod tests {
     fn test_dependencias_radix_consistentes() {
         let c = CatalogoShadcn::estandar();
         let dialog = c.buscar("dialog").unwrap();
-        assert!(dialog.primitivas.contains(&"@radix-ui/react-dialog".to_string()));
+        assert!(dialog
+            .primitivas
+            .contains(&"@radix-ui/react-dialog".to_string()));
         let button = c.buscar("button").unwrap();
-        assert!(button.dependencias.contains(&"class-variance-authority".to_string()));
+        assert!(button
+            .dependencias
+            .contains(&"class-variance-authority".to_string()));
         assert_eq!(button.variantes.len(), 6);
     }
 }

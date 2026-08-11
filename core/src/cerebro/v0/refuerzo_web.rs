@@ -117,24 +117,40 @@ impl RefuerzoWeb {
             referencias.push(ReferenciaWeb {
                 fuente: "catalogo:shadcn".into(),
                 tipo: "componente".into(),
-                contenido: self.catalogo.buscar("Input").map(|c| c.ejemplo.clone()).unwrap_or_default(),
+                contenido: self
+                    .catalogo
+                    .buscar("Input")
+                    .map(|c| c.ejemplo.clone())
+                    .unwrap_or_default(),
             });
             referencias.push(ReferenciaWeb {
                 fuente: "catalogo:shadcn".into(),
                 tipo: "componente".into(),
-                contenido: self.catalogo.buscar("Select").map(|c| c.ejemplo.clone()).unwrap_or_default(),
+                contenido: self
+                    .catalogo
+                    .buscar("Select")
+                    .map(|c| c.ejemplo.clone())
+                    .unwrap_or_default(),
             });
         }
         if lower.contains("dashboard") || lower.contains("metric") || lower.contains("panel") {
             referencias.push(ReferenciaWeb {
                 fuente: "catalogo:shadcn".into(),
                 tipo: "componente".into(),
-                contenido: self.catalogo.buscar("Card").map(|c| c.ejemplo.clone()).unwrap_or_default(),
+                contenido: self
+                    .catalogo
+                    .buscar("Card")
+                    .map(|c| c.ejemplo.clone())
+                    .unwrap_or_default(),
             });
             referencias.push(ReferenciaWeb {
                 fuente: "catalogo:shadcn".into(),
                 tipo: "componente".into(),
-                contenido: self.catalogo.buscar("Table").map(|c| c.ejemplo.clone()).unwrap_or_default(),
+                contenido: self
+                    .catalogo
+                    .buscar("Table")
+                    .map(|c| c.ejemplo.clone())
+                    .unwrap_or_default(),
             });
         }
         if lower.contains("game") || lower.contains("juego") || lower.contains("canvas") {
@@ -150,7 +166,11 @@ impl RefuerzoWeb {
             referencias.push(ReferenciaWeb {
                 fuente: "catalogo:shadcn".into(),
                 tipo: "componente".into(),
-                contenido: self.catalogo.buscar("Button").map(|c| c.ejemplo.clone()).unwrap_or_default(),
+                contenido: self
+                    .catalogo
+                    .buscar("Button")
+                    .map(|c| c.ejemplo.clone())
+                    .unwrap_or_default(),
             });
         }
 
@@ -193,10 +213,14 @@ impl RefuerzoWeb {
             let claves: Vec<String> = r
                 .contenido
                 .split_whitespace()
-                .map(|w| w.trim_matches(|c: char| !c.is_alphanumeric()).to_lowercase())
+                .map(|w| {
+                    w.trim_matches(|c: char| !c.is_alphanumeric())
+                        .to_lowercase()
+                })
                 .filter(|w| w.len() > 3)
                 .collect();
-            self.memoria.indexar_claves(&id, &r.tipo, claves, &r.contenido);
+            self.memoria
+                .indexar_claves(&id, &r.tipo, claves, &r.contenido);
             ingeridas += 1;
         }
         ingeridas
@@ -281,7 +305,9 @@ mod tests {
 
     #[test]
     fn test_max_referencias_respetado() {
-        let r = RefuerzoWeb::nuevo().con_local_forzado().con_max_referencias(1);
+        let r = RefuerzoWeb::nuevo()
+            .con_local_forzado()
+            .con_max_referencias(1);
         let res = r.extraer_local("dashboard formulario juego");
         let ctx = res.contexto;
         // El contexto no puede exceder el límite de referencias + catálogo.

@@ -13,6 +13,4 @@
 
 pub mod interocepcion;
 
-pub use interocepcion::{
-    EstadoCorporal, Organismo, SenalCorporal, SensacionCorporal,
-};
+pub use interocepcion::{EstadoCorporal, Organismo, SenalCorporal, SensacionCorporal};

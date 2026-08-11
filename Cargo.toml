@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "core",
+    "nexus-agent",
     "nexus-ghost-shell",
     "nexus-shell",
     "src-tauri",

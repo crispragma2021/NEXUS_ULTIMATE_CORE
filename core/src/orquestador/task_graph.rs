@@ -24,7 +24,10 @@ pub enum ToolAction {
     #[serde(rename = "execute_cmd")]
     ExecuteCmd { target: String },
     #[serde(rename = "search_code")]
-    SearchCode { target: String, pattern: Option<String> },
+    SearchCode {
+        target: String,
+        pattern: Option<String>,
+    },
     #[serde(rename = "list_dir")]
     ListDir { target: String },
     #[serde(rename = "noop")]
@@ -45,15 +48,15 @@ pub enum NodeState {
 /// Un nodo del grafo de ejecución — una tarea atómica e indivisible
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TaskNode {
-    pub id: String,                         // Ej: "step_01"
-    pub instruction: String,                // Ej: "Leer el archivo core/src/lib.rs"
-    pub tool: ToolAction,                   // Acción sugerida inicial
-    pub depends_on: Vec<String>,            // IDs de nodos de los que depende
-    pub output_schema: serde_json::Value,   // Formato estricto esperado (JSON Schema)
-    pub max_retries: u8,                    // Default: 2
-    pub priority: Priority,                 // Prioridad
-    pub state: NodeState,                   // Estado actual
-    pub error_msg: Option<String>,          // Mensaje en caso de fallo
+    pub id: String,                       // Ej: "step_01"
+    pub instruction: String,              // Ej: "Leer el archivo core/src/lib.rs"
+    pub tool: ToolAction,                 // Acción sugerida inicial
+    pub depends_on: Vec<String>,          // IDs de nodos de los que depende
+    pub output_schema: serde_json::Value, // Formato estricto esperado (JSON Schema)
+    pub max_retries: u8,                  // Default: 2
+    pub priority: Priority,               // Prioridad
+    pub state: NodeState,                 // Estado actual
+    pub error_msg: Option<String>,        // Mensaje en caso de fallo
 }
 
 /// Estado global del DAG
@@ -69,10 +72,10 @@ pub enum DAGState {
 /// El Grafo Acíclico Dirigido que contiene el plan de ejecución completo
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TaskDAG {
-    pub id: String,                         // Identificador único de ejecución
-    pub objective: String,                  // Objetivo de alto nivel del Arquitecto
-    pub nodes: HashMap<String, TaskNode>,    // Mapa id -> nodo
-    pub state: DAGState,                    // Estado global del DAG
+    pub id: String,                       // Identificador único de ejecución
+    pub objective: String,                // Objetivo de alto nivel del Arquitecto
+    pub nodes: HashMap<String, TaskNode>, // Mapa id -> nodo
+    pub state: DAGState,                  // Estado global del DAG
 }
 
 impl TaskDAG {
@@ -185,7 +188,10 @@ impl TaskDAG {
 
             if let Some(node) = self.nodes.get(&id) {
                 // No tocar nodos ejecutándose, completados o fallidos
-                if node.state == NodeState::Running || node.state == NodeState::Completed || node.state == NodeState::Failed {
+                if node.state == NodeState::Running
+                    || node.state == NodeState::Completed
+                    || node.state == NodeState::Failed
+                {
                     continue;
                 }
 
@@ -255,11 +261,13 @@ mod tests {
     #[test]
     fn test_dag_creation_and_dependencies() {
         let mut dag = TaskDAG::new("test_dag_1".to_string(), "Refactorizar código".to_string());
-        
+
         let step1 = TaskNode {
             id: "step_1".to_string(),
             instruction: "Leer archivo de configuracion".to_string(),
-            tool: ToolAction::ReadFile { target: "config.json".to_string() },
+            tool: ToolAction::ReadFile {
+                target: "config.json".to_string(),
+            },
             depends_on: vec![],
             output_schema: serde_json::Value::Null,
             max_retries: 2,
@@ -271,9 +279,9 @@ mod tests {
         let step2 = TaskNode {
             id: "step_2".to_string(),
             instruction: "Escribir nueva configuracion".to_string(),
-            tool: ToolAction::WriteFile { 
-                target: "config_new.json".to_string(), 
-                payload: "{}".to_string() 
+            tool: ToolAction::WriteFile {
+                target: "config_new.json".to_string(),
+                payload: "{}".to_string(),
             },
             depends_on: vec![],
             output_schema: serde_json::Value::Null,
@@ -311,7 +319,7 @@ mod tests {
     #[test]
     fn test_dag_cycle_prevention() {
         let mut dag = TaskDAG::new("cycle_test".to_string(), "Evitar bucles".to_string());
-        
+
         let a = TaskNode {
             id: "A".to_string(),
             instruction: "Task A".to_string(),

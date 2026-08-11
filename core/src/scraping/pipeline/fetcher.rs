@@ -143,7 +143,9 @@ impl Fetcher {
     /// Verifica robots.txt: descarga/parsea y decide si la URL está permitida.
     async fn check_robots(&self, task: &TaskSchema) -> Result<()> {
         let url = Url::parse(&task.url)?;
-        let domain = url.host_str().ok_or_else(|| anyhow!("sin host: {}", task.url))?;
+        let domain = url
+            .host_str()
+            .ok_or_else(|| anyhow!("sin host: {}", task.url))?;
         let scheme = url.scheme();
         let base = format!("{scheme}://{domain}");
 
@@ -283,11 +285,17 @@ mod tests {
     #[test]
     fn robots_vacio_permite_todo() {
         assert!(robots_allows("", "https://example.com/"));
-        assert!(robots_allows("User-agent: *\nDisallow:\n", "https://example.com/"));
+        assert!(robots_allows(
+            "User-agent: *\nDisallow:\n",
+            "https://example.com/"
+        ));
     }
 
     #[test]
     fn domain_extrae_host() {
-        assert_eq!(domain_of("https://example.com/path?x=1").unwrap(), "example.com");
+        assert_eq!(
+            domain_of("https://example.com/path?x=1").unwrap(),
+            "example.com"
+        );
     }
 }

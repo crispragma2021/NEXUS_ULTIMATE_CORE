@@ -24,10 +24,9 @@ use nexus_ultimate_core::cerebro::agentes::catalogo_agentes;
 use nexus_ultimate_core::cerebro::orquestador::Orquestador;
 use nexus_ultimate_core::cerebro::workflows::ComandoSlash;
 use nexus_ultimate_core::comms::intent_router::IntentRouter;
-use nexus_ultimate_core::efectores::model_router::{IntencionModelo, ModelRouter};
-use nexus_ultimate_core::valores::tribunal_dual::ModoTribunal;
 use nexus_ultimate_core::conocimiento::skills::catalogo_skills;
 use nexus_ultimate_core::efectores::agente_ejecutor::{AgenteEjecutor, ToolCall};
+use nexus_ultimate_core::efectores::model_router::{IntencionModelo, ModelRouter};
 use nexus_ultimate_core::efectores::nexus_claw_pro::NexusClawPro;
 use nexus_ultimate_core::infra::policy::ResourceGovernor;
 use nexus_ultimate_core::memoria::memoria_semantica::MemoriaSemantica;
@@ -35,10 +34,11 @@ use nexus_ultimate_core::procesos::fusion_selectiva::{Capacidad, FusionSelectiva
 use nexus_ultimate_core::procesos::resource_governor::ResourceGovernorDaemon;
 use nexus_ultimate_core::procesos::sistema_inmune::SistemaInmune;
 use nexus_ultimate_core::sentidos::ocr_vision::{
-    analizar_imagen, analizar_video, detectar_motores_externos, listar_modelos_vision, MotorVision,
-    ModoVision, MODELO_VISION_LOCAL_DEFAULT,
+    analizar_imagen, analizar_video, detectar_motores_externos, listar_modelos_vision, ModoVision,
+    MotorVision, MODELO_VISION_LOCAL_DEFAULT,
 };
 use nexus_ultimate_core::sentidos::propiocepcion::Propiocepcion;
+use nexus_ultimate_core::valores::tribunal_dual::ModoTribunal;
 use rusqlite::Connection;
 use serde_json::{json, Value};
 use std::io::{self, BufRead, Write};
@@ -1707,8 +1707,7 @@ async fn handle_nexus_cuerpo(params: &Value) -> Value {
     let cuerpo = ref_cerebro.organismo.analizar(segundos_inactivo);
 
     let resumen = if cuerpo.senales.is_empty() {
-        "✅ **SACIDAD** — el cuerpo está en óptimo estado. Sin señales que reportar."
-            .to_string()
+        "✅ **SACIDAD** — el cuerpo está en óptimo estado. Sin señales que reportar.".to_string()
     } else {
         let mut lineas = String::from("🫀 **ESTADO CORPORAL ACTIVO:**\n");
         for s in &cuerpo.senales {
@@ -1736,7 +1735,11 @@ async fn handle_nexus_cuerpo(params: &Value) -> Value {
 /// (local/nube), el modo usado y si se decidió en modo offline.
 async fn handle_nexus_tribunal(params: &Value) -> Value {
     let peticion = params["peticion"].as_str().unwrap_or("").trim();
-    let modo_str = params["modo"].as_str().unwrap_or("auto").trim().to_lowercase();
+    let modo_str = params["modo"]
+        .as_str()
+        .unwrap_or("auto")
+        .trim()
+        .to_lowercase();
     let modo = if modo_str == "local" {
         ModoTribunal::Local
     } else {

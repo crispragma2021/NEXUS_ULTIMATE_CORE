@@ -35,7 +35,10 @@ impl GateAst {
     ///
     /// `archivos` es un mapa de `ruta_absoluta → contenido`. Devuelve un
     /// `GateResult` con los errores encontrados y la duración de la pasada.
-    pub fn validar_local(&self, archivos: &std::collections::BTreeMap<String, String>) -> ResultadoGateAst {
+    pub fn validar_local(
+        &self,
+        archivos: &std::collections::BTreeMap<String, String>,
+    ) -> ResultadoGateAst {
         let inicio = Instant::now();
         let mut errores: Vec<ErrorGate> = Vec::new();
         let mut archivos_ok = 0usize;
@@ -91,7 +94,10 @@ impl GateAst {
     ///
     /// Si `node` no está disponible o el parseo falla de forma global, devuelve
     /// un resultado `passed=false` con el error capturado (nunca paniquea).
-    pub async fn validar_ast(&self, archivos: &std::collections::BTreeMap<String, String>) -> ResultadoGateAst {
+    pub async fn validar_ast(
+        &self,
+        archivos: &std::collections::BTreeMap<String, String>,
+    ) -> ResultadoGateAst {
         // Ruta determinista sin red: los tests no dependen de Node/SWC.
         // Producción puede sobreescribir esta lógica inyectando el motor SWC.
         self.validar_local(archivos)
@@ -321,9 +327,8 @@ fn validar_componentes(ruta: &str, contenido: &str) -> Vec<ErrorGate> {
     let es_tsx = ruta.to_lowercase().ends_with(".tsx");
 
     // Para archivos .tsx en `components/ui` o `App.tsx` exigimos un export.
-    let es_componente_raiz = ruta.contains("App.tsx")
-        || ruta.contains("components/")
-        || ruta.contains("pages/");
+    let es_componente_raiz =
+        ruta.contains("App.tsx") || ruta.contains("components/") || ruta.contains("pages/");
 
     if es_tsx && es_componente_raiz {
         // Acepta componentes exportados como función, const o lista nombrada
@@ -391,7 +396,11 @@ mod tests {
         let archivos = mapa_un_archivo("src/App.tsx", codigo);
         let res = gate.validar_local(&archivos);
         assert!(!res.result.passed);
-        assert!(res.result.errors.iter().any(|e| e.message.contains("sin cierre")));
+        assert!(res
+            .result
+            .errors
+            .iter()
+            .any(|e| e.message.contains("sin cierre")));
     }
 
     #[test]
@@ -401,7 +410,11 @@ mod tests {
         let archivos = mapa_un_archivo("src/App.tsx", codigo);
         let res = gate.validar_local(&archivos);
         assert!(!res.result.passed);
-        assert!(res.result.errors.iter().any(|e| e.message.contains("sin apertura")));
+        assert!(res
+            .result
+            .errors
+            .iter()
+            .any(|e| e.message.contains("sin apertura")));
     }
 
     #[test]
@@ -411,7 +424,11 @@ mod tests {
         let archivos = mapa_un_archivo("src/App.tsx", codigo);
         let res = gate.validar_local(&archivos);
         assert!(!res.result.passed);
-        assert!(res.result.errors.iter().any(|e| e.message.contains("Cadena sin cerrar")));
+        assert!(res
+            .result
+            .errors
+            .iter()
+            .any(|e| e.message.contains("Cadena sin cerrar")));
     }
 
     #[test]
@@ -430,7 +447,11 @@ mod tests {
         let archivos = mapa_un_archivo("src/App.tsx", codigo);
         let res = gate.validar_local(&archivos);
         assert!(!res.result.passed);
-        assert!(res.result.errors.iter().any(|e| e.message.contains("exportar")));
+        assert!(res
+            .result
+            .errors
+            .iter()
+            .any(|e| e.message.contains("exportar")));
     }
 
     #[test]
@@ -440,13 +461,20 @@ mod tests {
         let archivos = mapa_un_archivo("src/App.tsx", &contenido);
         let res = gate.validar_local(&archivos);
         assert!(!res.result.passed);
-        assert!(res.result.errors.iter().any(|e| e.message.contains("límite")));
+        assert!(res
+            .result
+            .errors
+            .iter()
+            .any(|e| e.message.contains("límite")));
     }
 
     #[test]
     fn test_resultado_usa_schema_y_gate_kind() {
         let gate = GateAst;
-        let archivos = mapa_un_archivo("src/App.tsx", "export default function App() { return null; }");
+        let archivos = mapa_un_archivo(
+            "src/App.tsx",
+            "export default function App() { return null; }",
+        );
         let res = gate.validar_local(&archivos);
         assert_eq!(res.result.schema, V0_SCHEMA_GATE);
         assert_eq!(res.result.gate, GateKind::Ast);
@@ -465,6 +493,10 @@ mod tests {
         let res = gate.validar_local(&archivos);
         // El import de Button no se usa: warning, pero el archivo pasa (passed
         // solo se bloquea con severity Error).
-        assert!(res.result.errors.iter().any(|e| e.message.contains("Button")));
+        assert!(res
+            .result
+            .errors
+            .iter()
+            .any(|e| e.message.contains("Button")));
     }
 }

@@ -127,12 +127,8 @@ async fn main() -> Result<()> {
         let intention = encoder.encode(&intention_input)?;
 
         // c. Ensamblar el prompt (system + user + logit_bias).
-        let prompt = assembler.assemble(
-            &input,
-            &context,
-            Some(&limbico.estado),
-            Some(&intention),
-        )?;
+        let prompt =
+            assembler.assemble(&input, &context, Some(&limbico.estado), Some(&intention))?;
 
         // d. Parámetros de generación modulados por el límbico.
         let params = limbico.estado.params_generacion();
@@ -157,7 +153,10 @@ async fn main() -> Result<()> {
             Err(e) => {
                 println!();
                 eprintln!("⚠️ Error al comunicarse con Ollama: {e}");
-                eprintln!("   ¿Está corriendo `ollama serve` y existe el modelo {}?", cli.model);
+                eprintln!(
+                    "   ¿Está corriendo `ollama serve` y existe el modelo {}?",
+                    cli.model
+                );
                 limbico.procesar_evento(false, 0.6, false);
                 continue;
             }
@@ -168,6 +167,17 @@ async fn main() -> Result<()> {
         // f. Persistir la interacción en la memoria episódica.
         if let Err(e) = loader.guardar_interaccion(&cli.session, "user", &input, &respuesta) {
             eprintln!("⚠️ No se pudo guardar la interacción: {e}");
+        }
+
+        // f2. 🧠 PIRÁMIDE (porte TencentDB Agent Memory): registrar L0 + extraer L1.
+        loader.registrar_conversacion_piramidal("user", &input, &respuesta);
+
+        // f3. ⚡ OFFLOAD (porte TencentDB Agent Memory): simbolizar logs largos.
+        if respuesta.len() > 600 {
+            loader.procesar_log_para_offload(
+                &format!("Respuesta {}", input.chars().take(24).collect::<String>()),
+                &respuesta,
+            );
         }
 
         // g. El límbico aprende del texto del Arquitecto.
@@ -245,10 +255,7 @@ async fn ollama_chat_stream(
                 continue;
             }
             if let Ok(v) = serde_json::from_str::<serde_json::Value>(line) {
-                if let Some(content) = v
-                    .pointer("/message/content")
-                    .and_then(|c| c.as_str())
-                {
+                if let Some(content) = v.pointer("/message/content").and_then(|c| c.as_str()) {
                     full.push_str(content);
                     print!("{content}");
                     stdout().flush().ok();

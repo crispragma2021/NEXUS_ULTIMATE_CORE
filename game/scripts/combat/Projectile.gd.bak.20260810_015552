@@ -1,0 +1,105 @@
+#!/usr/bin/env -S godot --script
+# Projectile — Proyectil para ataques a distancia
+
+class_name Projectile
+extends RigidBody3D
+
+# Configuración
+@export var damage: float = 10.0
+@export var speed: float = 30.0
+@export var lifetime: float = 5.0
+@export var weapon_range: int = 1  # 0=SHORT, 1=MEDIUM, 2=LONG
+@export var trail_color: Color = Color(1.0, 1.0, 0.5)
+
+# Estado
+var attacker: Node = null
+var _timer: float = 0.0
+var _has_hit: bool = false
+
+func _ready() -> void:
+	# Configurar como kinematic para control manual
+	rigid_body_mode = RigidBody3D.MODE_KINEMATIC
+	
+	# Desactivar gravedad
+	gravity_scale = 0.0
+	
+	# Capa de colisión
+	collision_layer = 8  # proyectiles
+	collision_mask = 1 | 4  # terreno + entidades
+	
+	# Trail visual
+	_create_trail()
+	
+	# Timer de vida
+	_timer = lifetime
+
+func _create_trail() -> void:
+	var trail = LineTrail3D.new()
+	trail.texture_mode = LineTrail3D.TEXTURE_MODE_TILE
+	trail.min_length = 0.1
+	trail.max_length = 20.0
+	trail.lifetime = 0.3
+	add_child(trail)
+
+func _physics_process(delta: float) -> void:
+	if _has_hit:
+		return
+	
+	_timer -= delta
+	if _timer <= 0.0:
+		queue_free()
+		return
+	
+	# Mover hacia adelante
+	var motion = -global_transform.basis.z * speed * delta
+	var collision = move_and_collide(motion)
+	
+	if collision:
+		_on_hit(collision.get_collider(), collision.get_position())
+
+func _on_hit(target: Node, position: Vector3) -> void:
+	if _has_hit:
+		return
+	
+	# No dañar al atacante
+	if target == attacker:
+		return
+	
+	_has_hit = true
+	
+	# Aplicar daño via CombatManager
+	var combat_mgr = get_node_or_null("/root/NexusCombatManager")
+	if combat_mgr != null and target is Node3D:
+		combat_mgr.deal_damage(attacker, target, damage, weapon_range)
+	
+	# Efecto visual de impacto
+	_create_impact_effect(position)
+	
+	queue_free()
+
+func _create_impact_effect(pos: Vector3) -> void:
+	var particles = GpuParticles3D.new()
+	particles.emitting = true
+	particles.one_shot = true
+	particles.amount = 10
+	particles.lifetime = 0.5
+	particles.explosiveness = 1.0
+	particles.spread = 45.0
+	particles.initial_velocity = 5.0
+	particles.global_position = pos
+	get_tree().root.add_child(particles)
+	
+	# Auto-limpiar
+	var tween = create_tween()
+	tween.tween_callback(particles.queue_free.bind()).set_delay(1.0)
+
+# Método estático para instanciar y disparar
+static func shoot(from: Node3D, direction: Vector3, damage: float, attacker: Node, weapon_range: int = 1) -> void:
+	var scene = load("res://scenes/projectiles/projectile.tscn")
+	var proj: Projectile = scene.instantiate()
+	proj.global_position = from.global_position
+	proj.look_at(from.global_position + direction, Vector3.UP)
+	proj.damage = damage
+	proj.attacker = attacker
+	proj.weapon_range = weapon_range
+	from.get_tree().root.add_child(proj)

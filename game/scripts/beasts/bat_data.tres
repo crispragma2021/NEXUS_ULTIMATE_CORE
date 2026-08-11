@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="BeastData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/beasts/BeastData.gd" id="1_beastdata"]
+
+[resource]
+script = ExtResource("1_beastdata")
+species_name = "Murciélago"
+level_min = 2
+level_max = 6
+base_health = 30.0
+base_damage = 8.0
+attack_range = 1.5
+move_speed = 6.0
+detection_radius = 10.0
+chase_radius = 50.0
+flee_health_threshold = 0.3
+color = Color(0.15, 0.15, 0.2, 1)
+xp_reward = 1
+biomes = ["any_night"]
+attack_type = 0
+attack_cooldown = 1.0

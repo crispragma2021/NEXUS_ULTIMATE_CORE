@@ -13,8 +13,7 @@ async fn main() {
     let cerebro = CerebroNativo::new();
 
     // Validar el modelo soberano Qwen3-4B Q4_K_M (repo Qwen/Qwen3-4B-GGUF)
-    let ruta =
-        "/home/soberano/NEXUS_ULTIMATE_CORE/brain/swarm/models/Qwen3-4B-Q4_K_M.gguf";
+    let ruta = "/home/soberano/NEXUS_ULTIMATE_CORE/brain/swarm/models/Qwen3-4B-Q4_K_M.gguf";
     println!("📥 [TEST] Asimilando modelo GGUF (Qwen3-4B)...");
     match cerebro.asimilar_pesos_con_seguridad(ruta).await {
         Ok(()) => println!("✅ [TEST] Modelo asimilado correctamente."),

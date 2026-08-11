@@ -8,6 +8,10 @@ default-run = "nexus-ui"
 name = "nexus-ui"
 path = "src/main.rs"
 
+[[bin]]
+name = "godot-controller"
+path = "src/godot_controller_cli.rs"
+
 [lib]
 name = "nexus_ui"
 crate-type = ["staticlib", "cdylib", "rlib"]

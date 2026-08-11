@@ -79,7 +79,8 @@ impl Metrics {
         self.tasks_timeout.fetch_add(1, Ordering::Relaxed);
     }
     pub fn record_task_provider_exhausted(&self) {
-        self.tasks_provider_exhausted.fetch_add(1, Ordering::Relaxed);
+        self.tasks_provider_exhausted
+            .fetch_add(1, Ordering::Relaxed);
     }
 
     /// Registra el estado de una tarea genérico por string.

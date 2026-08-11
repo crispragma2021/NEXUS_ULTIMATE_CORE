@@ -46,7 +46,10 @@ pub async fn map_reduce(
              Respeta el formato JSON. Si no hay datos relevantes, usa listas vacías.\n\n\
              Texto:\n{chunk}"
         );
-        let extracted = match ollama.extract_json(&prompt, Some(EXTRACTION_SYSTEM_PROMPT)).await {
+        let extracted = match ollama
+            .extract_json(&prompt, Some(EXTRACTION_SYSTEM_PROMPT))
+            .await
+        {
             Ok(v) => v,
             Err(e) => {
                 tracing::warn!("⚠️ [MAP-REDUCE] chunk {} falló: {} — se anota vacío", i, e);

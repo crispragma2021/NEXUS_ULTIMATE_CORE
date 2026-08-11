@@ -73,7 +73,10 @@ impl TelegramBridge {
                 let updates = match bot.get_updates().offset(offset).timeout(50).send().await {
                     Ok(updates) => updates,
                     Err(e) => {
-                        debug!("🔄 [TELEGRAM] get_updates timeout normal (long-poll): {}", e);
+                        debug!(
+                            "🔄 [TELEGRAM] get_updates timeout normal (long-poll): {}",
+                            e
+                        );
                         tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
                         continue;
                     }

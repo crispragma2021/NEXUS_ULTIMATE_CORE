@@ -225,7 +225,10 @@ impl Organismo {
         if swap_used_pct > self.umbral_swap_dolor {
             cuerpo.senales.push(SenalCorporal::nueva(
                 SensacionCorporal::Dolor,
-                format!("SWAP al {:.0}% — el sistema está usando disco como memoria", swap_used_pct),
+                format!(
+                    "SWAP al {:.0}% — el sistema está usando disco como memoria",
+                    swap_used_pct
+                ),
                 "Reparación: liberar procesos pesados o reiniciar servicios que acumulan memoria.",
             ));
         }
@@ -264,11 +267,17 @@ impl Organismo {
         }
         if temp_c >= self.umbral_temp_critico {
             critico = true;
-            causa = format!("CPU a {:.0}°C (umbral crítico {:.0}°C) — riesgo térmico grave", temp_c, self.umbral_temp_critico);
+            causa = format!(
+                "CPU a {:.0}°C (umbral crítico {:.0}°C) — riesgo térmico grave",
+                temp_c, self.umbral_temp_critico
+            );
         }
         if swap_used_pct >= self.umbral_swap_critico {
             critico = true;
-            causa = format!("SWAP al {:.0}% (umbral crítico {:.0}%) — el sistema se está ahogando en disco", swap_used_pct, self.umbral_swap_critico);
+            causa = format!(
+                "SWAP al {:.0}% (umbral crítico {:.0}%) — el sistema se está ahogando en disco",
+                swap_used_pct, self.umbral_swap_critico
+            );
         }
         cuerpo.critico = critico;
         cuerpo.causa_critica = causa;
@@ -328,7 +337,10 @@ fn leer_memoria() -> (f32, f32) {
         for linea in contenido.lines() {
             let mut partes = linea.split_whitespace();
             let clave = partes.next().unwrap_or("");
-            let valor = partes.next().and_then(|v| v.parse::<u64>().ok()).unwrap_or(0);
+            let valor = partes
+                .next()
+                .and_then(|v| v.parse::<u64>().ok())
+                .unwrap_or(0);
             match clave {
                 "MemTotal:" => total_ram = valor,
                 "MemAvailable:" => free_ram = valor,

@@ -32,8 +32,7 @@ async fn main() -> Result<()> {
     let subscriber = FmtSubscriber::builder()
         .with_max_level(Level::INFO)
         .finish();
-    tracing::subscriber::set_global_default(subscriber)
-        .context("configurando tracing")?;
+    tracing::subscriber::set_global_default(subscriber).context("configurando tracing")?;
 
     // ── Argumentos ──────────────────────────────────────────
     let mut db_path = PathBuf::from("scraper.db");
@@ -48,10 +47,7 @@ async fn main() -> Result<()> {
                 db_path = PathBuf::from(args.next().unwrap_or_else(|| "scraper.db".into()));
             }
             "--poll-ms" => {
-                poll_ms = args
-                    .next()
-                    .and_then(|v| v.parse().ok())
-                    .unwrap_or(5000);
+                poll_ms = args.next().and_then(|v| v.parse().ok()).unwrap_or(5000);
             }
             "--ollama-model" => {
                 ollama_model = args.next();
@@ -98,7 +94,10 @@ async fn main() -> Result<()> {
 
     // Cloud (tier-2) opcional.
     let cloud = if !openrouter_keys.is_empty() {
-        info!("☁️ [MAIN] CloudAdapter con {} keys OpenRouter", openrouter_keys.len());
+        info!(
+            "☁️ [MAIN] CloudAdapter con {} keys OpenRouter",
+            openrouter_keys.len()
+        );
         let adapter = CloudAdapter::new(vec![Box::new(
             nexus_ultimate_core::scraping::pipeline::cloud_adapter::OpenRouterProvider::new(
                 openrouter_keys,

@@ -35,10 +35,10 @@ pub mod session_store;
 pub mod telemetry;
 
 pub use contracts::{
-    ArchivoGenerado, DependenciasPlan, DesignTokens, DiffEntry, ErrorGate, GateResult,
-    GeneracionUI, GateKind, MetricaError, MetricasSession, NodoComponente, PlanComponentes,
-    RoutePlan, SessionState, SeveridadError, StateShape, StateVar, V0_SCHEMA_GENERATE,
-    V0_SCHEMA_GATE, V0_SCHEMA_PLAN, V0_SCHEMA_SESSION,
+    ArchivoGenerado, DependenciasPlan, DesignTokens, DiffEntry, ErrorGate, GateKind, GateResult,
+    GeneracionUI, MetricaError, MetricasSession, NodoComponente, PlanComponentes, RoutePlan,
+    SessionState, SeveridadError, StateShape, StateVar, V0_SCHEMA_GATE, V0_SCHEMA_GENERATE,
+    V0_SCHEMA_PLAN, V0_SCHEMA_SESSION,
 };
 pub use debugger_tier1::{DebuggerTier1, ResultadoDebugTier1};
 pub use debugger_tier2::{DebuggerTier2, ResultadoDebugTier2};
@@ -50,13 +50,13 @@ pub use gate_ast::{GateAst, ResultadoGateAst};
 pub use gate_render::{GateRender, ResultadoGateRender};
 pub use gate_visual::{GateVisual, ResultadoGateVisual};
 pub use generator::Generador;
-pub use pipeline::{PipelineV0, ResultadoPipeline};
-pub use planner::{IntencionUI, Planificador, PlanLocal};
-pub use polish::{
-    ErrorDataset, ErrorFrecuente, HallazgoToken, PayloadCodeSandbox, PayloadStackBlitz,
-    ResultadoTokens, exportar_codesandbox, exportar_stackblitz, validar_tokens,
-};
 pub use memoria_contexto::{FragmentoContexto, MemoriaContexto, ResultadoRecuperacion};
+pub use pipeline::{PipelineV0, ResultadoPipeline};
+pub use planner::{IntencionUI, PlanLocal, Planificador};
+pub use polish::{
+    exportar_codesandbox, exportar_stackblitz, validar_tokens, ErrorDataset, ErrorFrecuente,
+    HallazgoToken, PayloadCodeSandbox, PayloadStackBlitz, ResultadoTokens,
+};
 pub use rag_shadcn::{CatalogoShadcn, ComponenteShadcn};
 pub use razonador_qwen::{PlanRazonado, RazonadorQwen, ResultadoRazonamiento};
 pub use refuerzo_web::{ReferenciaWeb, RefuerzoWeb, ResultadoRefuerzo};

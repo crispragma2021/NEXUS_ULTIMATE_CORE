@@ -77,10 +77,7 @@ impl SLMDispatcher {
         }
 
         // Ejecutar llamada HTTP
-        let response = self.client.post(&endpoint)
-            .json(&payload)
-            .send()
-            .await?;
+        let response = self.client.post(&endpoint).json(&payload).send().await?;
 
         if !response.status().is_success() {
             let status = response.status();

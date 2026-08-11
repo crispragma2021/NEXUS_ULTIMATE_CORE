@@ -43,29 +43,47 @@ impl Validator {
         // 3. Validar campo "action"
         let action = match parsed.get("action").and_then(|a| a.as_str()) {
             Some(act) => act.to_string(),
-            None => return ValidationResult::InvalidAction("Falta el campo obligatorio 'action'".into()),
+            None => {
+                return ValidationResult::InvalidAction(
+                    "Falta el campo obligatorio 'action'".into(),
+                )
+            }
         };
 
         if !self.allowed_actions.contains(&action) {
-            return ValidationResult::InvalidAction(format!("Acción '{}' no se encuentra en la whitelist", action));
+            return ValidationResult::InvalidAction(format!(
+                "Acción '{}' no se encuentra en la whitelist",
+                action
+            ));
         }
 
         // 4. Validar campo "params"
         let params = match parsed.get("params") {
             Some(p) if p.is_object() => p,
-            _ => return ValidationResult::InvalidParams("Falta el objeto obligatorio 'params'".into()),
+            _ => {
+                return ValidationResult::InvalidParams(
+                    "Falta el objeto obligatorio 'params'".into(),
+                )
+            }
         };
 
         // 5. Validar "target" (el destino de la acción)
         let target = match params.get("target").and_then(|t| t.as_str()) {
             Some(t) => t,
-            None => return ValidationResult::InvalidParams("Falta el parámetro 'target' dentro de params".into()),
+            None => {
+                return ValidationResult::InvalidParams(
+                    "Falta el parámetro 'target' dentro de params".into(),
+                )
+            }
         };
 
         // 6. Validar seguridad de rutas para acciones que accedan al Filesystem
         if action == "read_file" || action == "write_file" || action == "list_dir" {
             if !self.is_path_safe(target) {
-                return ValidationResult::InvalidPath(format!("Acceso denegado: El target '{}' está fuera del workspace", target));
+                return ValidationResult::InvalidPath(format!(
+                    "Acceso denegado: El target '{}' está fuera del workspace",
+                    target
+                ));
             }
         }
 

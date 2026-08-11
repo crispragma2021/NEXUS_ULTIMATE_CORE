@@ -356,7 +356,7 @@ fn indexar_markdown(
         anyhow::bail!("{ruta} no encontrado");
     }
     let content = fs::read_to_string(&path).with_context(|| format!("Leyendo {ruta}"))?;
-    
+
     // Calcular hash SHA256 del archivo para asegurar integridad (Evolución Cognitiva)
     let mut hasher = Sha256::new();
     hasher.update(content.as_bytes());

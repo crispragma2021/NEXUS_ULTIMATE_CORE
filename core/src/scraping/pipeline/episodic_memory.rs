@@ -7,8 +7,8 @@
 //! - Recuperación semántica: embedding de la pregunta → top-k por coseno.
 //! - Consolidación: sumariza episodios viejos en "memorias núcleo".
 
-use crate::scraping::pipeline::embedding::EmbeddingEngine;
 use crate::scraping::pipeline::embedding::cosine_similarity;
+use crate::scraping::pipeline::embedding::EmbeddingEngine;
 use anyhow::{Context, Result};
 use rusqlite::Connection;
 use serde_json::json;

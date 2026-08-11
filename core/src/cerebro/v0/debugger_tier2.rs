@@ -77,7 +77,10 @@ impl DebuggerTier2 {
 
             // Corrección de imports React: aplica a TODO archivo .tsx con JSX,
             // independientemente de si tiene errores de gate (regla global).
-            if ruta.ends_with(".tsx") && !corregido.contains("import React") && contiene_jsx(&corregido) {
+            if ruta.ends_with(".tsx")
+                && !corregido.contains("import React")
+                && contiene_jsx(&corregido)
+            {
                 let mut nuevo = String::from("import React from 'react';\n");
                 nuevo.push_str(&corregido);
                 corregido = nuevo;
@@ -170,9 +173,15 @@ fn razonar_correccion_nivel2(contenido: &mut String, err: &ErrorGate) -> Option<
 
 /// Verifica si el contenido declara un fondo oscuro.
 fn tiene_fondo_oscuro(contenido: &str) -> bool {
-    ["bg-slate-900", "bg-zinc-900", "bg-black", "bg-gray-900", "bg-neutral-900"]
-        .iter()
-        .any(|f| contenido.contains(f))
+    [
+        "bg-slate-900",
+        "bg-zinc-900",
+        "bg-black",
+        "bg-gray-900",
+        "bg-neutral-900",
+    ]
+    .iter()
+    .any(|f| contenido.contains(f))
 }
 
 // ============================================================================
@@ -187,7 +196,11 @@ mod tests {
     fn gate_result(errors: Vec<ErrorGate>, tipo: &str) -> GateResult {
         GateResult {
             schema: V0_SCHEMA_GATE.to_string(),
-            gate: if tipo == "ast" { GateKind::Ast } else { GateKind::Visual },
+            gate: if tipo == "ast" {
+                GateKind::Ast
+            } else {
+                GateKind::Visual
+            },
             passed: errors.is_empty(),
             errors,
             runtime_errors: vec![],
@@ -230,7 +243,10 @@ mod tests {
         let d = DebuggerTier2;
         let codigo = "function App() {\n  return <div>Hola</div>;\n}";
         let archivos = mapa(&[("src/App.tsx", codigo)]);
-        let gates = vec![gate_result(vec![err("missing_export", "src/App.tsx")], "ast")];
+        let gates = vec![gate_result(
+            vec![err("missing_export", "src/App.tsx")],
+            "ast",
+        )];
         let r = d.razonar_local(&archivos, &gates);
         assert!(r.hay_correcciones);
         let corregido = r.archivos_corregidos.get("src/App.tsx").unwrap();
@@ -254,7 +270,10 @@ mod tests {
         let d = DebuggerTier2;
         let codigo = "export default function App() {\n  return <div className=\"max-w-7xl\"><button className=\"text-white\">X</button></div>;\n}";
         let archivos = mapa(&[("src/App.tsx", codigo)]);
-        let gates = vec![gate_result(vec![err("low_contrast", "src/App.tsx")], "visual")];
+        let gates = vec![gate_result(
+            vec![err("low_contrast", "src/App.tsx")],
+            "visual",
+        )];
         let r = d.razonar_local(&archivos, &gates);
         assert!(r.hay_correcciones);
         let corregido = r.archivos_corregidos.get("src/App.tsx").unwrap();
@@ -266,7 +285,10 @@ mod tests {
         let d = DebuggerTier2;
         let codigo = "import { X } from './inexistente';\nexport const a = 1;";
         let archivos = mapa(&[("src/App.tsx", codigo)]);
-        let gates = vec![gate_result(vec![err("import_irresoluble", "src/App.tsx")], "render")];
+        let gates = vec![gate_result(
+            vec![err("import_irresoluble", "src/App.tsx")],
+            "render",
+        )];
         let r = d.razonar_local(&archivos, &gates);
         // No puede corregirse localmente → queda como error residual.
         assert_eq!(r.errores_residuales.len(), 1);

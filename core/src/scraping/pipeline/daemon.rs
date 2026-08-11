@@ -88,10 +88,16 @@ impl Daemon {
 
     /// Inicia el bucle principal. Devuelve tras recibir señal de parada.
     pub async fn run(&self) {
-        tracing::info!("🚀 [DAEMON] iniciando loop (poll={}ms)", self.config.poll_interval_ms);
+        tracing::info!(
+            "🚀 [DAEMON] iniciando loop (poll={}ms)",
+            self.config.poll_interval_ms
+        );
 
         loop {
-            if self.stop_requested.load(std::sync::atomic::Ordering::SeqCst) {
+            if self
+                .stop_requested
+                .load(std::sync::atomic::Ordering::SeqCst)
+            {
                 break;
             }
 
@@ -111,7 +117,10 @@ impl Daemon {
             }
 
             for task_id in pending {
-                if self.stop_requested.load(std::sync::atomic::Ordering::SeqCst) {
+                if self
+                    .stop_requested
+                    .load(std::sync::atomic::Ordering::SeqCst)
+                {
                     break;
                 }
                 match self.process_task(&task_id).await {
@@ -127,7 +136,8 @@ impl Daemon {
     /// Procesa una tarea individual con rate limiting por dominio.
     async fn process_task(&self, task_id: &str) -> Result<()> {
         // Recuperar la tarea de la DB.
-        let Some((id, url, strategy, _selectors, _output_schema)) = self.db.get_task(task_id)? else {
+        let Some((id, url, strategy, _selectors, _output_schema)) = self.db.get_task(task_id)?
+        else {
             tracing::warn!("[DAEMON] tarea {task_id} no encontrada");
             return Ok(());
         };

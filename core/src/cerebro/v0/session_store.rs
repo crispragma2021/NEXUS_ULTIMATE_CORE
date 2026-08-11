@@ -126,12 +126,7 @@ impl SessionStore {
         conn.execute(
             "INSERT OR REPLACE INTO v0_sessions (session_id, state_json, created_at, updated_at)
              VALUES (?1, ?2, ?3, ?4)",
-            params![
-                state.session_id,
-                json,
-                state.created_at,
-                state.updated_at
-            ],
+            params![state.session_id, json, state.created_at, state.updated_at],
         )?;
         Ok(())
     }
@@ -152,8 +147,8 @@ impl SessionStore {
     /// Lista los IDs de todas las sesiones (ordenadas por actualización desc).
     pub fn listar_sesiones(&self) -> Result<Vec<String>> {
         let conn = self.conn.lock().map_err(|_| error_lock("lock listar"))?;
-        let mut stmt = conn
-            .prepare("SELECT session_id FROM v0_sessions ORDER BY updated_at DESC")?;
+        let mut stmt =
+            conn.prepare("SELECT session_id FROM v0_sessions ORDER BY updated_at DESC")?;
         let ids = stmt
             .query_map([], |r| r.get::<_, String>(0))?
             .collect::<rusqlite::Result<Vec<_>>>()?;
@@ -272,7 +267,9 @@ mod tests {
     fn test_actualizar_plan_y_codigo() {
         let store = store_tmp();
         let s = store.crear_sesion().unwrap();
-        store.actualizar_plan(&s.session_id, plan_ejemplo()).unwrap();
+        store
+            .actualizar_plan(&s.session_id, plan_ejemplo())
+            .unwrap();
         store
             .actualizar_codigo(&s.session_id, codigo_ejemplo())
             .unwrap();
@@ -339,7 +336,9 @@ mod tests {
         {
             let store = SessionStore::new(Some(db.clone())).unwrap();
             let s = store.crear_sesion().unwrap();
-            store.actualizar_plan(&s.session_id, plan_ejemplo()).unwrap();
+            store
+                .actualizar_plan(&s.session_id, plan_ejemplo())
+                .unwrap();
         }
         // nueva instancia sobre la misma DB
         let store2 = SessionStore::new(Some(db)).unwrap();

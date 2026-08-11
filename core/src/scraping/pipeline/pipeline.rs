@@ -104,10 +104,7 @@ impl Pipeline {
             if result.status == ScrapingStatus::Success {
                 match cerebro.index_result(result).await {
                     Ok(n) if n > 0 => {
-                        tracing::info!(
-                            "🧠 [CEREBRO] indexados {n} chunks de {}",
-                            result.task_id
-                        );
+                        tracing::info!("🧠 [CEREBRO] indexados {n} chunks de {}", result.task_id);
                     }
                     Ok(_) => {}
                     Err(e) => {
@@ -176,7 +173,8 @@ impl Pipeline {
             match route(&markdown) {
                 Route::DirectToCloud => {
                     result.tier_used = Some(TierUsed::Tier2Cloud);
-                    self.infer_tier2(&task.task_id, &markdown, &mut result).await;
+                    self.infer_tier2(&task.task_id, &markdown, &mut result)
+                        .await;
                 }
                 Route::MapReduceLocal => {
                     result.tier_used = Some(TierUsed::Tier1ThenTier2);
@@ -226,7 +224,8 @@ impl Pipeline {
             match route(&markdown) {
                 Route::DirectToCloud => {
                     result.tier_used = Some(TierUsed::Tier2Cloud);
-                    self.infer_tier2(&task.task_id, &markdown, &mut result).await;
+                    self.infer_tier2(&task.task_id, &markdown, &mut result)
+                        .await;
                 }
                 Route::MapReduceLocal => {
                     result.tier_used = Some(TierUsed::Tier1ThenTier2);
@@ -292,21 +291,22 @@ impl Pipeline {
         let start = std::time::Instant::now();
         let Some(ollama) = &self.ollama else {
             result.status = ScrapingStatus::Partial;
-            result.errors.push("sin Ollama configurado; solo limpieza".into());
+            result
+                .errors
+                .push("sin Ollama configurado; solo limpieza".into());
             return;
         };
 
         // Map-Reduce local sobre el texto masivo.
-        let map_out: MapReduceOutput = match map_reduce(ollama, task_id, markdown, &Default::default())
-            .await
-        {
-            Ok(out) => out,
-            Err(e) => {
-                result.status = ScrapingStatus::Failed;
-                result.errors.push(format!("tier-1 map-reduce: {e}"));
-                return;
-            }
-        };
+        let map_out: MapReduceOutput =
+            match map_reduce(ollama, task_id, markdown, &Default::default()).await {
+                Ok(out) => out,
+                Err(e) => {
+                    result.status = ScrapingStatus::Failed;
+                    result.errors.push(format!("tier-1 map-reduce: {e}"));
+                    return;
+                }
+            };
 
         result.scratchpad_path = Some(map_out.scratchpad_path.clone());
         result.extracted_data = Some(map_out.consolidated.clone());
@@ -433,7 +433,9 @@ mod tests {
     async fn html_vacio_devuelve_partial() {
         let pipeline = small_pipeline();
         let task = test_task();
-        let result = pipeline.process_html(&task, "<html><body><script>alert(1)</script></body></html>").await;
+        let result = pipeline
+            .process_html(&task, "<html><body><script>alert(1)</script></body></html>")
+            .await;
         assert_eq!(result.status, ScrapingStatus::Partial);
     }
 

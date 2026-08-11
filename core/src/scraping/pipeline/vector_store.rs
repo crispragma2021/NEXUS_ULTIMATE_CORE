@@ -189,7 +189,11 @@ impl VectorStore {
             })
             .filter(|h| h.score > 0.0)
             .collect();
-        hits.sort_by(|a, b| b.score.partial_cmp(&a.score).unwrap_or(std::cmp::Ordering::Equal));
+        hits.sort_by(|a, b| {
+            b.score
+                .partial_cmp(&a.score)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
         hits.truncate(k);
         Ok(hits)
     }
@@ -214,7 +218,11 @@ impl VectorStore {
             })
             .filter(|h| h.score > 0.0)
             .collect();
-        hits.sort_by(|a, b| b.score.partial_cmp(&a.score).unwrap_or(std::cmp::Ordering::Equal));
+        hits.sort_by(|a, b| {
+            b.score
+                .partial_cmp(&a.score)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
         hits.truncate(k);
         Ok(hits)
     }
@@ -259,7 +267,9 @@ mod tests {
     #[test]
     fn inserta_y_cuenta_chunks() {
         let store = VectorStore::open_in_memory().unwrap();
-        store.insert("t1", "https://x", "texto", &[0.0, 1.0]).unwrap();
+        store
+            .insert("t1", "https://x", "texto", &[0.0, 1.0])
+            .unwrap();
         assert_eq!(store.count().unwrap(), 1);
     }
 
@@ -289,22 +299,44 @@ mod tests {
         let store = VectorStore::open_in_memory().unwrap();
         // Proyecto "trader" y "telegram" con vectores distintos.
         store
-            .insert_in_project("t1", "trader", "https://trader.com", "precios de acciones", &[1.0, 0.0, 0.0, 0.0])
+            .insert_in_project(
+                "t1",
+                "trader",
+                "https://trader.com",
+                "precios de acciones",
+                &[1.0, 0.0, 0.0, 0.0],
+            )
             .unwrap();
         store
-            .insert_in_project("t2", "trader", "https://trader.com/2", "margenes de trading", &[0.8, 0.2, 0.0, 0.0])
+            .insert_in_project(
+                "t2",
+                "trader",
+                "https://trader.com/2",
+                "margenes de trading",
+                &[0.8, 0.2, 0.0, 0.0],
+            )
             .unwrap();
         store
-            .insert_in_project("t3", "telegram", "https://tg.com", "notificaciones de bots", &[0.0, 0.0, 1.0, 0.0])
+            .insert_in_project(
+                "t3",
+                "telegram",
+                "https://tg.com",
+                "notificaciones de bots",
+                &[0.0, 0.0, 1.0, 0.0],
+            )
             .unwrap();
 
         // Búsqueda sobre "trader" → NO debe devolver el chunk de telegram.
-        let hits = store.search_in_project(&[1.0, 0.0, 0.0, 0.0], "trader", 10).unwrap();
+        let hits = store
+            .search_in_project(&[1.0, 0.0, 0.0, 0.0], "trader", 10)
+            .unwrap();
         assert_eq!(hits.len(), 2);
         assert!(hits.iter().all(|h| h.chunk.project_id == "trader"));
 
         // Búsqueda sobre "telegram" → solo el chunk de telegram.
-        let hits_tg = store.search_in_project(&[0.0, 0.0, 1.0, 0.0], "telegram", 10).unwrap();
+        let hits_tg = store
+            .search_in_project(&[0.0, 0.0, 1.0, 0.0], "telegram", 10)
+            .unwrap();
         assert_eq!(hits_tg.len(), 1);
         assert_eq!(hits_tg[0].chunk.task_id, "t3");
     }
@@ -313,7 +345,9 @@ mod tests {
     fn insert_original_sigue_sin_proyecto() {
         let store = VectorStore::open_in_memory().unwrap();
         // La API original `insert` usa project_id vacío (retrocompatibilidad).
-        store.insert("t1", "https://x", "texto", &[0.0, 1.0]).unwrap();
+        store
+            .insert("t1", "https://x", "texto", &[0.0, 1.0])
+            .unwrap();
         let all = store.load_all().unwrap();
         assert_eq!(all[0].project_id, "");
     }

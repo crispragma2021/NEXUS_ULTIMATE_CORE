@@ -93,9 +93,7 @@ impl CerebroNativo {
                 });
             }
             None => {
-                warn!(
-                    "⚠️ [IA-NATIVA] No se encontró modelo GGUF en disco. Motor en modo warm-up."
-                );
+                warn!("⚠️ [IA-NATIVA] No se encontró modelo GGUF en disco. Motor en modo warm-up.");
             }
         }
 
@@ -115,8 +113,7 @@ impl CerebroNativo {
 
         info!("🧠 [IA-NATIVA] Procesando consulta local para: {}", prompt);
 
-        let messages =
-            TextMessages::new().add_message(TextMessageRole::User, prompt.to_string());
+        let messages = TextMessages::new().add_message(TextMessageRole::User, prompt.to_string());
 
         let response = model
             .send_chat_request(messages)
@@ -211,7 +208,10 @@ impl Default for CerebroNativo {
 ///
 /// El directorio contenedor y el nombre de archivo se extraen de la ruta.
 /// No se requiere chat template externo: se extrae del propio GGUF.
-async fn cargar_modelo_en(model_arc: &Arc<RwLock<Option<mistralrs::Model>>>, ruta: &str) -> Result<()> {
+async fn cargar_modelo_en(
+    model_arc: &Arc<RwLock<Option<mistralrs::Model>>>,
+    ruta: &str,
+) -> Result<()> {
     let path = Path::new(ruta);
     let dir = path
         .parent()

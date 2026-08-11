@@ -52,13 +52,17 @@ impl FeedbackBus {
 
     /// Envía una tarea de despacho desde el Planificador
     pub async fn dispatch_task(&self, dispatch: TaskDispatch) -> anyhow::Result<()> {
-        self.dispatch_tx.send(dispatch).await
+        self.dispatch_tx
+            .send(dispatch)
+            .await
             .map_err(|e| anyhow::anyhow!("Fallo al enviar despacho por el FeedbackBus: {}", e))
     }
 
     /// Envía un resultado de ejecución hacia el Planificador
     pub async fn send_result(&self, result: TaskResult) -> anyhow::Result<()> {
-        self.result_tx.send(result).await
+        self.result_tx
+            .send(result)
+            .await
             .map_err(|e| anyhow::anyhow!("Fallo al enviar resultado por el FeedbackBus: {}", e))
     }
 }

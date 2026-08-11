@@ -136,13 +136,21 @@ async fn project_status(
     State(st): State<Arc<AppState>>,
     Path(id): Path<String>,
 ) -> Result<Json<ProjectDto>, StatusCode> {
-    let scope = st.scopes.build_scope(&id).map_err(|_| StatusCode::NOT_FOUND)?;
+    let scope = st
+        .scopes
+        .build_scope(&id)
+        .map_err(|_| StatusCode::NOT_FOUND)?;
     let port = st.ports.get_port(&id).map_err(|_| StatusCode::NOT_FOUND)?;
     let status = st.health.check(&id, port).status;
     Ok(Json(ProjectDto {
         id,
         name: scope.name,
-        status: if status == ServiceStatus::Up { "up" } else { "down" }.into(),
+        status: if status == ServiceStatus::Up {
+            "up"
+        } else {
+            "down"
+        }
+        .into(),
         port: Some(port),
     }))
 }
@@ -161,7 +169,10 @@ async fn resolve_message(
 ) -> Json<ResolveMsgResp> {
     let Some(project_id) = st.scopes.detect_project(&req.message).ok().flatten() else {
         // Sin proyecto → sin contexto (ahorro de tokens).
-        return Json(ResolveMsgResp { project_id: None, context: None });
+        return Json(ResolveMsgResp {
+            project_id: None,
+            context: None,
+        });
     };
 
     // 1. Contexto estático del proyecto (ScopeMapper).
@@ -175,7 +186,10 @@ async fn resolve_message(
     // 2. Contexto semántico del proyecto (Cerebro RAG).
     let mut rag_ctx = String::new();
     if let Some(cerebro) = &st.cerebro {
-        match cerebro.build_project_context(&req.message, &project_id, 3).await {
+        match cerebro
+            .build_project_context(&req.message, &project_id, 3)
+            .await
+        {
             Ok((ctx, hits)) if !hits.is_empty() => {
                 rag_ctx = format!("### CONOCIMIENTO PREVIO DEL PROYECTO (RAG)\n{ctx}");
             }
@@ -206,7 +220,9 @@ async fn main() -> Result<()> {
         .and_then(|v| v.parse().ok())
         .unwrap_or(43211);
 
-    let db_dir = PathBuf::from(std::env::var("ANTIGRAVITY_DB").unwrap_or_else(|_| "data/orquestador".into()));
+    let db_dir = PathBuf::from(
+        std::env::var("ANTIGRAVITY_DB").unwrap_or_else(|_| "data/orquestador".into()),
+    );
     std::fs::create_dir_all(&db_dir)?;
 
     // Cerebro RAG (opcional): se activa si Ollama (nomic-embed-text) está
@@ -215,7 +231,9 @@ async fn main() -> Result<()> {
     let cerebro: Option<Arc<Cerebro>> = match EmbeddingEngine::default() {
         Ok(embedding) => {
             let store = Arc::new(VectorStore::open(&db_dir.join("brain.db"))?);
-            tracing::info!("🧠 [ANTIGRAVITY] Cerebro RAG activo (recuperación semántica por proyecto)");
+            tracing::info!(
+                "🧠 [ANTIGRAVITY] Cerebro RAG activo (recuperación semántica por proyecto)"
+            );
             Some(Arc::new(Cerebro::new(embedding, store)))
         }
         Err(_) => {

@@ -222,14 +222,23 @@ impl PipelineDb {
     /// Recupera los campos de una tarea para reconstruir un `TaskSchema`.
     ///
     /// Devuelve `(task_id, url, strategy, selectors, output_schema)`.
-    pub fn get_task(&self, task_id: &str) -> Result<Option<(String, String, String, Option<String>, Option<String>)>> {
+    pub fn get_task(
+        &self,
+        task_id: &str,
+    ) -> Result<Option<(String, String, String, Option<String>, Option<String>)>> {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare(
             "SELECT task_id, url, strategy, selectors, output_schema FROM tasks WHERE task_id = ?1",
         )?;
         let mut rows = stmt.query(rusqlite::params![task_id])?;
         if let Some(row) = rows.next()? {
-            Ok(Some((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?, row.get(4)?)))
+            Ok(Some((
+                row.get(0)?,
+                row.get(1)?,
+                row.get(2)?,
+                row.get(3)?,
+                row.get(4)?,
+            )))
         } else {
             Ok(None)
         }
@@ -260,7 +269,8 @@ mod tests {
         let db = PipelineDb::open_in_memory().unwrap();
         db.insert_task("t-1", "https://example.com", "http", None, None)
             .unwrap();
-        db.update_status("t-1", "success", Some(1200), None).unwrap();
+        db.update_status("t-1", "success", Some(1200), None)
+            .unwrap();
 
         let pending = db.list_pending_tasks(10).unwrap();
         assert!(pending.is_empty());
@@ -270,7 +280,8 @@ mod tests {
     fn robots_cache_expira_correctamente() {
         let db = PipelineDb::open_in_memory().unwrap();
         assert!(db.get_robots_cache("example.com").unwrap().is_none());
-        db.set_robots_cache("example.com", "User-agent: *\nDisallow:").unwrap();
+        db.set_robots_cache("example.com", "User-agent: *\nDisallow:")
+            .unwrap();
         let cached = db.get_robots_cache("example.com").unwrap();
         assert!(cached.is_some());
         assert!(cached.unwrap().contains("Disallow"));

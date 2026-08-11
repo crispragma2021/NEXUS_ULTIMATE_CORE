@@ -311,3 +311,13 @@ config.toml.bak*
 *.env.bak
 **/*.env.bak
 >>> REPLACE
+
+# Godot editor
+.godot/
+**/.godot/
+# Godot editor binario descargado (144MB, excede limite GitHub)
+tools/godot/
+
+# Artefactos de build del juego (binarios compilados, regenerables)
+game/build/
+**/game/build/

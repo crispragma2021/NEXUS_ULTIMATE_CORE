@@ -7,9 +7,9 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PrunedContext {
-    pub system_prompt: String,      // Rol del operador de ejecución atómica
-    pub user_prompt: String,        // Instrucción atómica empaquetada
-    pub output_schema: String,      // JSON Schema esperado
+    pub system_prompt: String, // Rol del operador de ejecución atómica
+    pub user_prompt: String,   // Instrucción atómica empaquetada
+    pub output_schema: String, // JSON Schema esperado
 }
 
 pub struct ContextPruner;
@@ -78,9 +78,9 @@ mod tests {
         let task = TaskNode {
             id: "test_task".to_string(),
             instruction: "Escribe un Hola Mundo en Python".to_string(),
-            tool: ToolAction::WriteFile { 
-                target: "hello.py".to_string(), 
-                payload: "print('Hello')".to_string() 
+            tool: ToolAction::WriteFile {
+                target: "hello.py".to_string(),
+                payload: "print('Hello')".to_string(),
             },
             depends_on: vec![],
             output_schema: serde_json::json!({
@@ -106,7 +106,9 @@ mod tests {
         let mut failed_task = task.clone();
         failed_task.error_msg = Some("JSON inválido: missing bracket".to_string());
         let ctx_failed = ContextPruner::build_prompt(&failed_task, None);
-        assert!(ctx_failed.user_prompt.contains("REINTENTO POR FALLO PREVIO"));
+        assert!(ctx_failed
+            .user_prompt
+            .contains("REINTENTO POR FALLO PREVIO"));
         assert!(ctx_failed.user_prompt.contains("missing bracket"));
     }
 }

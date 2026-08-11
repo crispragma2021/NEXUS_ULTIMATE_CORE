@@ -124,7 +124,7 @@ impl SistemaLimbico {
             self.estado.adrenalina += 0.10 * impacto;
         }
         self.estado.adrenalina *= 0.95; // decaimiento natural
-        self.estado.dopamina *= 0.98;   // decaimiento natural
+        self.estado.dopamina *= 0.98; // decaimiento natural
         self.estado.cortisol *= 0.97;
         self.estado.oxitocina *= 0.99;
         self.clamp();

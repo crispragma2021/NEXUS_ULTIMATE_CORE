@@ -93,11 +93,7 @@ impl OllamaClient {
     /// Genera y extrae un JSON estructurado según `system_prompt` (opcional).
     ///
     /// Devuelve el `Value` parseado de la respuesta.
-    pub async fn extract_json(
-        &self,
-        prompt: &str,
-        system_prompt: Option<&str>,
-    ) -> Result<Value> {
+    pub async fn extract_json(&self, prompt: &str, system_prompt: Option<&str>) -> Result<Value> {
         let resp = self.call(prompt, system_prompt, true).await?;
         let parsed: Value = serde_json::from_str(&resp.response)
             .context("Ollama no devolvió JSON válido pese a format=json")?;

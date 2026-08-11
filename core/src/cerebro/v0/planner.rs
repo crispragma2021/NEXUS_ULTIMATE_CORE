@@ -39,15 +39,52 @@ impl IntencionUI {
         // intención específica de gráficos debe ganar. Las keywords de Dashboard
         // no solapan con las de gráficos, por lo que "panel de métricas" sigue
         // cayendo correctamente en Dashboard.
-        if kw(&["gráfico", "grafico", "chart", "grafica", "gráfica", "graficos", "gráficos"]) {
+        if kw(&[
+            "gráfico",
+            "grafico",
+            "chart",
+            "grafica",
+            "gráfica",
+            "graficos",
+            "gráficos",
+        ]) {
             IntencionUI::Graficos
-        } else if kw(&["dashboard", "panel", "métricas", "metricas", "kpi", "analytics", "tablero"]) {
+        } else if kw(&[
+            "dashboard",
+            "panel",
+            "métricas",
+            "metricas",
+            "kpi",
+            "analytics",
+            "tablero",
+        ]) {
             IntencionUI::Dashboard
-        } else if kw(&["formulario", "form ", "login", "registro", "registrate", "signup", "input"]) {
+        } else if kw(&[
+            "formulario",
+            "form ",
+            "login",
+            "registro",
+            "registrate",
+            "signup",
+            "input",
+        ]) {
             IntencionUI::Formulario
-        } else if kw(&["landing", "página de inicio", "pagina de inicio", "hero", "inicio"]) {
+        } else if kw(&[
+            "landing",
+            "página de inicio",
+            "pagina de inicio",
+            "hero",
+            "inicio",
+        ]) {
             IntencionUI::Landing
-        } else if kw(&["listado", "tabla", "lista", "tabla de", "table", "grid de datos"]) {
+        } else if kw(&[
+            "listado",
+            "tabla",
+            "lista",
+            "tabla de",
+            "table",
+            "grid de datos",
+        ]) {
             IntencionUI::Listado
         } else {
             IntencionUI::Generico
@@ -121,13 +158,11 @@ impl Planificador {
                     ],
                 },
                 StateShape {
-                    use_state: vec![
-                        StateVar {
-                            name: "form".into(),
-                            tipo: "object".into(),
-                            initial: serde_json::json!({}),
-                        },
-                    ],
+                    use_state: vec![StateVar {
+                        name: "form".into(),
+                        tipo: "object".into(),
+                        initial: serde_json::json!({}),
+                    }],
                     use_reducer: vec![],
                     context: vec![],
                 },
@@ -321,24 +356,42 @@ mod tests {
 
     #[test]
     fn test_detectar_dashboard() {
-        assert_eq!(IntencionUI::detectar("crea un dashboard de ventas"), IntencionUI::Dashboard);
-        assert_eq!(IntencionUI::detectar("panel de métricas"), IntencionUI::Dashboard);
+        assert_eq!(
+            IntencionUI::detectar("crea un dashboard de ventas"),
+            IntencionUI::Dashboard
+        );
+        assert_eq!(
+            IntencionUI::detectar("panel de métricas"),
+            IntencionUI::Dashboard
+        );
     }
 
     #[test]
     fn test_detectar_formulario() {
-        assert_eq!(IntencionUI::detectar("haz un formulario de login"), IntencionUI::Formulario);
-        assert_eq!(IntencionUI::detectar("página de registro"), IntencionUI::Formulario);
+        assert_eq!(
+            IntencionUI::detectar("haz un formulario de login"),
+            IntencionUI::Formulario
+        );
+        assert_eq!(
+            IntencionUI::detectar("página de registro"),
+            IntencionUI::Formulario
+        );
     }
 
     #[test]
     fn test_detectar_landing() {
-        assert_eq!(IntencionUI::detectar("landing page de producto"), IntencionUI::Landing);
+        assert_eq!(
+            IntencionUI::detectar("landing page de producto"),
+            IntencionUI::Landing
+        );
     }
 
     #[test]
     fn test_detectar_graficos() {
-        assert_eq!(IntencionUI::detectar("panel con gráficos de líneas"), IntencionUI::Graficos);
+        assert_eq!(
+            IntencionUI::detectar("panel con gráficos de líneas"),
+            IntencionUI::Graficos
+        );
     }
 
     #[test]
@@ -403,7 +456,9 @@ mod tests {
         // Sin Gemini inyectado debe caer al planificador local.
         let p = Planificador::nuevo();
         let runtime = tokio::runtime::Runtime::new().unwrap();
-        let plan = runtime.block_on(p.planificar_gemini("dashboard de métricas", None)).unwrap();
+        let plan = runtime
+            .block_on(p.planificar_gemini("dashboard de métricas", None))
+            .unwrap();
         assert_eq!(plan.component_tree.name, "DashboardPage");
     }
 }

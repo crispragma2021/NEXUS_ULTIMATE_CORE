@@ -40,6 +40,9 @@ pub mod workflows;
 // ─── Orquestador Autónomo (gobernanza: circuit breaker + DAG + introspección + compresión) ──
 pub mod orquestador_autonomo;
 
+// ─── Bucle Reactivo (ejecución práctica: LLM → intención → acción → observación → reacción) ──
+pub mod bucle_reactivo;
+
 // ─── Generador de UI multi-agente (pipeline v0: Gemini planifica/genera, DeepSeek depura) ──
 pub mod v0;
 

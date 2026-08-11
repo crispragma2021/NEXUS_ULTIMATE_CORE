@@ -10,9 +10,9 @@ use std::time::Duration;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SandboxConfig {
-    pub timeout_secs: u64,                   // Timeout de comando (ej: 30s)
-    pub allowed_commands: Vec<String>,       // Whitelist de comandos permitidos
-    pub max_output_bytes: usize,             // Límite de tamaño de salida (ej: 1MB)
+    pub timeout_secs: u64,             // Timeout de comando (ej: 30s)
+    pub allowed_commands: Vec<String>, // Whitelist de comandos permitidos
+    pub max_output_bytes: usize,       // Límite de tamaño de salida (ej: 1MB)
 }
 
 impl Default for SandboxConfig {
@@ -71,13 +71,24 @@ impl Sandbox {
     fn safe_read_file(&self, call: &ToolCall) -> ToolResponse {
         let target = match call.arguments.get("target").and_then(|t| t.as_str()) {
             Some(t) => t,
-            None => return ToolResponse { success: false, output: "Falta el parámetro 'target'".into() },
+            None => {
+                return ToolResponse {
+                    success: false,
+                    output: "Falta el parámetro 'target'".into(),
+                }
+            }
         };
 
         let path = self.workspace_root.join(target);
         match std::fs::read_to_string(&path) {
-            Ok(content) => ToolResponse { success: true, output: content },
-            Err(e) => ToolResponse { success: false, output: format!("Error al leer el archivo: {}", e) },
+            Ok(content) => ToolResponse {
+                success: true,
+                output: content,
+            },
+            Err(e) => ToolResponse {
+                success: false,
+                output: format!("Error al leer el archivo: {}", e),
+            },
         }
     }
 
@@ -85,11 +96,21 @@ impl Sandbox {
     async fn safe_write_file(&self, call: &ToolCall) -> ToolResponse {
         let target = match call.arguments.get("target").and_then(|t| t.as_str()) {
             Some(t) => t,
-            None => return ToolResponse { success: false, output: "Falta el parámetro 'target'".into() },
+            None => {
+                return ToolResponse {
+                    success: false,
+                    output: "Falta el parámetro 'target'".into(),
+                }
+            }
         };
         let payload = match call.arguments.get("payload").and_then(|p| p.as_str()) {
             Some(p) => p,
-            None => return ToolResponse { success: false, output: "Falta el parámetro 'payload'".into() },
+            None => {
+                return ToolResponse {
+                    success: false,
+                    output: "Falta el parámetro 'payload'".into(),
+                }
+            }
         };
 
         let path = self.workspace_root.join(target);
@@ -97,7 +118,10 @@ impl Sandbox {
         // Crear directorios si es necesario
         if let Some(parent) = path.parent() {
             if let Err(e) = std::fs::create_dir_all(parent) {
-                return ToolResponse { success: false, output: format!("No se pudo crear directorios: {}", e) };
+                return ToolResponse {
+                    success: false,
+                    output: format!("No se pudo crear directorios: {}", e),
+                };
             }
         }
 
@@ -125,7 +149,12 @@ impl Sandbox {
     fn safe_execute_cmd(&self, call: &ToolCall) -> ToolResponse {
         let target = match call.arguments.get("target").and_then(|t| t.as_str()) {
             Some(t) => t,
-            None => return ToolResponse { success: false, output: "Falta el parámetro 'target'".into() },
+            None => {
+                return ToolResponse {
+                    success: false,
+                    output: "Falta el parámetro 'target'".into(),
+                }
+            }
         };
 
         // Extraer el binario base (ej: "cargo test" -> "cargo")
@@ -133,7 +162,10 @@ impl Sandbox {
         if !self.config.allowed_commands.contains(&binary.to_string()) {
             return ToolResponse {
                 success: false,
-                output: format!("Comando '{}' no permitido en la whitelist del Sandbox", binary),
+                output: format!(
+                    "Comando '{}' no permitido en la whitelist del Sandbox",
+                    binary
+                ),
             };
         }
 
@@ -175,7 +207,12 @@ impl Sandbox {
     fn safe_search_code(&self, call: &ToolCall) -> ToolResponse {
         let pattern = match call.arguments.get("pattern").and_then(|p| p.as_str()) {
             Some(p) => p,
-            None => return ToolResponse { success: false, output: "Falta el parámetro 'pattern' para buscar código".into() },
+            None => {
+                return ToolResponse {
+                    success: false,
+                    output: "Falta el parámetro 'pattern' para buscar código".into(),
+                }
+            }
         };
 
         // Lanzar ripgrep de forma segura
@@ -202,7 +239,11 @@ impl Sandbox {
 
     /// Listar directorios seguro
     fn safe_list_dir(&self, call: &ToolCall) -> ToolResponse {
-        let target = call.arguments.get("target").and_then(|t| t.as_str()).unwrap_or(".");
+        let target = call
+            .arguments
+            .get("target")
+            .and_then(|t| t.as_str())
+            .unwrap_or(".");
         let path = self.workspace_root.join(target);
 
         match std::fs::read_dir(path) {

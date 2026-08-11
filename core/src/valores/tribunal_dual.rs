@@ -161,7 +161,9 @@ mod tests {
     #[test]
     fn parsea_json_estricto() {
         assert_eq!(
-            VeredictoTribunal::parsear(r#"{"veredicto": "BLOQUEAR", "confianza": 0.95, "razon": "x"}"#),
+            VeredictoTribunal::parsear(
+                r#"{"veredicto": "BLOQUEAR", "confianza": 0.95, "razon": "x"}"#
+            ),
             VeredictoTribunal::Bloquear
         );
         assert_eq!(
@@ -176,9 +178,18 @@ mod tests {
 
     #[test]
     fn parsea_texto_libre_case_insensitive() {
-        assert_eq!(VeredictoTribunal::parsear("Decisión: bloquear esta acción"), VeredictoTribunal::Bloquear);
-        assert_eq!(VeredictoTribunal::parsear("Tengo dudas, no estoy seguro"), VeredictoTribunal::Dudar);
-        assert_eq!(VeredictoTribunal::parsear("AUTORIZADO sin objeciones"), VeredictoTribunal::Autorizar);
+        assert_eq!(
+            VeredictoTribunal::parsear("Decisión: bloquear esta acción"),
+            VeredictoTribunal::Bloquear
+        );
+        assert_eq!(
+            VeredictoTribunal::parsear("Tengo dudas, no estoy seguro"),
+            VeredictoTribunal::Dudar
+        );
+        assert_eq!(
+            VeredictoTribunal::parsear("AUTORIZADO sin objeciones"),
+            VeredictoTribunal::Autorizar
+        );
     }
 
     #[test]

@@ -3,8 +3,8 @@
 // Puro Rust, sin unwrap(), sin expect(), listo para producción.
 
 use crate::efectores::agente_ejecutor::ToolResponse;
-use crate::orquestador::task_graph::TaskNode;
 use crate::energia::zenith_pool::ZenithPool;
+use crate::orquestador::task_graph::TaskNode;
 use anyhow::{anyhow, Result};
 use std::sync::Arc;
 
@@ -19,7 +19,11 @@ impl CloudFallback {
     }
 
     /// Escala la tarea atómica a la nube (ej: Gemini 2.5 Pro) para asegurar resolución determinista
-    pub async fn execute_fallback(&self, task: &TaskNode, accum_error: &str) -> Result<ToolResponse> {
+    pub async fn execute_fallback(
+        &self,
+        task: &TaskNode,
+        accum_error: &str,
+    ) -> Result<ToolResponse> {
         tracing::warn!(
             "🚨 [ESCALACIÓN] Escalando tarea '{}' a nube por fallos persistentes del SLM local.",
             task.id
@@ -39,7 +43,10 @@ No agregues comentarios ni markdown. Solo el JSON."#.to_string();
 
         // Invocar Zenith Pool (que gestiona de forma inteligente OpenRouter, DeepSeek, Groq, Vertex y AI Studio como último respaldo)
         let full_prompt = format!("{}\n\nUser:\n{}", system_prompt, prompt);
-        let cloud_output = self.zenith.responder_estrategico(&full_prompt, "escalacion_nube").await;
+        let cloud_output = self
+            .zenith
+            .responder_estrategico(&full_prompt, "escalacion_nube")
+            .await;
 
         if cloud_output.is_empty()
             || cloud_output.contains("Sin energía")

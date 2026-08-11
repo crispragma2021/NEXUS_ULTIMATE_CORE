@@ -60,7 +60,8 @@ impl Cerebro {
 
     /// Indexa un texto arbitrario (troceado + embeddings + persistencia).
     pub async fn index_text(&self, task_id: &str, source_url: &str, text: &str) -> Result<usize> {
-        self.index_text_in_project(task_id, "", source_url, text).await
+        self.index_text_in_project(task_id, "", source_url, text)
+            .await
     }
 
     /// Indexa un texto asociado a un proyecto (Scope isolation).

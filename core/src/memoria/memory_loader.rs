@@ -16,8 +16,11 @@ use std::path::{Path, PathBuf};
 use tracing::info;
 
 use crate::autonomia::nucleo_identidad::NucleoIdentidad;
+use crate::memoria::hybrid_recall::HybridRecall;
 use crate::memoria::intention_encoder::{ConceptoSemantico, OceanEsencia};
+use crate::memoria::memoria_piramidal::MemoriaPiramidalStore;
 use crate::memoria::memory::MemoriaPulso;
+use crate::memoria::offload_simbolico::OffloadSimbolico;
 use crate::nexus_embedder::NexusEmbedder;
 
 /// Contexto de memoria unificado que se ensambla para cada turno.
@@ -33,6 +36,14 @@ pub struct MemoryContext {
     pub semanticos: Vec<ConceptoSemantico>,
     /// Esencias emocionales (ocean) con carga afectiva.
     pub ocean: Vec<OceanEsencia>,
+    /// 🧠 Pirámide L3: persona consolidada (perfil a largo plazo del Arquitecto).
+    pub persona: Option<String>,
+    /// 🧠 Pirámide L2: escenarios relevantes (bloques de contexto).
+    pub escenarios: Vec<String>,
+    /// ⚡ Canvas Mermaid del offloading simbólico (inyección ligera).
+    pub canvas_mermaid: Option<String>,
+    /// 🔀 Hits del hybrid recall (BM25+vector+RRF) más relevantes.
+    pub hits_hibridos: Vec<String>,
 }
 
 pub struct MemoryLoader {
@@ -40,6 +51,12 @@ pub struct MemoryLoader {
     nucleo_identidad: NucleoIdentidad,
     /// Conexión adicional a intelligence.db para consultar ocean/esencias.
     intelligence_conn: Connection,
+    /// 🧠 Pirámide L0→L3 (porte TencentDB Agent Memory).
+    piramide: MemoriaPiramidalStore,
+    /// ⚡ Offloading simbólico Mermaid (porte TencentDB Agent Memory).
+    offload: OffloadSimbolico,
+    /// 🔀 Hybrid recall BM25+vector+RRF (porte TencentDB Agent Memory).
+    hybrid: HybridRecall,
 }
 
 impl MemoryLoader {
@@ -55,12 +72,23 @@ impl MemoryLoader {
             .map_err(|e| anyhow::anyhow!("no se pudo abrir la identidad: {e}"))?;
         let intelligence_conn = Connection::open(&intelligence_db_path)?;
 
+        // Motores portados de TencentDB Agent Memory (todos tolerantes a errores).
+        let piramide = MemoriaPiramidalStore::new()
+            .map_err(|e| anyhow::anyhow!("no se pudo abrir la memoria piramidal: {e}"))?;
+        let offload = OffloadSimbolico::new()
+            .map_err(|e| anyhow::anyhow!("no se pudo abrir el offload simbólico: {e}"))?;
+        let hybrid = HybridRecall::new()
+            .map_err(|e| anyhow::anyhow!("no se pudo abrir el hybrid recall: {e}"))?;
+
         info!("🧠 MemoryLoader inicializado — memorias unificadas conectadas");
 
         Ok(Self {
             memoria_pulso,
             nucleo_identidad,
             intelligence_conn,
+            piramide,
+            offload,
+            hybrid,
         })
     }
 
@@ -99,7 +127,8 @@ impl MemoryLoader {
         prompt: &str,
         respuesta: &str,
     ) -> Result<()> {
-        self.memoria_pulso.guardar_interaccion(session_id, rol, prompt, respuesta)
+        self.memoria_pulso
+            .guardar_interaccion(session_id, rol, prompt, respuesta)
     }
 
     // ========================================================================
@@ -203,7 +232,98 @@ impl MemoryLoader {
     // ENSAMBLADO DEL CONTEXTO COMPLETO
     // ========================================================================
 
-    /// Carga todo lo necesario para un turno: identidad + episódica + semántica + ocean.
+    // ========================================================================
+    // 🧠 PIRÁMIDE L0→L3 (porte TencentDB Agent Memory)
+    // ========================================================================
+
+    /// Registra una conversación como L0 y extrae sus átomos L1.
+    pub fn registrar_conversacion_piramidal(&self, rol: &str, prompt: &str, respuesta: &str) {
+        let Ok(l0) = self.piramide.registrar_conversacion(rol, prompt, respuesta) else {
+            return;
+        };
+        let conversacion = format!("{} {}", prompt, respuesta);
+        let _ = self.piramide.extraer_atomos(&conversacion, l0);
+    }
+
+    /// Consolida la persona L3 desde los escenarios L2 más pesados.
+    pub fn consolidar_persona(&self) {
+        let (_, escenarios) = self
+            .piramide
+            .capa_superior_para_contexto(20)
+            .unwrap_or_default();
+        if escenarios.is_empty() {
+            return;
+        }
+        let ids: Vec<i64> = escenarios.iter().map(|e| e.id).collect();
+        let _ = self.piramide.consolidar_persona(&ids);
+    }
+
+    /// Recupera el camino de evidencia completo de un node_id (drill-down).
+    pub fn drill_down_piramidal(&self, node_id: &str) -> Vec<String> {
+        self.piramide.drill_down(node_id).unwrap_or_default()
+    }
+
+    /// Expone la persona y escenarios (cima de la pirámide) para inyección.
+    pub fn capa_superior_piramidal(&self, limite_l2: usize) -> (Option<String>, Vec<String>) {
+        let (persona, escenarios) = self
+            .piramide
+            .capa_superior_para_contexto(limite_l2)
+            .unwrap_or_default();
+        (
+            persona.map(|p| p.contenido),
+            escenarios.iter().map(|e| e.contenido.clone()).collect(),
+        )
+    }
+
+    // ========================================================================
+    // ⚡ OFFLOAD SIMBÓLICO (porte TencentDB Agent Memory)
+    // ========================================================================
+
+    /// Vuelca un log crudo a disco y lo simboliza en un canvas Mermaid.
+    pub fn procesar_log_para_offload(&self, titulo: &str, log: &str) {
+        if log.trim().is_empty() {
+            return;
+        }
+        let _ = self.offload.procesar_log_largo(titulo, log);
+    }
+
+    /// Obtiene el canvas Mermaid más reciente para inyección ligera.
+    pub fn canvas_mermaid_reciente(&self) -> Option<String> {
+        self.offload
+            .canvas_reciente()
+            .ok()
+            .flatten()
+            .map(|c| c.mermaid)
+    }
+
+    /// Recupera la evidencia cruda de un node_id del offload.
+    pub fn recuperar_evidencia_offload(&self, node_id: &str) -> Option<String> {
+        self.offload.recuperar_evidencia(node_id).ok()
+    }
+
+    // ========================================================================
+    // 🔀 HYBRID RECALL (porte TencentDB Agent Memory)
+    // ========================================================================
+
+    /// Recupera con la estrategia híbrida BM25+vector+RRF (default de Tencent).
+    pub fn recall_hibrido(&self, query: &str, limite: usize) -> Vec<String> {
+        self.hybrid
+            .recall(query)
+            .unwrap_or_default()
+            .into_iter()
+            .take(limite)
+            .map(|h| {
+                if h.texto.is_empty() {
+                    format!("[{}:{}]", h.fuente, h.id)
+                } else {
+                    h.texto
+                }
+            })
+            .collect()
+    }
+
+    /// Carga todo lo necesario para un turno: identidad + episódica + semántica +
+    /// ocean + pirámide (persona/escenarios) + offload (canvas) + hybrid recall.
     pub fn load_all(&self, session_id: &str, query: &str) -> MemoryContext {
         let conversaciones_recientes = self
             .get_recent_conversations(session_id, 8)
@@ -211,12 +331,25 @@ impl MemoryLoader {
         let semanticos = self.load_semantic_concepts(query, 5);
         let ocean = self.load_ocean_esencias(3, 0.4);
 
+        // 🧠 Pirámide: persona (L3) + escenarios (L2) — progressive disclosure.
+        let (persona, escenarios) = self.capa_superior_piramidal(3);
+
+        // ⚡ Offload: canvas Mermaid reciente para inyección ligera.
+        let canvas_mermaid = self.canvas_mermaid_reciente();
+
+        // 🔀 Hybrid recall: fusión BM25+vector+RRF.
+        let hits_hibridos = self.recall_hibrido(query, 5);
+
         MemoryContext {
             identidad_descripcion: self.get_identity_description(),
             identidad_vector: self.get_identity_vector(),
             conversaciones_recientes,
             semanticos,
             ocean,
+            persona,
+            escenarios,
+            canvas_mermaid,
+            hits_hibridos,
         }
     }
 }

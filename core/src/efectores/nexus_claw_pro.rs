@@ -155,9 +155,12 @@ impl NexusClawPro {
     /// contenido del prompt usando `ModelRouter` (whiterabbitneo-off para
     /// seguridad, deepseek-r1 para razonamiento, etc.).
     pub async fn procesar_con_intencion(&self, prompt: &str) -> Result<String, String> {
-        let (modelo, etiqueta) = crate::efectores::model_router::ModelRouter::new()
-            .seleccionar_con_etiqueta(prompt);
-        info!("🧭 [NEXUSCLAW_ROUTER] Intención {} → modelo {}", etiqueta, modelo);
+        let (modelo, etiqueta) =
+            crate::efectores::model_router::ModelRouter::new().seleccionar_con_etiqueta(prompt);
+        info!(
+            "🧭 [NEXUSCLAW_ROUTER] Intención {} → modelo {}",
+            etiqueta, modelo
+        );
         self.procesar_con_modelo(prompt, modelo).await
     }
 
@@ -180,12 +183,11 @@ impl NexusClawPro {
     }
 
     /// Núcleo de inferencia local: envía el prompt al modelo indicado.
-    pub async fn procesar_con_modelo(
-        &self,
-        prompt: &str,
-        modelo: &str,
-    ) -> Result<String, String> {
-        info!("🧠 [NEXUSCLAW_OLLAMA] Procesando con Ollama ({}) para mayor capacidad...", modelo);
+    pub async fn procesar_con_modelo(&self, prompt: &str, modelo: &str) -> Result<String, String> {
+        info!(
+            "🧠 [NEXUSCLAW_OLLAMA] Procesando con Ollama ({}) para mayor capacidad...",
+            modelo
+        );
         let ollama_url = std::env::var("OLLAMA_API_URL")
             .unwrap_or_else(|_| "http://localhost:11434/api/chat".to_string());
         let client = Client::new();

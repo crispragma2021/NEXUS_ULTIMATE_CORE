@@ -1,0 +1,32 @@
+#!/usr/bin/env -S godot --script
+# HealthBar — Barra de vida del jugador
+
+class_name HealthBar
+extends Control
+
+@onready var fill: ProgressBar = get_node("Fill")
+@onready var label: Label = get_node("Label")
+
+var _player: Node = null
+
+func _ready() -> void:
+	# Buscar jugador
+	_player = get_tree().get_first_node_in_group("player")
+	if _player != null and _player.has_node("HealthComponent"):
+		var health = _player.get_node("HealthComponent")
+		health.health_changed.connect(_on_health_changed)
+		_on_health_changed(health.current_health, health.max_health)
+
+func _on_health_changed(current: float, max_hp: float) -> void:
+	fill.max_value = max_hp
+	fill.value = current
+	label.text = "HP: %d/%d" % [int(current), int(max_hp)]
+	
+	# Cambiar color según porcentaje
+	var pct = current / max_hp if max_hp > 0 else 0.0
+	if pct > 0.6:
+		fill.theme_override_colors["fill_color"] = Color(0.2, 0.8, 0.2, 1)
+	elif pct > 0.3:
+		fill.theme_override_colors["fill_color"] = Color(0.9, 0.7, 0.1, 1)
+	else:
+		fill.theme_override_colors["fill_color"] = Color(0.9, 0.2, 0.2, 1)

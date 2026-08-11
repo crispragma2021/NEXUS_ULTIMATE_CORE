@@ -65,10 +65,7 @@ impl CloudProvider for OpenRouterProvider {
         let mut attempts = 0;
 
         while attempts < max_attempts {
-            let idx = self
-                .current_index
-                .load(std::sync::atomic::Ordering::SeqCst)
-                % pool_size;
+            let idx = self.current_index.load(std::sync::atomic::Ordering::SeqCst) % pool_size;
             let api_key = &self.api_keys[idx];
 
             let resp = self
@@ -215,7 +212,10 @@ impl CloudAdapter {
                     last_err = Some(e);
                 }
                 Err(_elapsed) => {
-                    tracing::warn!("⚠️ [CLOUD ADAPTER] {name} timeout (>{}s) — siguiente", timeout.as_secs());
+                    tracing::warn!(
+                        "⚠️ [CLOUD ADAPTER] {name} timeout (>{}s) — siguiente",
+                        timeout.as_secs()
+                    );
                     self.breaker.record_failure(name);
                     last_err = Some(anyhow!("timeout de {timeout:?} en {name}"));
                 }

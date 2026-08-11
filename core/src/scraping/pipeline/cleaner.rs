@@ -16,15 +16,7 @@ use std::collections::HashSet;
 
 /// Selectores de nodos a eliminar por completo.
 const STRIP_SELECTORS: [&str; 9] = [
-    "script",
-    "style",
-    "nav",
-    "footer",
-    "header",
-    "svg",
-    "iframe",
-    "noscript",
-    "form",
+    "script", "style", "nav", "footer", "header", "svg", "iframe", "noscript", "form",
 ];
 
 /// Limpia el HTML crudo y devuelve Markdown plano.
@@ -36,7 +28,8 @@ pub fn clean(html: &str, exclude_selectors: &[String]) -> String {
     let document = Html::parse_document(html);
 
     // 1. Construir lista de selectores de exclusión: base + extra.
-    let mut strip: Vec<Selector> = Vec::with_capacity(STRIP_SELECTORS.len() + exclude_selectors.len());
+    let mut strip: Vec<Selector> =
+        Vec::with_capacity(STRIP_SELECTORS.len() + exclude_selectors.len());
     for sel in STRIP_SELECTORS.iter() {
         if let Ok(s) = Selector::parse(sel) {
             strip.push(s);
@@ -210,7 +203,8 @@ mod tests {
 
     #[test]
     fn convierte_encabezados_a_markdown() {
-        let html = r#"<html><body><h1>A</h1><h2>B</h2><ul><li>Uno</li><li>Dos</li></ul></body></html>"#;
+        let html =
+            r#"<html><body><h1>A</h1><h2>B</h2><ul><li>Uno</li><li>Dos</li></ul></body></html>"#;
         let md = clean(html, &[]);
         assert!(md.contains("# A"));
         assert!(md.contains("## B"));

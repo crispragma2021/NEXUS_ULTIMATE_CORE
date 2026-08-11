@@ -273,7 +273,10 @@ mod tests {
         let html = r#"<html><head><meta property="og:title" content="Titulo A"></head><body><h1>Titulo B</h1></body></html>"#;
         let md = cleaner::clean(html, &[]);
         let res = analyze(html, &md);
-        let conflict = res.fields.iter().any(|f| f.confidence == Confidence::Conflict);
+        let conflict = res
+            .fields
+            .iter()
+            .any(|f| f.confidence == Confidence::Conflict);
         assert!(conflict);
     }
 }

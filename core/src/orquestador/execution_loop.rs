@@ -3,12 +3,12 @@
 // Puro Rust, sin unwrap(), sin expect(), listo para producción.
 
 use crate::efectores::agente_ejecutor::ToolResponse;
-use crate::orquestador::context_pruner::ContextPruner;
 use crate::orquestador::cloud_fallback::CloudFallback;
+use crate::orquestador::context_pruner::ContextPruner;
 use crate::orquestador::sandbox::Sandbox;
 use crate::orquestador::slm_dispatcher::SLMDispatcher;
 use crate::orquestador::task_graph::TaskNode;
-use crate::orquestador::validator::{Validator, ValidationResult};
+use crate::orquestador::validator::{ValidationResult, Validator};
 use anyhow::{anyhow, Result};
 
 pub struct ExecutionLoop {
@@ -99,12 +99,17 @@ impl ExecutionLoop {
             task.id
         );
 
-        let fallback_res = self.cloud_fallback.execute_fallback(task, &last_error).await?;
+        let fallback_res = self
+            .cloud_fallback
+            .execute_fallback(task, &last_error)
+            .await?;
 
         // Validar la salida del fallback de nube
         match self.validator.validate(&fallback_res.output) {
             ValidationResult::Valid(tool_call) => {
-                tracing::info!("✅ [ESCALACIÓN] Salida de nube validada con éxito. Ejecutando en Sandbox...");
+                tracing::info!(
+                    "✅ [ESCALACIÓN] Salida de nube validada con éxito. Ejecutando en Sandbox..."
+                );
                 let res = self.sandbox.execute(&tool_call).await;
                 Ok(res)
             }

@@ -6,6 +6,39 @@
 
 ## 🥇 HITOS PRINCIPALES
 
+### 2026-08-10 🎬 — ARDY (NVIDIA) Instalado y Funcional: Generación de Movimiento Humano 3D Interactivo
+- **Hito**: Instalación completa y verificación end-to-end del demo interactivo de **ARDY** (Autoregressive Diffusion with Hybrid Representation, SIGGRAPH 2026 de NVIDIA) para generación de movimiento humano 3D en tiempo real.
+- **Entorno**: Python 3.11 vía `uv` (gestor en Rust), PyTorch 2.13.0+cu126, RTX 3070 8GB VRAM + 48GB RAM.
+- **Checkpoint**: `ARDY-Core-RP-20FPS-Horizon40` descargado (730MB: denoiser.safetensors 623MB + tokenizer.safetensors 141MB + config + stats) desde HF no-gated.
+- **Text encoder LLM2Vec**: resuelto el problema del modelo gated `meta-llama/Meta-Llama-3-8B-Instruct` usando el mirror no-gated `NousResearch/Meta-Llama-3-8B-Instruct` (16GB) + adapters PEFT `McGill-NLP/LLM2Vec-Meta-Llama-3-8B-Instruct-mntp` y `-mntp-supervised`. Configurado `adapter_config.json` para apuntar al modelo base local y symlinks de los safetensors.
+- **Fix crítico OOM**: el método `LLM2VecEncoder.to()` sobreescribía `TEXT_ENCODER_DEVICE=cpu` moviendo el text encoder de 16GB a GPU (OOM con Ollama/Qwen usando 4.5GB de los 8GB). Fix quirúrgico en `llm2vec_wrapper.py` para que el env var tenga prioridad sobre el device pasado.
+- **Arquitectura de memoria**: text encoder (16GB) en CPU/RAM, modelo de difusión en GPU. Prewarm de caché de embeddings completado (11 encoded).
+- **Validado**: servidor web Viser en `http://localhost:2333` (HTTP 200), visor 3D Three.js r179 renderizando, UI Mantine con controles de Playback/Text/Generate/Visualize/Model/IO. Servicio gestionado por `service_manager.sh` como `ardy_demo`.
+
+### 2026-08-10 🎮 — Godot MCP Integrado: Control Total del Motor con 157 Herramientas
+- **Hito**: Integración del servidor MCP **`tugcantopaloglu/godot-mcp` v3.1.0** (157 herramientas) en el ecosistema NEXUS para control total del motor Godot 4.7 vía IA.
+- **Selección**: Evaluados `@coding-solo/godot-mcp` (20 tools básicas) vs `tugcantopaloglu/godot-mcp` (157 tools). El fork de Tugcan Topaloglu es un **superset completo** del original (construido sobre su arquitectura), añadiendo networking, render 3D/2D, UI controls, audio effects, animation trees, file I/O, ejecución de código runtime, inspección de propiedades, manipulación de escenas, señales, física, creación de proyectos, soporte C#/.NET y validación GDScript. Solo se instaló el superset (no ambos).
+- **Instalación**: clonado en `tools/godot-mcp`, `npm install` + `npm run build` OK (build/index.js 345KB + scripts GDScript).
+- **Configuración**: servidor `godot` añadido a `.roo/mcp.json` con `GODOT_PATH=/home/soberano/NEXUS_ULTIMATE_CORE/tools/godot/godot`, `GODOT_MCP_ALLOWED_DIRS` restringido a `game/`, y 152 herramientas en `alwaysAllow`.
+- **Autoload runtime**: copiado `mcp_interaction_server.gd` a `game/autoload/McpInteractionServer.gd` y registrado en `project.godot` para habilitar las herramientas runtime `game_*` (escucha en `127.0.0.1:9090`).
+- **Validado**: handshake MCP OK, `get_godot_version` → `4.7.1.stable.official.a13da4feb`, `get_project_info` → proyecto "NEXUS Protocol" (9 escenas, 25 scripts, 10 assets). Compatible con Godot 4.4+ (probado con 4.7).
+
+### 2026-08-10 🧹 — Proyecto Godot 100% Limpio: Eliminación del Editor Bridge Obsoleto
+- **Hito**: Auditoría y saneamiento completo del proyecto Godot `game/`. Verificación de errores solicitada por el Arquitecto reveló que el addon `nexus_editor_bridge` estaba construido sobre la clase **`HTTPServer` (inexistente en Godot 4)**.
+- **Diagnóstico raíz**: el addon usaba `HTTPServer.new()`, `register_handler()`, `start()`, `stop()` y `HTTPRequest` con `get_body()/get_query()/get_stream()` — API que no existe en Godot 4. Solo existen `TCPServer` + `StreamPeerTCP` (bajo nivel) o `HTTPRequest` (cliente).
+- **Correcciones GDScript**: slicing negativo `log[-lines:]` → `slice()` explícito; bloque `try/catch` (inexistente en GDScript) → `match` directo; `PackedByteArray.find()` con PackedByteArray → helper `_find_header_end()` de búsqueda manual de bytes; variable `match` (keyword reservada) → `found`; `ResourceSaver.save()` con Node → cast `as Resource`.
+- **Decisión soberana (Refactorización)**: el addon NO estaba habilitado en `project.godot`, ningún script invocaba los clientes Python, y el **Godot MCP (157 herramientas)** cubre todo su contrato. Se eliminó de raíz: `game/addons/nexus_editor_bridge/` (editor_bridge.gd + plugin.cfg), `scripts/nexus_editor_client.py` y `scripts/nexus_editor_demo.py`.
+- **Limpieza de zombies**: eliminadas referencias residuales al bridge en `game/autoload/LLMBridge.gd` y `game/docs/LLM_BRIDGE.md`.
+- **Validado**: `validate_scripts` scope `all` → **24/24 scripts válidos, 0 errores**. El puente runtime real `LLMBridge.gd` (puerto 8081) permanece intacto y funcional.
+
+### 2026-08-10 🩹 — Runtime Godot 0 Errores: Fix del Script Inline en Player.tscn
+- **Hito**: Ejecución del proyecto Godot (`Main.tscn`) y depuración de errores de runtime hasta lograr **arranque 100% limpio con 0 errores**.
+- **Bug raíz resuelto**: el script `HealthComponent.gd` NO se adjuntaba a los nodos de las escenas (`Player.tscn`, `test_health_component.tscn`, `beast_base.tscn`), causando `ERROR: health_node no es un HealthComponent válido. Tipo real: Node3D` y crash en `PlayerController.gd:128`.
+- **Diagnóstico diferencial**: el script cargaba bien como recurso (`reload() error 0`, `can_instantiate: true`) y funcionaba al adjuntarlo manualmente con `set_script()`, pero no se auto-adjuntaba desde la escena. Se descartaron: shebang en línea 1, corrupción de caché `.godot/`, y atributos `uid=` faltantes.
+- **Causa raíz definitiva**: en `Player.tscn` el script del nodo hijo `HealthComponent` estaba adjuntado **inline** con la declaración del nodo (`[node name="HealthComponent" type="Node3D" parent="." script=ExtResource("2_health")]`). Godot 4.7 no procesa correctamente esta sintaxis inline para nodos hijos. Al moverlo a **línea separada** (`script = ExtResource("2_health")`), el script se adjunta correctamente.
+- **Otros fixes de runtime**: puerto 8081/9090 con error 22 (EINVAL) por instancia duplicada del juego ocupando ambos puertos (matado el PID duplicado); crash `_update_max_health()`/`_respawn()` por `health` nulo (guardas `if health == null: return`); caché `.godot/` corrupta con referencia al addon eliminado (borrada y regenerada con `--import`).
+- **Validado**: arranque limpio — SkillManager (5 skills), World (49 chunks), Config, CombatManager, LLM-Bridge (127.0.0.1:8081), McpInteractionServer (127.0.0.1:9090), y `HealthComponent script=true, has set_max_health=true`. Código de diagnóstico temporal eliminado de `Main.gd` y `diag_health.gd` borrado.
+
 ### 2026-08-02 👁️ — Ojo Local Escalonado v2: CNN → PaddleOCR → tesseract → Qwen2.5-VL (Precisión Total)
 - **Hito**: Evolución del resolver CAPTCHA local de un stack de 2 tiers (tesseract + LLaVA) a un **stack escalonado de 4 tiers** con carga bajo demanda (lazy loading), explotando los 64GB de RAM disponibles.
 - **Tier 0 — CNN CAPTCHA** (`_cnn`): red convolucional ligera; se omite si onnx/tensorflow no están presentes. Primer intento instantáneo para CAPTCHAs de caracteres limpios.
@@ -104,3 +137,9 @@
 - **Timeframe del gráfico**: velas canvas alineadas a 1m (`intervalMs=60000`) para coincidir con el widget "1m".
 - **Curva de capital real**: PnL calculado desde ventas ejecutadas, baseline centrada cuando la línea es plana.
 - **Telemetría de conexión + auditoría Sentinel**: `lastTickReceived`/`lastPriceAtTick` rastreados en cada tick; estado `REAL_MODE_ACTIVE · Nms` / `STALE`; log de Sentinel en el panel de decisiones (feed ms, último precio).
+
+## 2026-08-11 — Resolución de Duplicación MCP (claws-mcp)
+- **Problema:** El binario efector `bin/claws-mcp` estaba registrado bajo dos nombres (`claws-mcp` en config global/IDE y `nexus-claws-mcp` en `.roo/mcp.json`), exponiendo las herramientas de archivos/comandos duplicadas al CÓDIGO y causando confusión.
+- **Causa raíz:** Triple registro del mismo binario: (1) `nexus-claws-mcp` en `.roo/mcp.json` (fuente de verdad), (2) `claws-mcp` en el global activo de Antigravity IDE, (3) `claws-mcp` en la plantilla `nexus-ide-config/Antigravity-roo-cline/mcp_settings.json`.
+- **Solución aplicada:** Deshabilitado `claws-mcp` (`disabled: true`) en el global activo y en la plantilla de IDE. Backup creado. Se conserva `nexus-claws-mcp` como único efector canónico.
+- **Decisión:** No se borró el registro (solo se deshabilitó) por reversibilidad segura.

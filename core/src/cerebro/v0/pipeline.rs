@@ -137,7 +137,11 @@ impl PipelineV0 {
     }
 
     /// Executa el pipeline completo de forma determinista (sin red).
-    pub fn ejecutar_local(&mut self, prompt: &str, session_id_opt: Option<&str>) -> ResultadoPipeline {
+    pub fn ejecutar_local(
+        &mut self,
+        prompt: &str,
+        session_id_opt: Option<&str>,
+    ) -> ResultadoPipeline {
         let mut telemetria = TelemetriaV0::nuevo();
         let inicio_total = Instant::now();
 
@@ -186,7 +190,9 @@ impl PipelineV0 {
         let mut diff_summary = String::new();
 
         if !ast_passed {
-            let r_t1 = self.debugger_tier1.depurar_local(&archivos, &r_ast.result.errors);
+            let r_t1 = self
+                .debugger_tier1
+                .depurar_local(&archivos, &r_ast.result.errors);
             telemetria.registrar_etapa("debugger_tier1", r_t1.duration_ms);
             telemetria.registrar_debugger();
             if r_t1.hay_correcciones {
@@ -292,7 +298,11 @@ impl PipelineV0 {
 
     /// Envoltorio de producción. Sin API disponible (hermeticidad de tests)
     /// delega a la pasada local determinista.
-    pub async fn ejecutar(&mut self, prompt: &str, session_id_opt: Option<&str>) -> ResultadoPipeline {
+    pub async fn ejecutar(
+        &mut self,
+        prompt: &str,
+        session_id_opt: Option<&str>,
+    ) -> ResultadoPipeline {
         self.ejecutar_local(prompt, session_id_opt)
     }
 
@@ -323,13 +333,18 @@ impl PipelineV0 {
     /// Aplica la resolución de dependencias sobre el package.json generado.
     /// Devuelve el mapa de archivos (con package.json corregido si aplica) y el
     /// número de dependencias rechazadas.
-    fn resolver_dependencias(&self, archivos: BTreeMap<String, String>) -> (BTreeMap<String, String>, usize) {
+    fn resolver_dependencias(
+        &self,
+        archivos: BTreeMap<String, String>,
+    ) -> (BTreeMap<String, String>, usize) {
         let mut archivos = archivos;
         let mut rechazadas = 0usize;
 
         if let Some(pkg_json) = archivos.get("package.json") {
             // Parsear el package.json (mapa ruta → contenido lo guarda como texto).
-            if let Ok(mut mapa) = serde_json::from_str::<serde_json::Map<String, serde_json::Value>>(pkg_json) {
+            if let Ok(mut mapa) =
+                serde_json::from_str::<serde_json::Map<String, serde_json::Value>>(pkg_json)
+            {
                 let resultado = self.resolver.resolver_package_json(&mapa);
                 rechazadas = resultado.rechazadas.len();
                 // Escribir las dependencias resueltas (nombre → versión) en la
@@ -372,7 +387,9 @@ mod tests {
     fn test_pipeline_dashboard_completo_limpio() {
         let mut pipeline = PipelineV0::nuevo(None);
         let resultado = pipeline.ejecutar_local("dashboard de métricas con kpi y analytics", None);
-        let r_render_final = pipeline.gate_render.validar_local(&resultado.archivos_finales);
+        let r_render_final = pipeline
+            .gate_render
+            .validar_local(&resultado.archivos_finales);
         let msgs_render: Vec<String> = r_render_final
             .result
             .runtime_errors
@@ -384,7 +401,12 @@ mod tests {
             .result
             .errors
             .iter()
-            .map(|e| format!("[{}:{}] code={:?} msg={}", e.file, e.line, e.code, e.message))
+            .map(|e| {
+                format!(
+                    "[{}:{}] code={:?} msg={}",
+                    e.file, e.line, e.code, e.message
+                )
+            })
             .collect();
 
         // Los gates finales deben estar limpios tras la orquestación completa.
@@ -486,7 +508,10 @@ mod tests {
             ("formulario de registro con inputs", 4),
             ("dashboard de ventas con tabla", 5),
             ("panel de administracion con sidebar, tabla y dialogo", 6),
-            ("aplicacion de ecommerce con productos, carrito y checkout oscuro", 7),
+            (
+                "aplicacion de ecommerce con productos, carrito y checkout oscuro",
+                7,
+            ),
         ];
         for (prompt, min_archivos) in prompts {
             let mut pipeline = PipelineV0::nuevo(None);
@@ -496,8 +521,7 @@ mod tests {
             assert!(
                 resultado.pipeline_limpio,
                 "prompt='{prompt}' no limpio: errores_restantes={} diff={}",
-                resultado.errores_restantes,
-                resultado.diff_summary
+                resultado.errores_restantes, resultado.diff_summary
             );
             assert_eq!(resultado.errores_restantes, 0, "prompt='{prompt}'");
             assert!(
@@ -518,7 +542,10 @@ mod tests {
                 "prompt='{prompt}' telemetría con {} etapas",
                 resultado.telemetria.etapas.len()
             );
-            assert!(!resultado.session_id.is_empty(), "prompt='{prompt}' sin session_id");
+            assert!(
+                !resultado.session_id.is_empty(),
+                "prompt='{prompt}' sin session_id"
+            );
         }
     }
 

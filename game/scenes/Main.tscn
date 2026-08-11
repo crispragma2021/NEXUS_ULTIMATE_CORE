@@ -1,0 +1,93 @@
+[gd_scene format=3 uid="uid://bc3sas1fulvq4"]
+
+[ext_resource type="Script" uid="uid://c0x2hsq7bgjtl" path="res://scenes/Main.gd" id="1_main"]
+[ext_resource type="PackedScene" path="res://scenes/Player.tscn" id="2_player"]
+[ext_resource type="Script" uid="uid://dpty357djlv8k" path="res://scripts/world/ChunkManager.gd" id="3_chunkmgr"]
+[ext_resource type="PackedScene" path="res://scenes/ui/skills_hud.tscn" id="4_skillshud"]
+[ext_resource type="PackedScene" path="res://scenes/ui/health_bar.tscn" id="5_healthbar"]
+[ext_resource type="Script" path="res://scripts/world/SafeZone.gd" id="6_safezone"]
+[ext_resource type="Script" path="res://scripts/beasts/SpawnZone.gd" id="7_spawnzone"]
+[ext_resource type="Resource" path="res://scripts/beasts/wolf_data.tres" id="8_wolf_data"]
+[ext_resource type="Resource" path="res://scripts/beasts/boar_data.tres" id="9_boar_data"]
+[ext_resource type="Resource" path="res://scripts/beasts/spider_data.tres" id="10_spider_data"]
+[ext_resource type="Resource" path="res://scripts/beasts/bat_data.tres" id="11_bat_data"]
+[ext_resource type="Resource" path="res://scripts/beasts/golem_data.tres" id="12_golem_data"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_1"]
+sky_top_color = Color(0.32, 0.55, 0.85, 1)
+sky_horizon_color = Color(0.72, 0.78, 0.85, 1)
+ground_bottom_color = Color(0.09, 0.11, 0.16, 1)
+ground_horizon_color = Color(0.09, 0.11, 0.16, 1)
+
+[sub_resource type="Sky" id="Sky_1"]
+sky_material = SubResource("ProceduralSkyMaterial_1")
+
+[sub_resource type="Environment" id="Environment_1"]
+background_mode = 2
+sky = SubResource("Sky_1")
+ambient_light_source = 3
+ambient_light_color = Color(0.6, 0.68, 0.78, 1)
+tonemap_mode = 2
+
+[sub_resource type="SphereShape3D" id="SafeZoneShape"]
+radius = 30.0
+
+[node name="Main" type="Node3D" unique_id=900500703]
+script = ExtResource("1_main")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1042223133]
+environment = SubResource("Environment_1")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=1924641445]
+transform = Transform3D(0.707, -0.5, 0.5, 0, 0.866, 0.5, -0.707, -0.5, 0.5, 0, 25, 0)
+light_energy = 1.2
+shadow_enabled = true
+
+[node name="ChunkContainer" type="Node3D" parent="." unique_id=139237026]
+
+[node name="Camera3D" type="Camera3D" parent="." unique_id=596212665]
+transform = Transform3D(0.707, -0.5, 0.5, 0, 0.866, 0.5, -0.707, -0.5, 0.5, 0, 90, 90)
+projection = 1
+current = true
+size = 60.0
+
+[node name="ChunkManager" type="Node" parent="." unique_id=1276620074]
+script = ExtResource("3_chunkmgr")
+
+[node name="Player" parent="." unique_id=1649757705 instance=ExtResource("2_player")]
+
+[node name="SkillsHUD" parent="." unique_id=1987474869 instance=ExtResource("4_skillshud")]
+layout_mode = 3
+anchors_preset = 15
+
+[node name="HealthBar" parent="." unique_id=2001234567 instance=ExtResource("5_healthbar")]
+layout_mode = 3
+anchors_preset = 9
+
+[node name="SafeZone" type="Area3D" parent="." unique_id=3001234567 script=ExtResource("6_safezone")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SafeZone"]
+shape = SubResource("SafeZoneShape")
+
+[node name="SpawnZones" type="Node3D" parent="." unique_id=3001234574]
+
+[node name="WolfZone" type="Node3D" parent="SpawnZones" unique_id=3001234575 script=ExtResource("7_spawnzone")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 50, 0, 50)
+beast_data = ExtResource("8_wolf_data")
+
+[node name="BoarZone" type="Node3D" parent="SpawnZones" unique_id=3001234576 script=ExtResource("7_spawnzone")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -50, 0, 60)
+beast_data = ExtResource("9_boar_data")
+
+[node name="SpiderZone" type="Node3D" parent="SpawnZones" unique_id=3001234577 script=ExtResource("7_spawnzone")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 40, 0, -40)
+beast_data = ExtResource("10_spider_data")
+
+[node name="BatZone" type="Node3D" parent="SpawnZones" unique_id=3001234578 script=ExtResource("7_spawnzone")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -30, 0, -50)
+beast_data = ExtResource("11_bat_data")
+
+[node name="GolemZone" type="Node3D" parent="SpawnZones" unique_id=3001234579 script=ExtResource("7_spawnzone")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 80)
+beast_data = ExtResource("12_golem_data")

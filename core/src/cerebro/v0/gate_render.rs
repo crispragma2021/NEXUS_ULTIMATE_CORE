@@ -52,7 +52,12 @@ impl GateRender {
             if !(ruta.ends_with(".tsx") || ruta.ends_with(".ts")) {
                 continue;
             }
-            runtime_errors.extend(validar_imports_irresolubles(ruta, contenido, &rutas_locales, &terceros));
+            runtime_errors.extend(validar_imports_irresolubles(
+                ruta,
+                contenido,
+                &rutas_locales,
+                &terceros,
+            ));
             runtime_errors.extend(validar_hooks_fuera_de_componente(ruta, contenido));
             runtime_errors.extend(validar_jsx_balance(ruta, contenido));
         }
@@ -136,13 +141,18 @@ fn validar_imports_irresolubles(
             linea.split("import").nth(1)
         };
         let Some(spec) = spec else { continue };
-        let spec = spec.trim().trim_matches(|c| c == '\'' || c == '"' || c == ';');
+        let spec = spec
+            .trim()
+            .trim_matches(|c| c == '\'' || c == '"' || c == ';');
         if spec.is_empty() {
             continue;
         }
 
         // Imports de estilos (css) y vite-env no se validan.
-        if spec.ends_with(".css") || spec.contains("vite-env") || spec.starts_with("./") && spec.contains("index.css") {
+        if spec.ends_with(".css")
+            || spec.contains("vite-env")
+            || spec.starts_with("./") && spec.contains("index.css")
+        {
             continue;
         }
 
@@ -151,7 +161,12 @@ fn validar_imports_irresolubles(
             if !resuelve_relativo(spec, &dir_actual, rutas_locales) {
                 errores.push(MetricaError {
                     tipo: "import_unresolved".into(),
-                    message: format!("{}:{} Import relativo '{}' no encontrado", ruta, idx + 1, spec),
+                    message: format!(
+                        "{}:{} Import relativo '{}' no encontrado",
+                        ruta,
+                        idx + 1,
+                        spec
+                    ),
                     stack: String::new(),
                 });
             }
@@ -162,7 +177,12 @@ fn validar_imports_irresolubles(
             if !resuelve_ruta_local(&destino, rutas_locales) {
                 errores.push(MetricaError {
                     tipo: "import_unresolved".into(),
-                    message: format!("{}:{} Import con alias '{}' no encontrado en src/", ruta, idx + 1, spec),
+                    message: format!(
+                        "{}:{} Import con alias '{}' no encontrado en src/",
+                        ruta,
+                        idx + 1,
+                        spec
+                    ),
                     stack: String::new(),
                 });
             }
@@ -173,7 +193,12 @@ fn validar_imports_irresolubles(
             if !es_node_builtin(&base) && !terceros.contains(&base) {
                 errores.push(MetricaError {
                     tipo: "import_tercero_no_declarado".into(),
-                    message: format!("{}:{} Import '{}' no declarado en package.json", ruta, idx + 1, spec),
+                    message: format!(
+                        "{}:{} Import '{}' no declarado en package.json",
+                        ruta,
+                        idx + 1,
+                        spec
+                    ),
                     stack: String::new(),
                 });
             }
@@ -229,7 +254,11 @@ fn resuelve_relativo(spec: &str, dir_actual: &str, rutas_locales: &[String]) -> 
 /// ¿Una ruta absoluta (sin extensión, ej. `src/lib/utils`) resuelve a un
 /// archivo local? Prueba `{ruta}.tsx`, `{ruta}.ts` y la ruta pura.
 fn resuelve_ruta_local(ruta: &str, rutas_locales: &[String]) -> bool {
-    let candidatos = [ruta.to_string(), format!("{ruta}.tsx"), format!("{ruta}.ts")];
+    let candidatos = [
+        ruta.to_string(),
+        format!("{ruta}.tsx"),
+        format!("{ruta}.ts"),
+    ];
     candidatos.iter().any(|c| {
         rutas_locales
             .iter()
@@ -242,13 +271,45 @@ fn es_node_builtin(spec: &str) -> bool {
     let base = spec.strip_prefix("node:").unwrap_or(spec);
     matches!(
         base,
-        "assert" | "buffer" | "child_process" | "cluster" | "console" | "constants"
-            | "crypto" | "dgram" | "diagnostics_channel" | "dns" | "domain"
-            | "events" | "fs" | "http" | "http2" | "https" | "module" | "net"
-            | "os" | "path" | "perf_hooks" | "process" | "punycode" | "querystring"
-            | "readline" | "repl" | "stream" | "string_decoder" | "timers"
-            | "tls" | "trace_events" | "tty" | "url" | "util" | "v8" | "vm"
-            | "wasi" | "worker_threads" | "zlib"
+        "assert"
+            | "buffer"
+            | "child_process"
+            | "cluster"
+            | "console"
+            | "constants"
+            | "crypto"
+            | "dgram"
+            | "diagnostics_channel"
+            | "dns"
+            | "domain"
+            | "events"
+            | "fs"
+            | "http"
+            | "http2"
+            | "https"
+            | "module"
+            | "net"
+            | "os"
+            | "path"
+            | "perf_hooks"
+            | "process"
+            | "punycode"
+            | "querystring"
+            | "readline"
+            | "repl"
+            | "stream"
+            | "string_decoder"
+            | "timers"
+            | "tls"
+            | "trace_events"
+            | "tty"
+            | "url"
+            | "util"
+            | "v8"
+            | "vm"
+            | "wasi"
+            | "worker_threads"
+            | "zlib"
     )
 }
 
@@ -277,7 +338,11 @@ fn validar_hooks_fuera_de_componente(ruta: &str, contenido: &str) -> Vec<Metrica
         if tiene_hook && profundidad_llaves <= 0 {
             errores.push(MetricaError {
                 tipo: "hooks_outside_component".into(),
-                message: format!("{}:{} Hook de React usado fuera de un componente", ruta, idx + 1),
+                message: format!(
+                    "{}:{} Hook de React usado fuera de un componente",
+                    ruta,
+                    idx + 1
+                ),
                 stack: String::new(),
             });
         }
@@ -328,7 +393,9 @@ fn validar_jsx_balance(ruta: &str, contenido: &str) -> Vec<MetricaError> {
         if chars.get(i + 1) == Some(&'/') {
             let mut j = i + 2;
             let mut nombre = String::new();
-            while j < chars.len() && (chars[j].is_alphanumeric() || chars[j] == '_' || chars[j] == '.') {
+            while j < chars.len()
+                && (chars[j].is_alphanumeric() || chars[j] == '_' || chars[j] == '.')
+            {
                 nombre.push(chars[j]);
                 j += 1;
             }
@@ -358,7 +425,8 @@ fn validar_jsx_balance(ruta: &str, contenido: &str) -> Vec<MetricaError> {
         // Tag de apertura `<Tag ...>`.
         let mut j = i + 1;
         let mut nombre = String::new();
-        while j < chars.len() && (chars[j].is_alphanumeric() || chars[j] == '_' || chars[j] == '.') {
+        while j < chars.len() && (chars[j].is_alphanumeric() || chars[j] == '_' || chars[j] == '.')
+        {
             nombre.push(chars[j]);
             j += 1;
         }
@@ -483,7 +551,8 @@ mod tests {
         let mut m = BTreeMap::new();
         m.insert(
             "package.json".to_string(),
-            r#"{"dependencies":{"react":"^18","react-dom":"^18","lucide-react":"^0.460"}}"#.to_string(),
+            r#"{"dependencies":{"react":"^18","react-dom":"^18","lucide-react":"^0.460"}}"#
+                .to_string(),
         );
         m.insert(
             "src/App.tsx".to_string(),
@@ -497,13 +566,15 @@ mod tests {
                 </div>
               );
             }
-            "#.to_string(),
+            "#
+            .to_string(),
         );
         m.insert(
             "src/components/ui/button.tsx".to_string(),
             r#"
             export function Button() { return <button className="px-4" />; }
-            "#.to_string(),
+            "#
+            .to_string(),
         );
         m
     }
@@ -512,7 +583,11 @@ mod tests {
     fn test_proyecto_valido_pasa() {
         let gate = GateRender;
         let res = gate.validar_local(&proyecto_valido());
-        assert!(res.result.passed, "debería pasar: {:?}", res.result.runtime_errors);
+        assert!(
+            res.result.passed,
+            "debería pasar: {:?}",
+            res.result.runtime_errors
+        );
         assert_eq!(res.result.gate, GateKind::Render);
     }
 
@@ -522,11 +597,16 @@ mod tests {
         let mut archivos = proyecto_valido();
         archivos.insert(
             "src/App.tsx".to_string(),
-            "import { Missing } from './no/existe';\nexport default function App(){return null;}".into(),
+            "import { Missing } from './no/existe';\nexport default function App(){return null;}"
+                .into(),
         );
         let res = gate.validar_local(&archivos);
         assert!(!res.result.passed);
-        assert!(res.result.runtime_errors.iter().any(|e| e.tipo == "import_unresolved"));
+        assert!(res
+            .result
+            .runtime_errors
+            .iter()
+            .any(|e| e.tipo == "import_unresolved"));
     }
 
     #[test]
@@ -539,7 +619,11 @@ mod tests {
         );
         let res = gate.validar_local(&archivos);
         assert!(!res.result.passed);
-        assert!(res.result.runtime_errors.iter().any(|e| e.tipo == "import_tercero_no_declarado"));
+        assert!(res
+            .result
+            .runtime_errors
+            .iter()
+            .any(|e| e.tipo == "import_tercero_no_declarado"));
     }
 
     #[test]
@@ -555,7 +639,11 @@ mod tests {
             "import { Dialog } from '@radix-ui/react-dialog';\nexport default function App(){return null;}".into(),
         );
         let res = gate.validar_local(&archivos);
-        assert!(res.result.passed, "scoped pkg debería resolver: {:?}", res.result.runtime_errors);
+        assert!(
+            res.result.passed,
+            "scoped pkg debería resolver: {:?}",
+            res.result.runtime_errors
+        );
     }
 
     #[test]
@@ -564,12 +652,15 @@ mod tests {
         let mut archivos = proyecto_valido();
         archivos.insert(
             "src/App.tsx".to_string(),
-            "export default function App(){ return <div className='x'><span>Hola</span> }"
-                .into(),
+            "export default function App(){ return <div className='x'><span>Hola</span> }".into(),
         );
         let res = gate.validar_local(&archivos);
         assert!(!res.result.passed);
-        assert!(res.result.runtime_errors.iter().any(|e| e.tipo == "jsx_unclosed"));
+        assert!(res
+            .result
+            .runtime_errors
+            .iter()
+            .any(|e| e.tipo == "jsx_unclosed"));
     }
 
     #[test]
@@ -582,7 +673,11 @@ mod tests {
         );
         let res = gate.validar_local(&archivos);
         assert!(!res.result.passed);
-        assert!(res.result.runtime_errors.iter().any(|e| e.tipo == "hooks_outside_component"));
+        assert!(res
+            .result
+            .runtime_errors
+            .iter()
+            .any(|e| e.tipo == "hooks_outside_component"));
     }
 
     #[test]
@@ -596,8 +691,14 @@ mod tests {
 
     #[test]
     fn test_paquete_base_scope() {
-        assert_eq!(paquete_base("@radix-ui/react-dialog"), "@radix-ui/react-dialog");
-        assert_eq!(paquete_base("@radix-ui/react-dialog/extra"), "@radix-ui/react-dialog");
+        assert_eq!(
+            paquete_base("@radix-ui/react-dialog"),
+            "@radix-ui/react-dialog"
+        );
+        assert_eq!(
+            paquete_base("@radix-ui/react-dialog/extra"),
+            "@radix-ui/react-dialog"
+        );
         assert_eq!(paquete_base("lucide-react/icons"), "lucide-react");
     }
 }

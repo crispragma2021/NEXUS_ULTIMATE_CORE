@@ -215,7 +215,14 @@ mod tests {
         let d = DebuggerTier1;
         let codigo = "export function App() {\n  return <div>"; // falta `}`
         let archivos = mapa(&[("src/App.tsx", codigo)]);
-        let r = d.depurar_local(&archivos, &[err("brace_unclosed", "llave sin cerrar", SeveridadError::Error)]);
+        let r = d.depurar_local(
+            &archivos,
+            &[err(
+                "brace_unclosed",
+                "llave sin cerrar",
+                SeveridadError::Error,
+            )],
+        );
         assert!(r.hay_correcciones);
         let corregido = r.archivos_corregidos.get("src/App.tsx").unwrap();
         assert!(corregido.contains("}"));
@@ -241,7 +248,10 @@ mod tests {
         let codigo = "export const x = 1;";
         let archivos = mapa(&[("src/App.tsx", codigo)]);
         // Código desconocido → no corregible, escala a Tier-2.
-        let r = d.depurar_local(&archivos, &[err("unknown", "error complejo", SeveridadError::Error)]);
+        let r = d.depurar_local(
+            &archivos,
+            &[err("unknown", "error complejo", SeveridadError::Error)],
+        );
         assert!(!r.hay_correcciones);
         assert_eq!(r.errores_no_corregidos.len(), 1);
     }

@@ -97,13 +97,14 @@ impl RazonadorQwen {
 
         // Inferir tecnología y módulos a partir de palabras clave del prompt.
         let lower = prompt.to_lowercase();
-        let tecnologia = if lower.contains("juego") || lower.contains("game") || lower.contains("canvas") {
-            "HTML5 Canvas + TypeScript"
-        } else if lower.contains("dashboard") || lower.contains("panel") {
-            "React + Tailwind + shadcn/ui"
-        } else {
-            "React + Tailwind + shadcn/ui"
-        };
+        let tecnologia =
+            if lower.contains("juego") || lower.contains("game") || lower.contains("canvas") {
+                "HTML5 Canvas + TypeScript"
+            } else if lower.contains("dashboard") || lower.contains("panel") {
+                "React + Tailwind + shadcn/ui"
+            } else {
+                "React + Tailwind + shadcn/ui"
+            };
 
         let mut modulos = vec![
             "src/App.tsx".to_string(),
@@ -204,7 +205,12 @@ Genera SOLO código válido, sin texto explicativo, usando este contexto de refe
     }
 
     /// Ejecuta una llamada a la API de Ollama `/api/chat`.
-    async fn llamar_ollama(&self, sistema: &str, prompt: &str, _max_tokens: u32) -> Result<String, String> {
+    async fn llamar_ollama(
+        &self,
+        sistema: &str,
+        prompt: &str,
+        _max_tokens: u32,
+    ) -> Result<String, String> {
         let cliente = reqwest::Client::new();
         let url = format!("{}/api/chat", self.base_url);
 
@@ -305,7 +311,10 @@ mod tests {
         let res = r.razonar_local("crea un juego de plataformas");
         assert!(res.plan.es_local);
         assert!(res.plan.tecnologia.contains("Canvas"));
-        assert!(res.plan.modulos.contains(&"src/entities/player.ts".to_string()));
+        assert!(res
+            .plan
+            .modulos
+            .contains(&"src/entities/player.ts".to_string()));
     }
 
     #[test]

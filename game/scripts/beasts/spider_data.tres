@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="BeastData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/beasts/BeastData.gd" id="1_beastdata"]
+
+[resource]
+script = ExtResource("1_beastdata")
+species_name = "Arácnido"
+level_min = 5
+level_max = 12
+base_health = 40.0
+base_damage = 12.0
+attack_range = 3.0
+move_speed = 5.0
+detection_radius = 18.0
+chase_radius = 40.0
+flee_health_threshold = 0.25
+color = Color(0.2, 0.1, 0.3, 1)
+xp_reward = 3
+biomes = ["forest", "cave"]
+attack_type = 1
+attack_cooldown = 1.2

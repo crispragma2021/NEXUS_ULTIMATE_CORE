@@ -179,14 +179,8 @@ impl AgenteEspecialista {
                 "nexus-cfo-expert",
                 "performance-profiling",
             ],
-            Self::BullAnalyst => &[
-                "nexus-scientist-expert",
-                "performance-profiling",
-            ],
-            Self::BearAnalyst => &[
-                "nexus-scientist-expert",
-                "performance-profiling",
-            ],
+            Self::BullAnalyst => &["nexus-scientist-expert", "performance-profiling"],
+            Self::BearAnalyst => &["nexus-scientist-expert", "performance-profiling"],
         }
     }
 

@@ -52,7 +52,10 @@ async fn main() {
 
     let token = match env::var("TELEGRAM_TOKEN") {
         Ok(t) => {
-            info!("✅ TOKEN encontrado: ...{}", &t[t.len().saturating_sub(6)..]);
+            info!(
+                "✅ TOKEN encontrado: ...{}",
+                &t[t.len().saturating_sub(6)..]
+            );
             t
         }
         Err(_) => {

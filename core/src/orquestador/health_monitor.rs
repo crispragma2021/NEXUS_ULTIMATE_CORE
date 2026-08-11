@@ -67,8 +67,10 @@ impl HealthMonitor {
     /// Es la base para el LED. Si el servicio no responde → Down.
     pub fn check_tcp(&self, port: u16) -> ServiceStatus {
         let start = std::time::Instant::now();
-        match TcpStream::connect_timeout(&format!("127.0.0.1:{port}").parse().unwrap(), self.connect_timeout)
-        {
+        match TcpStream::connect_timeout(
+            &format!("127.0.0.1:{port}").parse().unwrap(),
+            self.connect_timeout,
+        ) {
             Ok(stream) => {
                 // Cerrar limpiamente.
                 let _ = stream.shutdown(Shutdown::Both);
@@ -85,13 +87,15 @@ impl HealthMonitor {
     /// Usa un socket crudo para evitar dependencias async aquí.
     pub fn check_http(&self, port: u16) -> ServiceStatus {
         let path = self.http_path.as_deref().unwrap_or("/health");
-        let request = format!("GET {path} HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\nConnection: close\r\n\r\n");
+        let request =
+            format!("GET {path} HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\nConnection: close\r\n\r\n");
 
-        match TcpStream::connect_timeout(&format!("127.0.0.1:{port}").parse().unwrap(), self.connect_timeout) {
+        match TcpStream::connect_timeout(
+            &format!("127.0.0.1:{port}").parse().unwrap(),
+            self.connect_timeout,
+        ) {
             Ok(mut stream) => {
-                stream
-                    .set_read_timeout(Some(self.connect_timeout))
-                    .ok();
+                stream.set_read_timeout(Some(self.connect_timeout)).ok();
                 if stream.write_all(request.as_bytes()).is_err() {
                     return ServiceStatus::Down;
                 }
@@ -106,7 +110,13 @@ impl HealthMonitor {
                 head.split_whitespace()
                     .nth(1)
                     .and_then(|code| code.parse::<u16>().ok())
-                    .map(|c| if (200..400).contains(&c) { ServiceStatus::Up } else { ServiceStatus::Down })
+                    .map(|c| {
+                        if (200..400).contains(&c) {
+                            ServiceStatus::Up
+                        } else {
+                            ServiceStatus::Down
+                        }
+                    })
                     .unwrap_or(ServiceStatus::Down)
             }
             Err(_) => ServiceStatus::Down,
@@ -152,7 +162,7 @@ mod tests {
         // Puerto 8000 no abierto en CI → Down esperado (o Up si hay servicio local).
         let mon = HealthMonitor::default();
         let s = mon.check_tcp(9); // puerto discard, casi seguro cerrado
-        // No asumimos: solo verificamos que devuelve un valor válido.
+                                  // No asumimos: solo verificamos que devuelve un valor válido.
         assert!(s == ServiceStatus::Up || s == ServiceStatus::Down);
     }
 

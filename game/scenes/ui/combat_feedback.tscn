@@ -1,0 +1,9 @@
+[gd_scene format=3 uid="uid://cp3eoyt14c02j"]
+
+[ext_resource type="Script" path="res://scripts/ui/combat_feedback.gd" id="1_g304k"]
+
+[node name="CombatFeedback" type="Label3D"]
+script = ExtResource("1_g304k")
+pixel_size = 0.05
+c_ull_mask = 0
+

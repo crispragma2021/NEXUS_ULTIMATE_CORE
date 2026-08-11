@@ -37,6 +37,8 @@ struct Circuito {
 #[derive(Debug)]
 pub struct CircuitBreaker {
     circuitos: HashMap<String, Circuito>,
+    umbral_fallos: u32,
+    cooldown: Duration,
 }
 
 impl Default for CircuitBreaker {
@@ -46,25 +48,34 @@ impl Default for CircuitBreaker {
 }
 
 impl CircuitBreaker {
-    /// Crea un interruptor global con umbral y cooldown por defecto.
+    /// Crea un interruptor con umbral y cooldown configurados.
     pub fn new(umbral_fallos: u32, cooldown: Duration) -> Self {
         Self {
             circuitos: HashMap::new(),
+            umbral_fallos,
+            cooldown,
+        }
+    }
+
+    /// Devuelve una configuración de circuito por defecto para un nuevo proveedor.
+    fn config_por_defecto(&self) -> Circuito {
+        Circuito {
+            estado: EstadoCircuito::Cerrado,
+            fallos_consecutivos: 0,
+            umbral_fallos: self.umbral_fallos,
+            cooldown: self.cooldown,
+            abierto_desde: None,
         }
     }
 
     /// ¿Puedo llamar al proveedor `nombre` ahora?
     pub fn puede_llamar(&mut self, nombre: &str) -> bool {
         let now = Instant::now();
-        let circ = self.circuitos.entry(nombre.to_string()).or_insert_with(|| {
-            Circuito {
-                estado: EstadoCircuito::Cerrado,
-                fallos_consecutivos: 0,
-                umbral_fallos: 3,
-                cooldown: Duration::from_secs(30),
-                abierto_desde: None,
-            }
-        });
+        let config = self.config_por_defecto();
+        let circ = self
+            .circuitos
+            .entry(nombre.to_string())
+            .or_insert(config);
         match circ.estado {
             EstadoCircuito::Cerrado | EstadoCircuito::MedioAbierto => true,
             EstadoCircuito::Abierto => {
@@ -95,15 +106,11 @@ impl CircuitBreaker {
     /// Registra un fallo: acumula y abre el circuito si supera el umbral.
     pub fn registrar_fallo(&mut self, nombre: &str) {
         let now = Instant::now();
-        let circ = self.circuitos.entry(nombre.to_string()).or_insert_with(|| {
-            Circuito {
-                estado: EstadoCircuito::Cerrado,
-                fallos_consecutivos: 0,
-                umbral_fallos: 3,
-                cooldown: Duration::from_secs(30),
-                abierto_desde: None,
-            }
-        });
+        let config = self.config_por_defecto();
+        let circ = self
+            .circuitos
+            .entry(nombre.to_string())
+            .or_insert(config);
         circ.fallos_consecutivos += 1;
         match circ.estado {
             EstadoCircuito::MedioAbierto => {
@@ -309,7 +316,10 @@ impl GrafoTareas {
 
     /// Nº de nodos completados.
     pub fn nodos_completados(&self) -> usize {
-        self.nodos.values().filter(|n| n.estado == EstadoNodo::Completado).count()
+        self.nodos
+            .values()
+            .filter(|n| n.estado == EstadoNodo::Completado)
+            .count()
     }
 }
 
@@ -472,7 +482,11 @@ pub fn comprimir_contexto(texto: &str, max_frases: usize) -> String {
 
     // Ordenar por score descendente, tomar top N, devolver en orden original.
     puntuadas.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
-    let mut top: Vec<usize> = puntuadas.into_iter().take(max_frases).map(|(i, _)| i).collect();
+    let mut top: Vec<usize> = puntuadas
+        .into_iter()
+        .take(max_frases)
+        .map(|(i, _)| i)
+        .collect();
     top.sort_unstable();
     top.iter()
         .map(|&i| frases[i])

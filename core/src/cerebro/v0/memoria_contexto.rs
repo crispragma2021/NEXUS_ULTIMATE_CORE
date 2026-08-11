@@ -63,7 +63,9 @@ impl Default for MemoriaContexto {
 impl MemoriaContexto {
     /// Construye una memoria vacía.
     pub fn nueva() -> Self {
-        Self { fragmentos: Vec::new() }
+        Self {
+            fragmentos: Vec::new(),
+        }
     }
 
     /// Índice un fragmento. Si el id ya existe, lo reemplaza (dedup).
@@ -79,7 +81,13 @@ impl MemoriaContexto {
     }
 
     /// Índice un fragmento desde un nombre + contenido y una lista de claves.
-    pub fn indexar_claves(&mut self, id: &str, categoria: &str, claves: Vec<String>, contenido: &str) {
+    pub fn indexar_claves(
+        &mut self,
+        id: &str,
+        categoria: &str,
+        claves: Vec<String>,
+        contenido: &str,
+    ) {
         let refs: Vec<&str> = claves.iter().map(|c| c.as_str()).collect();
         self.indexar(id, categoria, &refs, contenido);
     }
@@ -96,8 +104,11 @@ impl MemoriaContexto {
             claves.extend(
                 comp.descripcion
                     .split_whitespace()
-                    .map(|w| w.trim_matches(|c: char| !c.is_alphanumeric()).to_lowercase())
-                    .filter(|w| w.len() > 3)
+                    .map(|w| {
+                        w.trim_matches(|c: char| !c.is_alphanumeric())
+                            .to_lowercase()
+                    })
+                    .filter(|w| w.len() > 3),
             );
             let contenido = format!(
                 "[shadcn/{}] ({}) {}\nDependencias: {}\nEjemplo: {}",
@@ -194,7 +205,8 @@ impl MemoriaContexto {
         if seleccionados.is_empty() {
             if let Some(mejor) = self.fragmentos.first().cloned() {
                 recortado = true;
-                let recortado_texto: String = mejor.contenido.chars().take(presupuesto * 4).collect();
+                let recortado_texto: String =
+                    mejor.contenido.chars().take(presupuesto * 4).collect();
                 seleccionados.push(FragmentoContexto {
                     contenido: recortado_texto.clone(),
                     ..mejor.clone()
@@ -253,8 +265,18 @@ mod tests {
     #[test]
     fn test_indexar_dedup_reemplaza() {
         let mut m = MemoriaContexto::nueva();
-        m.indexar("patron:loop", "patrón", &["loop", "frame"], "requestAnimationFrame");
-        m.indexar("patron:loop", "patrón", &["loop", "frame"], "delta-t actualizado por frame");
+        m.indexar(
+            "patron:loop",
+            "patrón",
+            &["loop", "frame"],
+            "requestAnimationFrame",
+        );
+        m.indexar(
+            "patron:loop",
+            "patrón",
+            &["loop", "frame"],
+            "delta-t actualizado por frame",
+        );
         assert_eq!(m.len(), 1);
         assert!(m.contexto_completo().contains("delta-t"));
     }

@@ -67,7 +67,9 @@ impl ProviderCircuitBreaker {
     /// Indica si se puede llamar al proveedor (no está en Open).
     pub fn is_allowed(&self, provider: &str) -> bool {
         let mut circuits = self.circuits.lock().unwrap();
-        let entry = circuits.entry(provider.to_string()).or_insert_with(|| CircuitEntry::new(self.pause_ms));
+        let entry = circuits
+            .entry(provider.to_string())
+            .or_insert_with(|| CircuitEntry::new(self.pause_ms));
 
         match entry.state {
             CircuitState::Closed => true,
@@ -88,7 +90,9 @@ impl ProviderCircuitBreaker {
     /// Registra un éxito → resetea el circuito.
     pub fn record_success(&self, provider: &str) {
         let mut circuits = self.circuits.lock().unwrap();
-        let entry = circuits.entry(provider.to_string()).or_insert_with(|| CircuitEntry::new(self.pause_ms));
+        let entry = circuits
+            .entry(provider.to_string())
+            .or_insert_with(|| CircuitEntry::new(self.pause_ms));
         entry.state = CircuitState::Closed;
         entry.consecutive_failures = 0;
         entry.opened_at = None;
@@ -97,7 +101,9 @@ impl ProviderCircuitBreaker {
     /// Registra un fallo → incrementa; si llega al umbral, abre el circuito.
     pub fn record_failure(&self, provider: &str) {
         let mut circuits = self.circuits.lock().unwrap();
-        let entry = circuits.entry(provider.to_string()).or_insert_with(|| CircuitEntry::new(self.pause_ms));
+        let entry = circuits
+            .entry(provider.to_string())
+            .or_insert_with(|| CircuitEntry::new(self.pause_ms));
 
         // Si estaba HalfOpen y falló la prueba → volver a abrir.
         if entry.state == CircuitState::HalfOpen {

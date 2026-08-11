@@ -97,7 +97,9 @@ impl Generador {
     fn construir_app_tsx(&self, plan: &PlanComponentes) -> String {
         // Identificar componentes shadcn usados en el árbol.
         let usados = colectar_componentes_shadcn(&plan.component_tree);
-        let mut imports = String::from("import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';\n");
+        let mut imports = String::from(
+            "import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';\n",
+        );
         let mut usos = String::new();
 
         for c in &usados {
@@ -304,10 +306,7 @@ fn construir_index_css(plan: &PlanComponentes) -> String {
     //   - `.dark` → toggle manual (clase) para el switch de la UI.
     // Si el plan pide `dark`, el tema oscuro es el por defecto.
     let (light_default, dark_default) = if plan.app.theme == "dark" {
-        (
-            "prefers-color-scheme: dark",
-            "color-scheme: dark;",
-        )
+        ("prefers-color-scheme: dark", "color-scheme: dark;")
     } else {
         ("(prefers-color-scheme: dark)", "")
     };
@@ -417,11 +416,17 @@ fn construir_package_json(plan: &PlanComponentes) -> serde_json::Map<String, ser
     }
 
     let mut pkg = serde_json::Map::new();
-    pkg.insert("name".into(), serde_json::Value::String(plan.app.name.clone()));
+    pkg.insert(
+        "name".into(),
+        serde_json::Value::String(plan.app.name.clone()),
+    );
     pkg.insert("version".into(), json_v("0.1.0"));
     pkg.insert("private".into(), serde_json::Value::Bool(true));
     pkg.insert("dependencies".into(), serde_json::Value::Object(deps));
-    pkg.insert("devDependencies".into(), serde_json::Value::Object(dev_deps));
+    pkg.insert(
+        "devDependencies".into(),
+        serde_json::Value::Object(dev_deps),
+    );
     pkg.insert(
         "scripts".into(),
         serde_json::json!({
@@ -1251,17 +1256,17 @@ mod tests {
         assert!(paths.contains(&"src/components/ui/card.tsx"));
 
         // El App.tsx importa el Button.
-        let app = gen
-            .files
-            .iter()
-            .find(|f| f.path == "src/App.tsx")
-            .unwrap();
-        assert!(app.content.contains("import { Button } from '@/components/ui/button'"));
+        let app = gen.files.iter().find(|f| f.path == "src/App.tsx").unwrap();
+        assert!(app
+            .content
+            .contains("import { Button } from '@/components/ui/button'"));
     }
 
     #[test]
     fn test_generar_con_dashboard_incluye_componentes() {
-        let plan = Planificador::nuevo().planificar_local("dashboard de ventas").plan;
+        let plan = Planificador::nuevo()
+            .planificar_local("dashboard de ventas")
+            .plan;
         let mut g = Generador::nuevo();
         let gen = g.generar_local(&plan);
         let paths: Vec<&str> = gen.files.iter().map(|f| f.path.as_str()).collect();
@@ -1316,7 +1321,11 @@ mod tests {
         plan.app.theme = "dark".into();
         let mut g = Generador::nuevo();
         let gen = g.generar_local(&plan);
-        let css = gen.files.iter().find(|f| f.path == "src/index.css").unwrap();
+        let css = gen
+            .files
+            .iter()
+            .find(|f| f.path == "src/index.css")
+            .unwrap();
         assert!(css.content.contains(".dark"));
     }
 

@@ -84,6 +84,12 @@ async fn main() -> Result<()> {
             intensidad: 0.6,
             embedding: NexusEmbedder::generar("serenidad", &[]),
         }],
+        persona: Some(
+            "## Perfil del Arquitecto\n- Prefiere Rust y arquitecturas soberanas.".to_string(),
+        ),
+        escenarios: vec!["ESCENARIO: Memoria unificada".to_string()],
+        canvas_mermaid: Some("graph LR\n    n_1[\"L0\"] -->|consolida| n_2[\"L1\"]\n".to_string()),
+        hits_hibridos: vec!["NEXUS integra memoria unificada en nexus_memoria.db".to_string()],
     };
 
     let consulta = "Hola, Arquitecto. ¿Qué recuerdas sobre la memoria unificada?".to_string();
@@ -105,7 +111,9 @@ async fn main() -> Result<()> {
         identidad: context.identidad_vector.clone(),
         neuroquimica: nq,
     };
-    let intention = encoder.encode(&intention_input).context("encode de intención")?;
+    let intention = encoder
+        .encode(&intention_input)
+        .context("encode de intención")?;
 
     // Prueba 1 — El SAE guía: vector M normalizado y logit_bias acotado.
     {
@@ -149,18 +157,13 @@ async fn main() -> Result<()> {
 
     let assembler = PromptAssembler::default();
     let prompt = assembler
-        .assemble(
-            &consulta,
-            &context,
-            Some(&limbico.estado),
-            Some(&intention),
-        )
+        .assemble(&consulta, &context, Some(&limbico.estado), Some(&intention))
         .context("ensamblaje del prompt")?;
 
     // Prueba 3 — Recuerda: la memoria unificada llega al contexto.
     {
-        let ok = prompt.system.contains("memoria unificada")
-            && prompt.system.contains("Arquitecto");
+        let ok =
+            prompt.system.contains("memoria unificada") && prompt.system.contains("Arquitecto");
         pruebas.push(Prueba {
             nombre: "3. Recuerda (memoria unificada en contexto)",
             exito: ok,
@@ -180,7 +183,8 @@ async fn main() -> Result<()> {
         pruebas.push(Prueba {
             nombre: "4. Es consistente (identidad y voz)",
             exito: ok,
-            detalle: "el system prompt conserva identidad, lealtad y directriz de español".to_string(),
+            detalle: "el system prompt conserva identidad, lealtad y directriz de español"
+                .to_string(),
         });
     }
 
@@ -195,9 +199,7 @@ async fn main() -> Result<()> {
             exito: ok,
             detalle: format!(
                 "oxitocina={:.3}, temp {:.2}→{:.2}",
-                limbico.estado.oxitocina,
-                params_basal.temperature,
-                params_tras.temperature
+                limbico.estado.oxitocina, params_basal.temperature, params_tras.temperature
             ),
         });
     }

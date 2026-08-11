@@ -86,7 +86,8 @@ impl RateLimiter {
 
     /// Libera el hueco de concurrencia tras la petición.
     pub fn release(&self, domain: &str, success: bool) {
-        self.in_flight.fetch_sub(1, std::sync::atomic::Ordering::SeqCst);
+        self.in_flight
+            .fetch_sub(1, std::sync::atomic::Ordering::SeqCst);
         if success {
             self.backoff_ms.lock().unwrap().remove(domain);
         }
@@ -124,9 +125,18 @@ impl RateLimiter {
 fn parse_sqlite_datetime_ms(s: &str) -> Result<u64> {
     // Parse simple sin dependencias externas (formato fijo de SQLite).
     let mut parts = s.split(['-', ' ', ':']).filter(|p| !p.is_empty());
-    let y: i64 = parts.next().ok_or_else(|| anyhow::anyhow!("bad year"))?.parse()?;
-    let mo: i64 = parts.next().ok_or_else(|| anyhow::anyhow!("bad month"))?.parse()?;
-    let d: i64 = parts.next().ok_or_else(|| anyhow::anyhow!("bad day"))?.parse()?;
+    let y: i64 = parts
+        .next()
+        .ok_or_else(|| anyhow::anyhow!("bad year"))?
+        .parse()?;
+    let mo: i64 = parts
+        .next()
+        .ok_or_else(|| anyhow::anyhow!("bad month"))?
+        .parse()?;
+    let d: i64 = parts
+        .next()
+        .ok_or_else(|| anyhow::anyhow!("bad day"))?
+        .parse()?;
     let h: i64 = parts.next().unwrap_or("0").parse()?;
     let mi: i64 = parts.next().unwrap_or("0").parse()?;
     let se: i64 = parts.next().unwrap_or("0").parse()?;

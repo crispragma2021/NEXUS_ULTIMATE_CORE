@@ -840,7 +840,9 @@ impl ZenithPool {
         }
 
         // 5. Último respaldo nube: Gemini AI Studio (solo si todo lo demás falló)
-        warn!("⚠️ [ZENITH] Vertex AI falló o no disponible. Probando AI Studio (último respaldo)...");
+        warn!(
+            "⚠️ [ZENITH] Vertex AI falló o no disponible. Probando AI Studio (último respaldo)..."
+        );
         let respuesta_studio = self.cerebro_gemini(prompt, "gemini-3-flash-preview").await;
         if !respuesta_studio.contains("Cuota agotada") && !respuesta_studio.is_empty() {
             return respuesta_studio;

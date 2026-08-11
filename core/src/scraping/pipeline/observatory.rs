@@ -135,7 +135,13 @@ impl Observatory {
     }
 
     /// Registra una fuente a monitorear.
-    pub fn add_source(&self, url: &str, selector: Option<&str>, field_name: &str, interval_min: u64) -> Result<i64> {
+    pub fn add_source(
+        &self,
+        url: &str,
+        selector: Option<&str>,
+        field_name: &str,
+        interval_min: u64,
+    ) -> Result<i64> {
         let conn = self.conn.lock().unwrap();
         conn.execute(
             "INSERT INTO observatory_sources (url, selector, field_name, check_interval_min)

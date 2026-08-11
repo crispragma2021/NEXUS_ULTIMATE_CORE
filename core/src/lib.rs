@@ -18,9 +18,9 @@ pub mod identities;
 pub mod infra;
 pub mod memoria;
 pub mod neuroquimica;
-pub mod organismo; // 🫀 Interocepción: sensaciones corporales funcionales
 pub mod nexus_embedder;
 pub mod nexus_telegram;
+pub mod organismo; // 🫀 Interocepción: sensaciones corporales funcionales
 pub mod phantom; // 👻 Módulo fantasma de compatibilidad
 pub use memoria::evolution;
 pub mod brain_metabolism;
@@ -65,9 +65,9 @@ pub use infra::herramientas_nativas::HerramientasNativas;
 pub use infra::kernel::KernelSovereign;
 pub use infra::network;
 pub use infra::paths::{resolve_path, NEXUS_ROOT};
-pub use memoria::persistence;
-pub use memoria::memory_loader;
 pub use memoria::intention_encoder;
+pub use memoria::memory_loader;
+pub use memoria::persistence;
 pub use memoria::prompt_assembler;
 pub use memoria::sistema_limbico;
 pub use procesos::telemetry;

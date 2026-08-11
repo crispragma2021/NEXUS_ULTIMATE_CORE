@@ -4,7 +4,7 @@
 			"command": "/home/soberano/NEXUS_ULTIMATE_CORE/bin/claws-mcp",
 			"args": [],
 			"type": "stdio",
-			"disabled": false,
+			"disabled": true,
 			"alwaysAllow": [
 				"leer_archivo",
 				"escribir_archivo",

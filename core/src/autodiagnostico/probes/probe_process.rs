@@ -53,7 +53,9 @@ impl HealthProbe for ProbeProcess {
                         mensaje.push_str(&format!("{} servicios críticos activos. ", activos));
                     } else {
                         // Sin servicios registrados no es fallo: el gestor opera bien.
-                        mensaje.push_str("Gestor de servicios operativo (sin servicios registrados). ");
+                        mensaje.push_str(
+                            "Gestor de servicios operativo (sin servicios registrados). ",
+                        );
                     }
                 } else {
                     passed = false;

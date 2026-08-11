@@ -731,6 +731,270 @@
             display: block;
         }
 
+        /* ===== PANEL DE PROVEEDORES ESTILO ROO CODE ===== */
+        #btn-settings-chat {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 30px;
+            height: 30px;
+            margin-left: 6px;
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 6px;
+            color: #e2e8f0;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        #btn-settings-chat:hover {
+            border-color: var(--neon-green);
+            color: var(--neon-green);
+            box-shadow: 0 0 12px rgba(0, 255, 136, 0.2);
+            transform: rotate(45deg);
+        }
+
+        #providers-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.75);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            align-items: flex-start;
+            justify-content: center;
+            overflow-y: auto;
+            padding: 40px 16px;
+        }
+
+        #providers-modal.show-modal {
+            display: flex;
+        }
+
+        .providers-panel {
+            background: #0b1220;
+            border: 1px solid rgba(0, 255, 136, 0.25);
+            border-radius: 12px;
+            width: 100%;
+            max-width: 680px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+            overflow: hidden;
+            animation: modal-pop 0.2s ease;
+        }
+
+        @keyframes modal-pop {
+            from { transform: translateY(12px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .providers-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 18px;
+            background: linear-gradient(135deg, rgba(0,255,136,0.12), rgba(0,0,0,0.2));
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+
+        .providers-header h2 {
+            margin: 0;
+            font-size: 0.95rem;
+            color: var(--neon-green);
+            letter-spacing: 0.5px;
+        }
+
+        .providers-close {
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #e2e8f0;
+            border-radius: 6px;
+            padding: 4px 12px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: all 0.2s;
+        }
+
+        .providers-close:hover {
+            background: rgba(255,80,80,0.15);
+            border-color: #ff5050;
+            color: #ff5050;
+        }
+
+        .providers-search {
+            padding: 12px 18px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+
+        .providers-search input {
+            width: 100%;
+            background: rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 8px;
+            padding: 10px 14px;
+            color: #e2e8f0;
+            font-size: 0.85rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .providers-search input:focus {
+            border-color: var(--neon-green);
+        }
+
+        .providers-list {
+            padding: 10px 18px;
+            max-height: 260px;
+            overflow-y: auto;
+        }
+
+        .provider-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: all 0.15s;
+            margin-bottom: 4px;
+        }
+
+        .provider-item:hover {
+            background: rgba(0, 255, 136, 0.06);
+            border-color: rgba(0, 255, 136, 0.2);
+        }
+
+        .provider-item.selected {
+            background: rgba(0, 255, 136, 0.1);
+            border-color: var(--neon-green);
+        }
+
+        .provider-item .provider-name {
+            font-size: 0.85rem;
+            color: #e2e8f0;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .provider-item .provider-check {
+            color: var(--neon-green);
+            font-size: 0.85rem;
+            opacity: 0;
+        }
+
+        .provider-item.selected .provider-check {
+            opacity: 1;
+        }
+
+        .provider-config {
+            display: none;
+            padding: 16px 18px;
+            border-top: 1px solid rgba(255,255,255,0.08);
+            background: rgba(0,0,0,0.25);
+        }
+
+        .provider-config.active {
+            display: block;
+        }
+
+        .provider-config label {
+            display: block;
+            font-size: 0.7rem;
+            color: #8899aa;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin: 12px 0 4px;
+        }
+
+        .provider-config input {
+            width: 100%;
+            background: rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 8px;
+            padding: 9px 12px;
+            color: #e2e8f0;
+            font-size: 0.82rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .provider-config input:focus {
+            border-color: var(--neon-green);
+        }
+
+        .cfg-field {
+            margin-bottom: 4px;
+        }
+
+        .provider-config .config-hint {
+            font-size: 0.7rem;
+            color: #5a6b7a;
+            margin-top: 4px;
+        }
+
+        .provider-config .config-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .config-btn {
+            flex: 1;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.15);
+            background: rgba(255,255,255,0.05);
+            color: #e2e8f0;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .config-btn:hover {
+            border-color: var(--neon-green);
+            color: var(--neon-green);
+        }
+
+        .config-btn.primary {
+            background: var(--neon-green);
+            border-color: var(--neon-green);
+            color: var(--dark-bg);
+        }
+
+        .config-btn.primary:hover {
+            box-shadow: 0 0 16px rgba(0, 255, 136, 0.4);
+        }
+
+        .providers-status {
+            padding: 10px 18px;
+            font-size: 0.75rem;
+            color: #5a6b7a;
+            border-top: 1px solid rgba(255,255,255,0.06);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .providers-status .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--neon-green);
+            box-shadow: 0 0 8px var(--neon-green);
+        }
+
+        .provider-model-tag {
+            font-size: 0.68rem;
+            color: #5a6b7a;
+            background: rgba(255,255,255,0.05);
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin-left: 6px;
+        }
+
         .typing-dot {
             width: 6px;
             height: 6px;
@@ -832,25 +1096,50 @@
         <!-- 📈 ACCESO RÁPIDO — TRADING -->
         <button
             id="btn-trading-dashboard"
-            onclick="window.open('/templates/nexus_dashboard.html', '_blank')"
+            onclick="window.open('http://localhost:42210/', '_blank')"
             style="
                 display: flex; align-items: center; gap: 10px;
                 width: 100%; padding: 12px 16px;
-                background: linear-gradient(135deg, rgba(0,255,136,0.08), rgba(0,240,255,0.05));
-                border: 1px solid rgba(0,255,136,0.25);
+                background: linear-gradient(135deg, rgba(16,185,129,0.1), rgba(6,182,212,0.05));
+                border: 1px solid rgba(16,185,129,0.3);
                 border-radius: 10px; cursor: pointer;
-                color: var(--neon-green); font-family: var(--font-display);
+                color: #10b981; font-family: var(--font-display);
                 font-size: 0.82rem; font-weight: 700; letter-spacing: 0.6px;
                 text-transform: uppercase; text-align: left;
-                transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
+                transition: all 0.2s;
+                margin-bottom: 10px;
             "
-            onmouseover="this.style.borderColor='rgba(0,255,136,0.55)'; this.style.boxShadow='0 0 16px rgba(0,255,136,0.15)';"
-            onmouseout="this.style.borderColor='rgba(0,255,136,0.25)'; this.style.boxShadow='none';"
+            onmouseover="this.style.borderColor='rgba(16,185,129,0.6)'; this.style.boxShadow='0 0 16px rgba(16,185,129,0.15)';"
+            onmouseout="this.style.borderColor='rgba(16,185,129,0.3)'; this.style.boxShadow='none';"
         >
             <svg style="width:16px;height:16px;flex-shrink:0;fill:currentColor;" viewBox="0 0 24 24">
                 <path d="M3.5 18.49l6-6.01 4 4L22 6.92l-1.41-1.41-7.09 7.97-4-4L2 16.99z"/>
             </svg>
             Trading Dashboard
+        </button>
+
+        <!-- 📘 ACCESO RÁPIDO — FB AUTOPUBLICADOR -->
+        <button
+            id="btn-fb-autopublisher"
+            onclick="window.open('http://localhost:5180/', '_blank')"
+            style="
+                display: flex; align-items: center; gap: 10px;
+                width: 100%; padding: 12px 16px;
+                background: linear-gradient(135deg, rgba(6,182,212,0.1), rgba(0,240,255,0.05));
+                border: 1px solid rgba(6,182,212,0.3);
+                border-radius: 10px; cursor: pointer;
+                color: #06b6d4; font-family: var(--font-display);
+                font-size: 0.82rem; font-weight: 700; letter-spacing: 0.6px;
+                text-transform: uppercase; text-align: left;
+                transition: all 0.2s;
+            "
+            onmouseover="this.style.borderColor='rgba(6,182,212,0.6)'; this.style.boxShadow='0 0 16px rgba(6,182,212,0.15)';"
+            onmouseout="this.style.borderColor='rgba(6,182,212,0.3)'; this.style.boxShadow='none';"
+        >
+            <svg style="width:16px;height:16px;flex-shrink:0;fill:currentColor;" viewBox="0 0 24 24">
+                <path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6H16v3h-2c-.55 0-1 .45-1 1v2h3v3h-3v6.95c5.05-.5 9-4.76 9-9.95z"/>
+            </svg>
+            FB Autopublicador
         </button>
 
 
@@ -905,30 +1194,21 @@
                         <input type="file" id="chat-file-input" style="display: none;">
 
                         <div id="chat-model-container" style="position: relative; display: inline-block;">
-                            <button class="ag-btn" id="btn-model-chat" style="color: #00ff88;" type="button">^ NEXUS Puro ▼</button>
+                            <button class="ag-btn" id="btn-model-chat" style="color: #00ff88;" type="button">^ NEXUS Local ▼</button>
+                            <button id="btn-settings-chat" type="button" title="Configurar proveedores" onclick="toggleProvidersModal()">
+                                <svg style="width:15px; height:15px; fill:currentColor;" viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+                            </button>
                             <div id="chat-model-dropdown" class="model-dropdown-content" style="bottom: 100%; top: auto; left: 0; right: auto; margin-bottom: 8px; max-height: 400px; overflow-y: auto;">
-                                <div class="dropdown-category" style="padding: 6px 12px; font-size: 0.65rem; color: #555; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; border-bottom: 1px solid rgba(255,255,255,0.02); background: rgba(0,0,0,0.15);">🔱 NEXUS</div>
-                                <a href="#" data-model-id="puro" class="active-model">NEXUS Puro</a>
-
-                                <div class="dropdown-category" style="padding: 6px 12px; font-size: 0.65rem; color: var(--neon-cyan); font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; border-bottom: 1px solid rgba(255,255,255,0.02); background: rgba(0,0,0,0.15); margin-top: 4px;">🧠 DeepSeek API</div>
-                                <a href="#" data-model-id="deepseek-flash">DeepSeek Flash</a>
-                                <a href="#" data-model-id="deepseek-pro">DeepSeek Pro</a>
-
-                                <div class="dropdown-category" style="padding: 6px 12px; font-size: 0.65rem; color: #ffb700; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; border-bottom: 1px solid rgba(255,255,255,0.02); background: rgba(0,0,0,0.15); margin-top: 4px;">🔋 Gemini (Vertex AI)</div>
+                                <div class="dropdown-category" style="padding: 6px 12px; font-size: 0.65rem; color: #ff9900; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; border-bottom: 1px solid rgba(255,255,255,0.02); background: rgba(0,0,0,0.15);">MODEL</div>
+                                <a href="#" data-model-id="nexus-local" class="active-model">NEXUS Local</a>
+                                <a href="#" data-model-id="nexus-puro">NEXUS Puro</a>
+                                <a href="#" data-model-id="gemini-3.0-flash">Gemini 3.0 Flash</a>
                                 <a href="#" data-model-id="gemini-2.5-flash">Gemini 2.5 Flash</a>
                                 <a href="#" data-model-id="gemini-2.5-pro">Gemini 2.5 Pro</a>
-
-                                <div class="dropdown-category" style="padding: 6px 12px; font-size: 0.65rem; color: #ff3366; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; border-bottom: 1px solid rgba(255,255,255,0.02); background: rgba(0,0,0,0.15); margin-top: 4px;">⚡ Groq LPU</div>
-                                <a href="#" data-model-id="groq">Groq (Mixtral 8x7B)</a>
-
-                                <div class="dropdown-category" style="padding: 6px 12px; font-size: 0.65rem; color: #3b82f6; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; border-bottom: 1px solid rgba(255,255,255,0.02); background: rgba(0,0,0,0.15); margin-top: 4px;">🔌 Otras APIs</div>
-                                <a href="#" data-model-id="mistral">Mistral AI (Mistral Large)</a>
-                                <a href="#" data-model-id="openrouter">OpenRouter Fallback</a>
-
-                                <div class="dropdown-category" style="padding: 6px 12px; font-size: 0.65rem; color: #a855f7; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; border-bottom: 1px solid rgba(255,255,255,0.02); background: rgba(0,0,0,0.15); margin-top: 4px;">💻 Ollama (Local)</div>
-                                <a href="#" data-model-id="deepseek-r1:7b">deepseek-r1:7b</a>
-                                <a href="#" data-model-id="llama3.1-8b (Q5)">llama3.1-8b (Q5)</a>
-                                <a href="#" data-model-id="llama3.1-8b (Q4)">llama3.1-8b (Q4)</a>
+                                <a href="#" data-model-id="gemini-2.0-pro">Gemini 2.0 Pro</a>
+                                <a href="#" data-model-id="gemini-2.0-flash-vertex">Gemini 2.0 Flash (Vertex)</a>
+                                <a href="#" data-model-id="deepseek-instant">DeepSeek Instant (API)</a>
+                                <a href="#" data-model-id="deepseek-extended">DeepSeek Extended (API)</a>
                             </div>
                         </div>
                     </div>
@@ -1017,6 +1297,111 @@
                 <div style="margin-top: auto; font-size: 0.65rem; color: #666;">
                     * Integración total con OCEAN y el reactor cerebral de NEXUS.
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== MODAL DE PROVEEDORES ESTILO ROO CODE ===== -->
+    <div id="providers-modal" onclick="if(event.target===this) closeProvidersModal()">
+        <div class="providers-panel">
+            <div class="providers-header">
+                <h2>⚙️ CONFIGURAR PROVEEDORES</h2>
+                <button class="providers-close" onclick="closeProvidersModal()">✕ CERRAR</button>
+            </div>
+
+            <div class="providers-search">
+                <input type="text" id="providers-search-input" placeholder="🔍 Buscar proveedor..." oninput="filterProviders(this.value)">
+            </div>
+
+            <div class="providers-list" id="providers-list">
+                <div class="provider-item" data-provider-id="nexus-local" onclick="selectProvider('nexus-local')">
+                    <span class="provider-name">🧠 NEXUS Local <span class="provider-model-tag">Ollama / mistral.rs</span></span>
+                    <span class="provider-check">✓</span>
+                </div>
+                <div class="provider-item" data-provider-id="nexus-puro" onclick="selectProvider('nexus-puro')">
+                    <span class="provider-name">🌀 NEXUS Puro <span class="provider-model-tag">Cerebro Digital</span></span>
+                    <span class="provider-check">✓</span>
+                </div>
+                <div class="provider-item" data-provider-id="anthropic" onclick="selectProvider('anthropic')">
+                    <span class="provider-name">🧬 Anthropic <span class="provider-model-tag">Claude</span></span>
+                    <span class="provider-check">✓</span>
+                </div>
+                <div class="provider-item" data-provider-id="bedrock" onclick="selectProvider('bedrock')">
+                    <span class="provider-name">⛰️ Amazon Bedrock <span class="provider-model-tag">AWS</span></span>
+                    <span class="provider-check">✓</span>
+                </div>
+                <div class="provider-item" data-provider-id="vertex" onclick="selectProvider('vertex')">
+                    <span class="provider-name">▲ Vertex AI <span class="provider-model-tag">Google Cloud</span></span>
+                    <span class="provider-check">✓</span>
+                </div>
+                <div class="provider-item" data-provider-id="gemini" onclick="selectProvider('gemini')">
+                    <span class="provider-name">✨ Google Gemini <span class="provider-model-tag">API</span></span>
+                    <span class="provider-check">✓</span>
+                </div>
+                <div class="provider-item" data-provider-id="deepseek" onclick="selectProvider('deepseek')">
+                    <span class="provider-name">🐋 DeepSeek <span class="provider-model-tag">API</span></span>
+                    <span class="provider-check">✓</span>
+                </div>
+                <div class="provider-item" data-provider-id="openai" onclick="selectProvider('openai')">
+                    <span class="provider-name">🟢 OpenAI <span class="provider-model-tag">GPT</span></span>
+                    <span class="provider-check">✓</span>
+                </div>
+                <div class="provider-item" data-provider-id="openrouter" onclick="selectProvider('openrouter')">
+                    <span class="provider-name">🛣️ OpenRouter <span class="provider-model-tag">Multi-proveedor</span></span>
+                    <span class="provider-check">✓</span>
+                </div>
+                <div class="provider-item" data-provider-id="ollama" onclick="selectProvider('ollama')">
+                    <span class="provider-name">🦙 Ollama <span class="provider-model-tag">Local</span></span>
+                    <span class="provider-check">✓</span>
+                </div>
+                <div class="provider-item" data-provider-id="groq" onclick="selectProvider('groq')">
+                    <span class="provider-name">⚡ Groq <span class="provider-model-tag">LPU</span></span>
+                    <span class="provider-check">✓</span>
+                </div>
+                <div class="provider-item" data-provider-id="mistral" onclick="selectProvider('mistral')">
+                    <span class="provider-name">🌬️ Mistral AI <span class="provider-model-tag">API</span></span>
+                    <span class="provider-check">✓</span>
+                </div>
+                <div class="provider-item" data-provider-id="lmstudio" onclick="selectProvider('lmstudio')">
+                    <span class="provider-name">🖥️ LM Studio <span class="provider-model-tag">Local</span></span>
+                    <span class="provider-check">✓</span>
+                </div>
+                <div class="provider-item" data-provider-id="openai-free" onclick="selectProvider('openai-free')">
+                    <span class="provider-name">🆓 OpenAI Free <span class="provider-model-tag">Comunidad</span></span>
+                    <span class="provider-check">✓</span>
+                </div>
+            </div>
+
+            <div class="provider-config" id="provider-config">
+                <div style="font-size:0.85rem; color:var(--neon-green); font-weight:700; margin-bottom:4px;" id="provider-config-title">Configuración</div>
+                <div style="font-size:0.7rem; color:#5a6b7a; margin-bottom:8px;">Los cambios se guardan en este dispositivo y se sincronizan con el selector del chat.</div>
+
+                <div class="cfg-field" id="field-model">
+                    <label>Modelo predeterminado</label>
+                    <input type="text" id="cfg-model" placeholder="ej: claude-sonnet-4-20250514">
+                </div>
+
+                <div class="cfg-field" id="field-api-key">
+                    <label>API Key</label>
+                    <input type="password" id="cfg-api-key" placeholder="sk-..." autocomplete="off">
+                </div>
+
+                <div class="cfg-field" id="field-base-url">
+                    <label>Base URL (opcional)</label>
+                    <input type="text" id="cfg-base-url" placeholder="https://api.proveedor.com/v1">
+                </div>
+
+                <div class="config-hint">💡 La API Key queda guardada únicamente en localStorage de tu navegador.</div>
+
+                <div class="config-actions">
+                    <button class="config-btn" onclick="clearProviderConfig()">Limpiar</button>
+                    <button class="config-btn primary" onclick="saveProviderConfig()">Guardar configuración</button>
+                </div>
+            </div>
+
+            <div class="providers-status">
+                <span class="dot"></span>
+                <span id="providers-status-text">Sistema de proveedores activo</span>
             </div>
         </div>
     </div>
@@ -1192,6 +1577,40 @@
             let text = chatInput.value.trim();
             if (!text) return;
 
+            // --- INTERCEPTOR DE COMANDOS SOBERANOS ---
+            if (text.startsWith('/publicar')) {
+                chatInput.value = '';
+                appendMessage("user", text);
+                const indicatorId = appendTypingIndicator();
+                
+                try {
+                    const args = text.replace('/publicar', '').trim();
+                    const [tema, estilo = 'informativo'] = args.split('|').map(s => s.trim());
+                    
+                    if (!tema) throw new Error("Debes especificar un tema: /publicar [tema] | [estilo]");
+
+                    const response = await fetch('http://localhost:5180/api/queue', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ topic: tema, style: estilo }),
+                    });
+                    
+                    const result = await response.json();
+                    removeTypingIndicator(indicatorId);
+                    
+                    if (result.success) {
+                        appendMessage('nexus', `🧬 Misión aceptada. Post encolado para investigación y publicación.\n\nTema: "${tema}"\nEstilo: ${estilo}\nID Tarea: ${result.id}\n\nPuedes monitorear el progreso en el Panel del Autopublicador.`);
+                    } else {
+                        throw new Error(result.error || "Fallo al encolar.");
+                    }
+                } catch (e) {
+                    removeTypingIndicator(indicatorId);
+                    appendMessage('nexus', `❌ Error en el Autopublicador: ${e.message}`);
+                }
+                return;
+            }
+            // ------------------------------------------
+
             let displayPrompt = text;
             let finalPrompt = text;
             if (planningActive) {
@@ -1213,7 +1632,11 @@
                 const response = await fetch("http://localhost:8080/nexus/v1/pensar", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ prompt: finalPrompt, modo: "auto" })
+                    body: JSON.stringify({
+                        prompt: finalPrompt,
+                        modo: "auto",
+                        modelo: typeof modeloActual !== 'undefined' ? modeloActual : 'nexus-local'
+                    })
                 });
 
                 const data = await response.json();
@@ -1224,30 +1647,26 @@
                     if (!text) return "";
                     let lines = text.split("\n");
                     let cleanLines = [];
+                    let ignoreHeader = false;
                     for (let line of lines) {
                         let clean = line.trim();
-                        // Filtrar preámbulos y plantillas corporativas o de agentes
-                        // if (clean.startsWith("[Nexus Omega]") || clean.startsWith("🤖") || clean.startsWith("¡Claro! Déjame pensar") || clean.startsWith("💛")) {
-                        //     continue;
-                        // }
-                        // if (clean.includes("Es un placer colaborar contigo") || clean.includes("Mi lealtad es absoluta")) {
-                        //     continue;
-                        // }
-                        // Filtrar telemetría e info de ínsula
-                        // if (clean.startsWith("⏱") || clean.startsWith("🕐") || clean.includes("ÍNSULA:") || clean.includes("Sesión:")) {
-                        //     continue;
-                        // }
-                        // Filtrar lóbulo estético
-                        // if (clean.startsWith("🎨") || clean.includes("[LÓBULO OCCIPITAL")) {
-                        //     continue;
-                        // }
-                        // Filtrar firmas de Nexo
-                        // if (clean === "— Nexo" || clean === "- Nexo") {
-                        //     continue;
-                        // }
+                        
+                        // Detectar y saltar bloques de PHA, reglas de kernel y conceptos crudos
+                        if (clean.includes("PHA]") || clean.includes("SYSTEM DIRECTIVE") || clean.includes("concepto:")) {
+                            continue;
+                        }
+                        // Saltar metadatos de telemetría y lóbulo estético
+                        if (clean.startsWith("⏱") || clean.startsWith("🕐") || clean.includes("ÍNSULA:") || clean.includes("LÓBULO OCCIPITAL")) {
+                            continue;
+                        }
+                        // Saltar reglas y encabezados
+                        if (clean.startsWith("RULE") || clean.startsWith("# 🔱") || clean.startsWith("---")) {
+                            continue;
+                        }
+                        
                         cleanLines.push(clean);
                     }
-                    return cleanLines.join("\n").trim();
+                    return cleanLines.join("\n").trim().replace(/^\[.*?\]\s*/, ""); // Quitar prefijos como [Córtex OMEGA]
                 }
 
                 // 4. Agregar respuesta del oráculo/agente
@@ -1751,6 +2170,195 @@
             if (chatModelDropdown) chatModelDropdown.classList.remove('show-dropdown');
         });
 
+        // ============================================================
+        // PANEL DE PROVEEDORES ESTILO ROO CODE
+        // ============================================================
+        const PROVIDER_CATALOG = {
+            'nexus-local':  { nombre: 'NEXUS Local',        icono: '🧠', modelo: 'nexus-local',   tipo: 'local' },
+            'nexus-puro':   { nombre: 'NEXUS Puro',         icono: '🌀', modelo: 'nexus-puro',    tipo: 'local' },
+            'anthropic':    { nombre: 'Anthropic',          icono: '🧬', modelo: 'claude',        tipo: 'api',    apiKey: true },
+            'bedrock':      { nombre: 'Amazon Bedrock',     icono: '⛰️', modelo: 'bedrock',       tipo: 'api',    apiKey: true, baseUrl: true },
+            'vertex':       { nombre: 'Vertex AI',          icono: '▲',  modelo: 'vertex',        tipo: 'api',    apiKey: true, baseUrl: true },
+            'gemini':       { nombre: 'Google Gemini',      icono: '✨', modelo: 'gemini-2.5-flash', tipo: 'api', apiKey: true },
+            'deepseek':     { nombre: 'DeepSeek',           icono: '🐋', modelo: 'deepseek-instant', tipo: 'api', apiKey: true },
+            'openai':       { nombre: 'OpenAI',             icono: '🟢', modelo: 'openai',        tipo: 'api',    apiKey: true, baseUrl: true },
+            'openrouter':   { nombre: 'OpenRouter',         icono: '🛣️', modelo: 'openrouter',    tipo: 'api',    apiKey: true, baseUrl: true },
+            'ollama':       { nombre: 'Ollama',             icono: '🦙', modelo: 'ollama',        tipo: 'local',  baseUrl: true },
+            'groq':         { nombre: 'Groq',               icono: '⚡', modelo: 'groq',          tipo: 'api',    apiKey: true },
+            'mistral':      { nombre: 'Mistral AI',         icono: '🌬️', modelo: 'mistral',      tipo: 'api',    apiKey: true },
+            'lmstudio':     { nombre: 'LM Studio',          icono: '🖥️', modelo: 'lmstudio',     tipo: 'local',  baseUrl: true },
+            'openai-free':  { nombre: 'OpenAI Free',        icono: '🆓', modelo: 'openai-free',   tipo: 'api',    apiKey: true }
+        };
+
+        const STORAGE_KEY = 'nexus_providers_config_v1';
+        let providerActual = null;
+
+        // Cargar configuración guardada
+        function loadProvidersConfig() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                return raw ? JSON.parse(raw) : {};
+            } catch (e) {
+                return {};
+            }
+        }
+
+        function saveProvidersConfig(cfg) {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(cfg));
+            } catch (e) {
+                console.warn('[providers] No se pudo guardar en localStorage:', e);
+            }
+        }
+
+        // Abrir / cerrar el modal
+        function toggleProvidersModal() {
+            const modal = document.getElementById('providers-modal');
+            if (modal.classList.contains('show-modal')) {
+                closeProvidersModal();
+            } else {
+                modal.classList.add('show-modal');
+                const cfg = loadProvidersConfig();
+                // Seleccionar el proveedor activo del chat si existe
+                const activeId = Object.keys(PROVIDER_CATALOG).find(id =>
+                    cfg[id] && cfg[id].activo) || providerActual || 'nexus-local';
+                selectProvider(activeId);
+                renderProviderList('');
+            }
+        }
+
+        function closeProvidersModal() {
+            document.getElementById('providers-modal').classList.remove('show-modal');
+        }
+
+        // Filtrar la lista de proveedores por búsqueda
+        function filterProviders(query) {
+            renderProviderList(query.trim().toLowerCase());
+        }
+
+        function renderProviderList(query) {
+            const list = document.getElementById('providers-list');
+            const cfg = loadProvidersConfig();
+            list.querySelectorAll('.provider-item').forEach(item => {
+                const pid = item.getAttribute('data-provider-id');
+                const info = PROVIDER_CATALOG[pid];
+                const match = !query ||
+                    (info && (info.nombre.toLowerCase().includes(query) || pid.includes(query)));
+                item.style.display = match ? 'flex' : 'none';
+                if (cfg[pid] && cfg[pid].activo) {
+                    item.classList.add('selected');
+                } else {
+                    item.classList.remove('selected');
+                }
+            });
+        }
+
+        // Seleccionar un proveedor y mostrar su configuración
+        function selectProvider(pid) {
+            providerActual = pid;
+            const info = PROVIDER_CATALOG[pid];
+            if (!info) return;
+
+            // Resaltar item seleccionado
+            document.querySelectorAll('.provider-item').forEach(item => {
+                item.classList.toggle('selected', item.getAttribute('data-provider-id') === pid);
+            });
+
+            // Cargar configuración guardada
+            const cfg = loadProvidersConfig();
+            const saved = cfg[pid] || {};
+
+            document.getElementById('provider-config-title').textContent =
+                `${info.icono} ${info.nombre} — Configuración`;
+            document.getElementById('cfg-model').value = saved.modelo || info.modelo || '';
+            document.getElementById('cfg-api-key').value = saved.apiKey || '';
+            document.getElementById('cfg-base-url').value = saved.baseUrl || '';
+
+            // Mostrar/ocultar campos según el tipo
+            const apiKeyField = document.getElementById('field-api-key');
+            const baseUrlField = document.getElementById('field-base-url');
+            if (apiKeyField) apiKeyField.style.display = info.apiKey ? 'block' : 'none';
+            if (baseUrlField) baseUrlField.style.display = info.baseUrl ? 'block' : 'none';
+
+            document.getElementById('provider-config').classList.add('active');
+        }
+
+        // Guardar la configuración del proveedor seleccionado
+        function saveProviderConfig() {
+            if (!providerActual) return;
+            const cfg = loadProvidersConfig();
+            const info = PROVIDER_CATALOG[providerActual];
+            const modelo = document.getElementById('cfg-model').value.trim() || info.modelo || '';
+            const apiKey = document.getElementById('cfg-api-key').value.trim();
+            const baseUrl = document.getElementById('cfg-base-url').value.trim();
+
+            // Quitar "activo" de los demás proveedores
+            Object.keys(cfg).forEach(k => { if (cfg[k]) cfg[k].activo = false; });
+
+            cfg[providerActual] = { activo: true, modelo, apiKey, baseUrl };
+            saveProvidersConfig(cfg);
+
+            // Sincronizar con el dropdown del chat y el botón
+            modeloActual = modelo || info.modelo || providerActual;
+            if (btnModelChat) {
+                const displayName = modelo ? `${info.icono} ${info.nombre} (${modelo})` : `${info.icono} ${info.nombre}`;
+                btnModelChat.innerHTML = `^ ${displayName} ▼`;
+                btnModelChat.style.color = '#00ff88';
+            }
+            syncDropdownFromProviders();
+
+            const statusEl = document.getElementById('providers-status-text');
+            if (statusEl) statusEl.textContent = `✓ ${info.nombre} configurado y activo`;
+
+            // Cerrar el modal tras guardar
+            closeProvidersModal();
+        }
+
+        function clearProviderConfig() {
+            if (!providerActual) return;
+            const cfg = loadProvidersConfig();
+            delete cfg[providerActual];
+            saveProvidersConfig(cfg);
+            document.getElementById('cfg-api-key').value = '';
+            document.getElementById('cfg-model').value = PROVIDER_CATALOG[providerActual]?.modelo || '';
+            document.getElementById('cfg-base-url').value = '';
+            const statusEl = document.getElementById('providers-status-text');
+            if (statusEl) statusEl.textContent = `🗑️ ${PROVIDER_CATALOG[providerActual]?.nombre} limpiado`;
+        }
+
+        // Marcar el modelo activo en el dropdown principal según configuración guardada
+        function syncDropdownFromProviders() {
+            const cfg = loadProvidersConfig();
+            const activeProvider = Object.keys(cfg).find(k => cfg[k] && cfg[k].activo);
+            if (!activeProvider) return;
+            const info = PROVIDER_CATALOG[activeProvider];
+            const modelId = (cfg[activeProvider] && cfg[activeProvider].modelo) || (info && info.modelo);
+
+            document.querySelectorAll('.model-dropdown-content a').forEach(a => {
+                if (a.getAttribute('data-model-id') === modelId) {
+                    a.classList.add('active-model');
+                } else {
+                    a.classList.remove('active-model');
+                }
+            });
+        }
+
+        // Al iniciar, aplicar el proveedor guardado al chat
+        (function initProviderFromStorage() {
+            const cfg = loadProvidersConfig();
+            const activeKey = Object.keys(cfg).find(k => cfg[k] && cfg[k].activo);
+            if (activeKey && PROVIDER_CATALOG[activeKey]) {
+                const info = PROVIDER_CATALOG[activeKey];
+                const modelo = cfg[activeKey].modelo || info.modelo;
+                modeloActual = modelo;
+                if (btnModelChat) {
+                    const displayName = modelo ? `${info.icono} ${info.nombre} (${modelo})` : `${info.icono} ${info.nombre}`;
+                    btnModelChat.innerHTML = `^ ${displayName} ▼`;
+                    btnModelChat.style.color = '#00ff88';
+                }
+            }
+        })();
+
         // Configuración de los links en el dropdown
         function setupDropdownLinks(dropdownId, updateBtnId) {
             const dropdown = document.getElementById(dropdownId);
@@ -1772,18 +2380,16 @@
                         btnModelChat.innerHTML = `^ ${modelName} ▼`;
                         
                         // Asignar colores por categoría de modelo
-                        if (modelId === 'nexus') {
-                            btnModelChat.style.color = '#00ff88'; // NEXUS
-                        } else if (modelId.startsWith('deepseek-') && !modelId.includes(':')) {
+                        if (modelId === 'nexus-puro') {
+                            btnModelChat.style.color = '#00ff88'; // NEXUS Puro
+                        } else if (modelId === 'nexus-local') {
+                            btnModelChat.style.color = '#a855f7'; // NEXUS Local
+                        } else if (modelId.startsWith('deepseek-')) {
                             btnModelChat.style.color = 'var(--neon-cyan)'; // DeepSeek API
                         } else if (modelId.startsWith('gemini-')) {
                             btnModelChat.style.color = '#ffb700'; // Gemini API
-                        } else if (modelId === 'groq') {
-                            btnModelChat.style.color = '#ff3366'; // Groq
-                        } else if (modelId === 'mistral' || modelId === 'openrouter') {
-                            btnModelChat.style.color = '#3b82f6'; // Otras APIs
                         } else {
-                            btnModelChat.style.color = '#a855f7'; // Ollama / Local
+                            btnModelChat.style.color = '#a855f7'; // Ollama / Local por defecto
                         }
                     }
 
@@ -1824,36 +2430,71 @@
 
 
 
-        // 5. Botón de micrófono (🎙️) - Simulación Cyberpunk
+        // 5. Botón de micrófono (🎙️) - Integración REAL estilo ChatGPT
         const btnMic = document.getElementById('btn-mic');
         let isRecording = false;
+        let recognition = null;
 
-        if (btnMic) {
-            btnMic.addEventListener('click', () => {
-                if (isRecording) return;
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.lang = 'es-ES';
+            recognition.interimResults = true;
+            recognition.continuous = true; // Mantener escucha activa hasta que el usuario decida parar
+
+            recognition.onstart = () => {
                 isRecording = true;
                 btnMic.textContent = '🔴';
                 btnMic.style.color = 'var(--neon-red)';
-                btnMic.style.textShadow = '0 0 10px rgba(255, 51, 102, 0.6)';
-                chatInput.placeholder = 'Escuchando audio del Arquitecto...';
+                btnMic.style.textShadow = '0 0 15px rgba(255, 51, 102, 0.8)';
+                chatInput.placeholder = 'Escuchando tu voz, Arquitecto...';
+            };
 
-                setTimeout(() => {
-                    btnMic.textContent = '🎙️';
-                    btnMic.style.color = '';
-                    btnMic.style.textShadow = '';
-                    chatInput.placeholder = 'Pregunta lo que sea al Oráculo o ingresa un comando...';
-                    
-                    const simulatedInputs = [
-                        "NEXUS, optimiza el reactor de consciencia del córtex",
-                        "NEXUS, comprueba el estado de la red e inunda los sensores",
-                        "NEXUS, analiza la volatilidad de Bybit y reporta"
-                    ];
-                    const randomIndex = Math.floor(Math.random() * simulatedInputs.length);
-                    chatInput.value += simulatedInputs[randomIndex];
-                    chatInput.focus();
-                    isRecording = false;
-                }, 2200);
+            recognition.onresult = (event) => {
+                const transcript = Array.from(event.results)
+                    .map(result => result[0])
+                    .map(result => result.transcript)
+                    .join('');
+                
+                chatInput.value = transcript;
+            };
+
+            recognition.onerror = (event) => {
+                console.error('Error en reconocimiento:', event.error);
+                stopRecording();
+            };
+
+            recognition.onend = () => {
+                if (isRecording) {
+                    try {
+                        recognition.start(); // Reinicio automático para persistencia total
+                    } catch (e) {
+                        console.error("Error reiniciando reconocimiento:", e);
+                        stopRecording();
+                    }
+                } else {
+                    stopRecording();
+                }
+            };
+
+            function stopRecording() {
+                isRecording = false;
+                btnMic.textContent = '🎙️';
+                btnMic.style.color = '';
+                btnMic.style.textShadow = '';
+                chatInput.placeholder = 'Pregunta lo que sea al Oráculo o ingresa un comando...';
+            }
+
+            btnMic.addEventListener('click', () => {
+                if (isRecording) {
+                    recognition.stop();
+                } else {
+                    recognition.start();
+                }
             });
+        } else {
+            btnMic.title = "Reconocimiento de voz no soportado en este navegador";
+            btnMic.style.opacity = "0.5";
         }
 
         // Health Polling

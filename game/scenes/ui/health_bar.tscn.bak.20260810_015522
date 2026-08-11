@@ -1,0 +1,41 @@
+[gd_scene load_steps=3 format=3 uid://uid0a1b2c3d4e5f6]
+
+[ext_resource type="Script" path="res://scripts/ui/health_bar.gd" id="1_healthbar"]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bg"]
+bg_color = Color(0.1, 0.1, 0.1, 0.9)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.3, 0.3, 0.3, 1)
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_fill"]
+bg_color = Color(0.2, 0.8, 0.2, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[node name="HealthBar" type="Control" anchor_right=1.0 anchor_bottom=1.0 layout_mode=3 anchors_preset=9 offset_left=-220.0 offset_top=-100.0 offset_right=-20.0 offset_bottom=-20.0]
+script = ExtResource("1_healthbar")
+
+[node name="Background" type="Panel" parent="." anchor_right=1.0 anchor_bottom=1.0 layout_mode=3 anchors_preset=9 offset_left=-200.0 offset_top=-80.0 offset_right=0.0 offset_bottom=0.0]
+custom_styles/panel = SubResource("StyleBoxFlat_bg")
+
+[node name="Fill" type="ProgressBar" parent="." anchor_right=1.0 anchor_bottom=1.0 layout_mode=3 anchors_preset=9 offset_left=-198.0 offset_top=-78.0 offset_right=-2.0 offset_bottom=-2.0]
+min_value = 0.0
+max_value = 100.0
+value = 100.0
+custom_styles/background = SubResource("StyleBoxFlat_bg")
+custom_styles/fill = SubResource("StyleBoxFlat_fill")
+
+[node name="Label" type="Label" parent="." anchor_right=1.0 anchor_bottom=1.0 layout_mode=3 anchors_preset=9 offset_left=-200.0 offset_top=-100.0 offset_right=0.0 offset_bottom=-60.0]
+horizontal_alignment = 1
+text = "HP: 100/100"
+theme_override_font_sizes/font_size = 14
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 2

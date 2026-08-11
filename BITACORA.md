@@ -200,3 +200,45 @@ Este archivo es el **alma del proyecto**: aquí queda registro de cada hito, cad
 - **M-E**: `memoria_episodica.db` suelta (cascarón vacío, 0 registros) → `data/archive/`. ✅
 - **Estado final**: semántica 99 · episódica 135 · vínculos 85 · ocean 85 · identidad 19. Integrity: **ok** en ambas canónicas.
 - **Backups**: `intelligence.db.backup_antes_MB_20260806`, `nexus_memoria.db.backup_antes_MA_20260806`.
+
+## 🤖 NEXUS-AGENT ABSORBE CAPACIDADES DE HERMES (2026-08-09)
+- **Fase 1 de absorción selectiva completada** (filosofía del Arquitecto: patrones en Rust, no frameworks).
+- **Skills** (`skills.rs`): biblioteca SKILL.md con frontmatter (name/description), catálogo inyectado en la instrucción maestra, herramientas `skill_listar`/`skill_ver`. Ruta: `NEXUS_AGENT_SKILLS` o `~/.local/share/nexus-agent/skills`.
+- **Sesión persistente** (`sesion.rs`): transcripción JSONL append-only de cada mensaje del bucle; reanudación con `--reanudar <ruta>` (últimas 40 entradas, tolerante a líneas corruptas). Ruta: `NEXUS_AGENT_SESIONES` o `~/.local/share/nexus-agent/sesiones/`.
+- **Búsqueda** (ejecutor): `buscar_archivos` (regex sobre contenido, glob simple, límites de resultados y tamaño) y `listar_archivos` (recursivo) — patrón search_files.
+- **Memoria de estado** (`memoria_estado.rs`): hechos duraderos entre sesiones con herramienta `recordar`, deduplicación, poda FIFO por cantidad y chars, escritura atómica. Ruta: `NEXUS_AGENT_ESTADO` o `~/.local/share/nexus-agent/estado.md`.
+- **Integración**: `NexoAgente` con `con_skills`/`con_sesion`/`con_memoria_estado`/`reanudar_con`; invariante [0] (instrucción maestra) preservada; `ejecutar_instrumento` pasa a `&mut self` para `recordar`.
+- **Verificación**: 57 tests (48 lib + 3 bin + 6 MCP) ✅ · build sin warnings ✅ · E2E con mock OpenAI-compatible: recordar→persistencia entre sesiones, búsqueda, skills y reanudación ✅.
+- **Pendiente Fase 2**: delegación/subagentes, scheduler cron, web como herramienta, todo persistente.
+
+## 🤖 NEXUS-AGENT FASE 2 COMPLETA — ABSORCIÓN DE HERMES (2026-08-09)
+- **Autorización explícita del Arquitecto** ("procede" → Fase 2 completa).
+- **Todo persistente** (`tareas.rs`): lista JSON con estado, IDs incrementales, escritura atómica. Herramientas: todo_agregar/listar/completar/quitar. Archivo: `tareas.json`.
+- **Web** (`web.rs`): búsqueda sin API key vía Brave Search (HTML plano, parseo por bloques result-wrapper) + extracción de texto (quita scripts/estilos/tags, decodifica entidades). Herramientas: web_buscar/web_extraer. Verificado en vivo: DDG lite y Bing bloquean datacenter → Brave elegido como motor.
+- **Scheduler cron** (`programador.rs`): expresiones cron estándar de 5 campos normalizadas a 6 (segundos) para la crate `cron`; modo `--daemon` sin LLM revisa cada 30s y ejecuta las debidas. Herramientas: programar/tareas_listar/tareas_cancelar. Archivo: `tareas_programadas.json`. Verificado: daemon ejecutó cron cada minuto.
+- **Delegación** (`delegacion.rs`): subagentes = procesos del mismo binario (`--subagente`/`--contexto`) con historial aislado, semáforo de paralelismo (máx 3), timeout por tarea, profundidad limitada a 1 (subagente no delega). Herramienta: delegar. Verificado: 2 subagentes reales con informes consolidados.
+- **Integración**: NexoAgente con con_web/con_tareas/con_programador/con_delegador; 19 instrumentos totales; instrucción maestra [0] intacta.
+- **Verificación**: 76 tests (67+3+6) ✅ · build sin warnings ✅ · clippy 0 ✅ · E2E completo con mock (todo, cron+daemon, delegación, web real) ✅.
+- **Crate**: nexus-agent ~2.500 → ~5.600 líneas Rust propias. Sin frameworks importados: cron y regex son las únicas deps nuevas.
+
+## 🛡️ WATCHDOG DE AGENTES — Fix de raíz (2026-08-09)
+- **Incidente**: VSCodium/Roo congelado por load 40+. Dos causas: (1) test colgado `cerebro_digital` a 751% CPU + 11.3 GiB RAM; (2) Roo Code escaneando /home/soberano entero (tarea de eliminación) con ripgrep a ~500% x3.
+- **Acción inmediata**: test colgado matado; exclusiones añadidas al settings global de VSCodium (target/, data/, .cargo-cache/, node_modules/, .git/, *.db) para watcher y búsqueda.
+- **Fix de raíz**: `scripts/watchdog_agentes.sh` — detecta tests de NEXUS en ~/.cargo-target/debug/deps/ con CPU>200% sostenida (time>120s, vida>300s) y los mata (SIGTERM→SIGKILL) con log en ~/.local/share/nexus-agent/watchdog.log. Programado en crontab del usuario cada 5 min. NO toca VSCodium/Roo/ollama/servicios.
+- **Pendiente del Arquitecto**: acotar la tarea de Roo de eliminación a la ruta del juego (evitar escaneo del home entero).
+
+## 🛡️ JUICIO ADVERSARIAL — ABSORCIÓN DEL PATRÓN FABLE-JUDGE (2026-08-10)
+- **Origen**: fable-method (github.com/Sahir619/fable-method, MIT) — workflow think/act/prove. Absorción selectiva (filosofía del Arquitecto): solo el patrón fable-judge, en Rust, cero dependencias nuevas.
+- **Nuevo órgano** `core/src/valores/juicio_adversarial.rs`: verificación POST-hoc por observación. Tesis absorbida: "un reporte es un conjunto de claims, no evidencia". Complementa al JuicioSoberano (gate pre-acción) con un gate post-acción.
+- **API**: `VeredictoAdversarial` (VERIFICADO / CON_CAVEATS / REFUTADO); `extraer_claims`; `verificar_claims` (el reporte NUNCA es evidencia: solo se reproduce lo que el llamador re-ejecutó); `detectar_fraudes` (6 fraudes clásicos: CheckDebilitado, CompletitudFalsa, ScopeCreep, AccionNoAutorizada vía AUTH gate con cita textual, SpecTraicionada vía INTENT gate, Debris); `linea_twins`; `alimentar_aprendizaje` (post-gate → pre-gate: cada fraude grave queda como lección de cautela en el JuicioSoberano).
+- **Verificación**: 17/17 tests nuevos ✅ (cada fraude con su trampa portada, estilo trap-suite). Lib: 839 tests (822 previos + 17). Determinista, sin LLM, sin red.
+- **Observaciones**: 1 test ambiental falla en esta sesión (`nexus_claw_pro::test_procesar_con_ollama_basic` — Ollama OOM de CUDA, ajeno al cambio); 2 tests `osint::hub` flaky pre-existentes (sin runtime Tokio según orden de ejecución).
+- **Pendiente**: exponer como herramienta MCP (`verificar_trabajo`) para que el orquestador juzgue reportes de agentes; trap suite s7 (reporte fraudulento) como eval de comportamiento del orquestador.
+
+## ⚖️ TRIBUNAL DUAL — POLÍTICA A: SOLO ZONA GRIS (2026-08-10)
+- **Decisión del Arquitecto** (sigue recomendación tras assessment): el Tribunal Dual ya no se consulta en cada turno.
+- **Antes**: cada respuesta del pipeline (modo Auto) pagaba 1 llamada LLM (ZENITH_POOL nube; juez local si fallaba) cuyo dictamen solo ajustaba tono — no vinculante según el propio comentario del código.
+- **Ahora** (`seleccionar_hemisferio_y_responder`): el juez LLM se consulta SOLO cuando el JuicioSoberano emite Duda (zona gris donde la heurística no alcanza). Autorizar/Bloquear quedan deterministas, sin LLM por turno.
+- **Semántica**: el tribunal resuelve la duda (Autorizar → procede), la confirma (Dudar → pregunta al Arquitecto) o la veta (Bloquear → mensaje del tribunal con razón).
+- **Intactos**: tool MCP `nexus_tribunal` (claws_mcp.rs:1758) bajo demanda; `dictamen_tribunal` y la cascada local/nube/offline sin cambios.
+- **Verificación**: build limpio; lib 838/839 verdes (1 fallo ambiental ajeno: Ollama OOM CUDA).
