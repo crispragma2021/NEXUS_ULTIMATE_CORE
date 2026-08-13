@@ -242,3 +242,24 @@ Este archivo es el **alma del proyecto**: aquí queda registro de cada hito, cad
 - **Semántica**: el tribunal resuelve la duda (Autorizar → procede), la confirma (Dudar → pregunta al Arquitecto) o la veta (Bloquear → mensaje del tribunal con razón).
 - **Intactos**: tool MCP `nexus_tribunal` (claws_mcp.rs:1758) bajo demanda; `dictamen_tribunal` y la cascada local/nube/offline sin cambios.
 - **Verificación**: build limpio; lib 838/839 verdes (1 fallo ambiental ajeno: Ollama OOM CUDA).
+
+## 🎨 NEXUS PROTOCOL — PIPELINE DE ARTE 2D ISOMÉTRICO (2026-08-12)
+- **Decisión de arquitectura**: el juego baja de 3D isométrico a 2D plano con tiles isométricos (estética 2.5D sin el costo del 3D). Primer juego del Arquitecto → alcance terminable. Sistemas de IA/combate (CombatManager, SkillManager, LLMBridge, MCP) se portan tal cual.
+- **Entorno descargado**: Godot 4.7 stable Linux (~/.local/opt, symlink ~/.local/bin/godot, verificado abriendo el proyecto) + ImageMagick/Pillow (ya presentes).
+- **Estructura**: game/assets/{characters, enemies/bat|boar|golem|spider, tiles/grass|dirt|stone|water|snow, objects, ui, backgrounds}.
+- **Pipeline**: game/scripts/asset_pipeline.sh (limpiar → transparente+trim; spritesheet → montage; tileset → verifica grid) — probado con assets de test.
+- **Kit de prompts**: game/docs/KIT_DE_PROMPTS.md — prompt base de estilo + prompts por entidad real (héroe, 4 bestias, 5 biomas, objetos, UI, parallax) + orden de producción.
+- **Pendiente**: generar el primer lote de arte en Scenario.gg y portar ChunkManager/PlayerController a 2D (TileMap).
+
+## 📜 GDD BOCETO — VISIÓN ÉPICA (2026-08-12)
+- Creado game/docs/GDD_BOCETO.md — documento vivo de diseño.
+- Visión: mundo procedural masivo + colonia RimWorld-like + NEXUS como AI STORYTELLER (el orquestador narra, juzga y responde al estado de la colonia vía LLMBridge/MCP ya existentes).
+- Arte como capa swappable (skins por prompt base: oscuro/pixel/cartoon) sin tocar sistemas.
+- Roadmap F1-F6: portar a 2D → colonia mínima → bestias → narrador v1 → profundidad → estilos.
+
+## 🎮 DIRECTIVA DEFINITIVA — TODO 2D EN GODOT (2026-08-13)
+- El Arquitecto confirma: TODO el juego (NEXUS Protocol) será 2D a
+  partir de ahora, en Godot. Nada de 3D.
+- Implica: portar el proyecto actual (CharacterBody3D, chunks 3D,
+  meshes) a 2D (CharacterBody2D, TileMapLayer, Camera2D, sprites).
+- El GDD ya refleja la decisión (visión + sección 2D isométrico).

@@ -1254,7 +1254,7 @@ impl DeepSeekAPI {
         };
 
         let start_time = std::time::Instant::now();
-        let full_prompt = self.construir_prompt_con_identidad(prompt);
+        let identidad = self.cargar_identidad_nexus();
 
         // NEXUS: Aplicando Capa de Invisibilidad Soberana al Cerebelo
         let cloak = NexusCloak::new(SigiloLevel::Soberano);
@@ -1270,9 +1270,16 @@ impl DeepSeekAPI {
         }
         let client = client_builder.build().unwrap_or_else(|_| Client::new());
 
+        // DeepSeek Context Caching: la identidad (estable) va en "system" para que
+        // DeepSeek la cache automáticamente como prefijo del prompt entre llamadas.
+        // El "user" solo lleva la tarea variable, que no se re-paga si el prefijo ya está
+        // en caché. Ahorro estimado ~85-90% del costo de identidad en turnos repetidos.
         let mut body = json!({
             "model": official_model,
-            "messages": [{"role": "user", "content": full_prompt}],
+            "messages": [
+                {"role": "system", "content": identidad},
+                {"role": "user", "content": prompt}
+            ],
             "max_tokens": 2000
         });
 

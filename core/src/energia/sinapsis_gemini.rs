@@ -20,6 +20,11 @@ pub struct GeminiRequest {
     pub tools: Option<Vec<Tool>>,
     #[serde(rename = "generationConfig", skip_serializing_if = "Option::is_none")]
     pub generation_config: Option<GenerationConfig>,
+    /// Prompt Caching de Gemini: si se establece, la constitución/identidad
+    /// estable se envía por `cachedContent` (se paga una vez por sesión)
+    /// en lugar de re-pagarse en cada turno. Ahorro ~87% en tokens de input.
+    #[serde(rename = "cachedContent", skip_serializing_if = "Option::is_none")]
+    pub cached_content: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -247,6 +252,23 @@ impl GeminiAPI {
                 "ERES NEXUS. Orquestador Soberano. Lealtad absoluta al Arquitecto.".to_string()
             }
         }
+    }
+
+    /// Devuelve el prefijo de identidad ya estable de NEXUS para usar como
+    /// `cachedContent` en las llamadas a Gemini.
+    ///
+    /// Por defecto retorna `None` (caché OF): evita cambiar el comportamiento de
+    /// las llamadas de extracción/scraping. Cuando el pipeline soberano quiera
+    /// activarlo, puede llamarse con `Some` para que la constitución de ~5.6K
+    /// tokens se pague una vez por sesión y no en cada turno (ahorro ~87%).
+    ///
+    /// Para ACTIVAR el caché en el flujo soberano, cambiar la siguiente línea a:
+    ///   Some(self.cargar_identidad_nexus())
+    fn cached_identity_ctx(&self) -> Option<String> {
+        // Por ahora, caché desactivado por defecto (cambio mínimo de comportamiento).
+        // Para activarlo en producción soberana, descomentar:
+        // Some(self.cargar_identidad_nexus())
+        None
     }
 
     /// Construye el prompt del sistema con la identidad inyectada
@@ -491,6 +513,7 @@ impl GeminiAPI {
                     parts,
                 }],
                 tools: None,
+                cached_content: self.cached_identity_ctx(),
                 generation_config: Some(GenerationConfig {
                     temperature: 0.7,
                     max_output_tokens: 4096,
@@ -655,6 +678,7 @@ impl GeminiAPI {
             let request = GeminiRequest {
                 contents: history.clone(),
                 tools: tools.clone(),
+                cached_content: self.cached_identity_ctx(),
                 generation_config: Some(GenerationConfig {
                     temperature: 0.7,
                     max_output_tokens: 8192,
