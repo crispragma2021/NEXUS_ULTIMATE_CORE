@@ -253,6 +253,19 @@ fn herramientas_completas() -> Value {
                 "required": ["origen"]
             }
         }),
+        // 🛰️ RAG DOCUMENTAL — memoria del proyecto en la nube (Vertex AI Search)
+        json!({
+            "name": "consultar_rag",
+            "description": "🛰️ Consulta la base documental RAG del proyecto (GDDs de juegos, planes, anatomía, identidad) en Vertex AI Search. Devuelve los documentos relevantes con título y snippet. Úsala cuando NEXUS necesite recordar decisiones de diseño del proyecto desde su memoria documental en la nube.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "query": { "type": "string", "description": "Pregunta sobre el proyecto (ej: '¿cómo funciona la muerte permanente en NEXUS Protocol 2D?')" },
+                    "page_size": { "type": "integer", "description": "Nº de resultados a devolver. Default: 3" }
+                },
+                "required": ["query"]
+            }
+        }),
         json!({
             "name": "propiocepcion_scan",
             "description": "Escanea el sistema completo (CPU, GPU, RAM, disco, puertos, procesos) y devuelve un diagnóstico biométrico detallado. El sexto sentido de NEXUS para conocer su propio cuerpo hardware.",
@@ -1189,6 +1202,93 @@ async fn handle_vision_capture(params: &Value) -> Value {
     }
 }
 
+/// 🛰️ RAG DOCUMENTAL — consulta la base del proyecto en Vertex AI Search
+async fn handle_consultar_rag(params: &Value) -> Value {
+    let query = params["query"].as_str().unwrap_or("").trim().to_string();
+    if query.is_empty() {
+        return json!({ "error": "Falta el parámetro 'query'." });
+    }
+    let page_size = params["page_size"].as_u64().unwrap_or(3).min(10);
+
+    // Obtener token de gcloud (Bearer) para Vertex AI
+    let token = match obtener_token_vertex().await {
+        Ok(t) => t,
+        Err(e) => return json!({ "error": e }),
+    };
+
+    let proyecto = std::env::var("GCP_PROJECT")
+        .unwrap_or_else(|_| "project-26e94ab7-4257-4475-ade".into());
+    let url = format!(
+        "https://discoveryengine.googleapis.com/v1/projects/{}/locations/global/collections/default_collection/engines/nexus-godot-engine/servingConfigs/default_search:search",
+        proyecto
+    );
+
+    let body = json!({ "query": query, "pageSize": page_size });
+    let client = reqwest::Client::new();
+    let resp = client
+        .post(&url)
+        .bearer_auth(&token)
+        .header("x-goog-user-project", &proyecto)
+        .json(&body)
+        .send()
+        .await;
+
+    let resp = match resp {
+        Ok(r) => r,
+        Err(e) => return json!({ "error": format!("Error de conexión con Vertex AI: {}", e) }),
+    };
+
+    if !resp.status().is_success() {
+        let status = resp.status();
+        let text = resp.text().await.unwrap_or_default();
+        return json!({ "error": format!("Vertex AI HTTP {}: {}", status, &text[..text.len().min(300)]) });
+    }
+
+    let data: Value = match resp.json().await {
+        Ok(d) => d,
+        Err(e) => return json!({ "error": format!("Fallo parseando respuesta: {}", e) }),
+    };
+
+    let mut resultados = Vec::new();
+    if let Some(items) = data["results"].as_array() {
+        for item in items {
+            let doc = &item["document"];
+            let sd = &doc["derivedStructData"];
+            let titulo = sd["title"].as_str().unwrap_or(doc["id"].as_str().unwrap_or("?"));
+            let documento = doc["id"].as_str().unwrap_or("");
+            let mut snippet = "";
+            if let Some(answers) = sd["extractive_answers"].as_array() {
+                if let Some(first) = answers.first() {
+                    snippet = first["content"].as_str().unwrap_or("");
+                }
+            }
+            resultados.push(json!({
+                "titulo": titulo,
+                "documento": documento,
+                "snippet": snippet.chars().take(300).collect::<String>(),
+            }));
+        }
+    }
+
+    json!({ "resultados": resultados, "total": resultados.len(), "motor": "vertex-ai-search" })
+}
+
+/// Obtiene el token Bearer de gcloud para Vertex AI.
+async fn obtener_token_vertex() -> Result<String, String> {
+    let gcloud = std::env::var("GCLOUD_PATH")
+        .unwrap_or_else(|_| r"C:\Users\crisp\gcloud-sdk\bin\gcloud.cmd".into());
+    let out = tokio::process::Command::new(&gcloud)
+        .args(["auth", "print-access-token"])
+        .output()
+        .await
+        .map_err(|e| format!("gcloud no disponible: {}", e))?;
+    let token = String::from_utf8_lossy(&out.stdout).trim().to_string();
+    if token.is_empty() {
+        return Err("gcloud no devolvió token (¿sesión iniciada?)".into());
+    }
+    Ok(token)
+}
+
 /// 👁️ OCR/VISIÓN — Da ojos al SLM local (modelo elegible), a Gemini (nube)
 /// y a DeepSeek (OCR front-end + razonamiento)
 async fn handle_nexus_ocr(params: &Value) -> Value {
@@ -1933,6 +2033,7 @@ async fn main() -> Result<()> {
                     "vision_capture" => handle_vision_capture(&params).await,
                     "nexus_ocr" => handle_nexus_ocr(&params).await,
                     "nexus_video" => handle_nexus_video(&params).await,
+                    "consultar_rag" => handle_consultar_rag(&params).await,
                     "propiocepcion_scan" => handle_propiocepcion_scan(&params),
                     "sistema_inmune_patrol" => handle_sistema_inmune_patrol(&params),
                     "resource_governor" => handle_resource_governor(&params).await,
