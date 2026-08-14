@@ -20,11 +20,16 @@ pub struct InstrumentoLlamado {
 
 impl InstrumentoLlamado {
     /// Extrae un argumento string, con fallback a vacío.
+    /// Acepta tanto valores string como objetos/arrays (los serializa a JSON).
     pub fn argumento(&self, clave: &str) -> Option<String> {
-        self.argumentos
-            .get(clave)
-            .and_then(|v| v.as_str())
-            .map(|s| s.to_string())
+        self.argumentos.get(clave).and_then(|v| {
+            if let Some(s) = v.as_str() {
+                Some(s.to_string())
+            } else {
+                // Objeto/array/número → serializar a JSON string
+                serde_json::to_string(v).ok()
+            }
+        })
     }
 }
 
