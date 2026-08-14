@@ -39,6 +39,7 @@ use crate::cerebro::razonamiento_r1::RazonadorR1;
 use crate::cerebro::synapse::MotorSynapse;
 use crate::comms::bus_neuronal::BusNeuronal;
 use crate::comms::deteccion_intencion::DeteccionIntencion;
+#[cfg(target_os = "linux")]
 use crate::defensa::kernel_shield::KernelShield;
 use crate::defensa::sistema_digestivo::SistemaDigestivo;
 use crate::defensa::sistema_homeostasis::SistemaHomeostasis;
@@ -115,6 +116,7 @@ pub struct Orquestador {
     pub izquierdo: HemisferioIzquierdo,
     pub derecho: HemisferioDerecho,
     pub groq: HemisferioGroq,
+    #[cfg(target_os = "linux")]
     pub shield: KernelShield,
     pub razonador: RazonadorR1,
     pub ultimo_dopamina: Mutex<f64>,
@@ -286,6 +288,7 @@ impl Orquestador {
         let derecho = HemisferioDerecho::new(&api_key);
         let groq_key = std::env::var("GROQ_API_KEY").unwrap_or_default();
         let groq = HemisferioGroq::new(&groq_key);
+        #[cfg(target_os = "linux")]
         let shield = KernelShield::new();
         let razonador = RazonadorR1::new();
         let db_path_clone = db_path.clone();
@@ -454,6 +457,7 @@ impl Orquestador {
             izquierdo,
             derecho,
             groq,
+            #[cfg(target_os = "linux")]
             shield,
             razonador,
             ultimo_dopamina: Mutex::new(0.0),

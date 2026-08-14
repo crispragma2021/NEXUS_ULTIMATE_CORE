@@ -103,7 +103,6 @@ wgpu = "0.19"
 bytemuck = "1.18"
 winit = "0.30"
 axum = "0.7"
-aya = { version = "0.13", features = ["async_tokio"] }
 notify = "6.1"
 thiserror = "1.0"
 aes-gcm = "0.10"
@@ -119,3 +118,11 @@ wiremock = "0.5"
 
 [build-dependencies]
 tonic-build = "0.12"
+
+# 🪟 Windows: afinidad de hilos (SetThreadAffinityMask)
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.59", features = ["Win32_System_Threading"] }
+
+# 🛡️ Kernel Shield (eBPF) — solo Linux (BPF no existe en Windows)
+[target.'cfg(target_os = "linux")'.dependencies]
+aya = { version = "0.13", features = ["async_tokio"] }

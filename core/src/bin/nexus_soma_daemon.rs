@@ -19,6 +19,7 @@ use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use sysinfo::{CpuRefreshKind, MemoryRefreshKind, RefreshKind, System};
+#[cfg(unix)]
 use tokio::signal::unix::{signal, SignalKind};
 
 // ==========================================
@@ -386,17 +387,27 @@ async fn main() {
     let running = daemon.running.clone();
 
     // ⚡ Capturar SIGINT y SIGTERM para shutdown graceful
+    #[cfg(unix)]
     let mut sigint = signal(SignalKind::interrupt()).expect("No se pudo capturar SIGINT");
+    #[cfg(unix)]
     let mut sigterm = signal(SignalKind::terminate()).expect("No se pudo capturar SIGTERM");
 
     let handle = tokio::spawn(async move {
-        tokio::select! {
-            _ = sigint.recv() => {
-                eprintln!("\n🧬 [SOMA DAEMON] SIGINT recibido. Apagando...");
+        #[cfg(unix)]
+        {
+            tokio::select! {
+                _ = sigint.recv() => {
+                    eprintln!("\n🧬 [SOMA DAEMON] SIGINT recibido. Apagando...");
+                }
+                _ = sigterm.recv() => {
+                    eprintln!("\n🧬 [SOMA DAEMON] SIGTERM recibido. Apagando...");
+                }
             }
-            _ = sigterm.recv() => {
-                eprintln!("\n🧬 [SOMA DAEMON] SIGTERM recibido. Apagando...");
-            }
+        }
+        #[cfg(windows)]
+        {
+            let _ = tokio::signal::ctrl_c().await;
+            eprintln!("\n🧬 [SOMA DAEMON] Ctrl+C recibido. Apagando...");
         }
         running.store(false, Ordering::Relaxed);
     });

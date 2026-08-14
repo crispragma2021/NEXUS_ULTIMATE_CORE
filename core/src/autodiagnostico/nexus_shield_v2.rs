@@ -21,26 +21,46 @@ pub struct BpfArena {
 impl BpfArena {
     pub fn new(name: &str, size: usize) -> anyhow::Result<Self> {
         // Simulación de BPF Arena usando memoria compartida o memfd
-        let ptr = unsafe {
-            libc::mmap(
-                std::ptr::null_mut(),
-                size,
-                libc::PROT_READ | libc::PROT_WRITE,
-                libc::MAP_ANONYMOUS | libc::MAP_SHARED,
-                -1,
-                0,
-            )
-        };
+        #[cfg(target_os = "linux")]
+        {
+            let ptr = unsafe {
+                libc::mmap(
+                    std::ptr::null_mut(),
+                    size,
+                    libc::PROT_READ | libc::PROT_WRITE,
+                    libc::MAP_ANONYMOUS | libc::MAP_SHARED,
+                    -1,
+                    0,
+                )
+            };
 
-        if ptr == libc::MAP_FAILED {
-            return Err(anyhow::anyhow!("Fallo al mapear BPF Arena"));
+            if ptr == libc::MAP_FAILED {
+                return Err(anyhow::anyhow!("Fallo al mapear BPF Arena"));
+            }
+
+            return Ok(Self {
+                name: name.to_string(),
+                size,
+                ptr,
+            });
         }
 
-        Ok(Self {
-            name: name.to_string(),
-            size,
-            ptr,
-        })
+        #[cfg(not(target_os = "linux"))]
+        {
+            // Windows y otros: arena en heap (simulación equivalente).
+            // El puntero se usa solo como token de identidad del arena.
+            let layout = std::alloc::Layout::from_size_align(size.max(1), 16)
+                .map_err(|e| anyhow::anyhow!("Layout BPF Arena: {e}"))?;
+            let ptr = unsafe { std::alloc::alloc_zeroed(layout) } as *mut c_void;
+            if ptr.is_null() {
+                return Err(anyhow::anyhow!("Fallo al asignar BPF Arena"));
+            }
+            Ok(Self {
+                name: name.to_string(),
+                size,
+                ptr,
+            })
+        }
     }
 }
 

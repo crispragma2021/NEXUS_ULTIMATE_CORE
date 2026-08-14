@@ -6,7 +6,6 @@ members = [
     "nexus-shell",
     "src-tauri",
     "workshop/nexus-terminal",
-    "scratch/nexus_headless",
     "mcp_arsenal/nexus_web_search"
 ]
 exclude = [

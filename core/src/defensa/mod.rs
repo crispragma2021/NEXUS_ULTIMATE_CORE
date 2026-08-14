@@ -7,6 +7,7 @@ pub mod autoinmunidad;
 pub mod biometric_bridge;
 pub mod camuflaje_omega;
 pub mod identidad_soberana;
+#[cfg(target_os = "linux")]
 pub mod kernel_shield;
 pub mod mediador_accion;
 pub mod memoria_dolor;

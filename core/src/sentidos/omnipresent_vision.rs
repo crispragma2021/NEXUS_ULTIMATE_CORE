@@ -35,13 +35,22 @@ impl OmnipresentVision {
 
     /// Captura absoluta de todos los monitores y procesamiento inteligente
     pub async fn capturar_y_procesar() -> anyhow::Result<()> {
+        // La captura xcap retiene punteros nativos (*mut c_void) que no son
+        // Send: se ejecuta en spawn_blocking para no contaminar el future.
+        tokio::task::spawn_blocking(Self::capturar_y_procesar_sync)
+            .await
+            .map_err(|e| anyhow::anyhow!("spawn_blocking visión: {e}"))?
+    }
+
+    /// Versión síncrona de la captura (usada por spawn_blocking).
+    fn capturar_y_procesar_sync() -> anyhow::Result<()> {
         let start = Instant::now();
-        let monitors = Monitor::all().map_err(|e| anyhow::anyhow!("Fallo xcap: {}", e))?;
+        let monitors = Monitor::all().map_err(|e| anyhow::anyhow!("Fallo xcap: {e}"))?;
 
         if let Some(monitor) = monitors.first() {
             let image = monitor
                 .capture_image()
-                .map_err(|e| anyhow::anyhow!("Error captura: {}", e))?;
+                .map_err(|e| anyhow::anyhow!("Error captura: {e}"))?;
 
             // 1. Convertir a Base64 para el HUD
             let mut buffer = std::io::Cursor::new(Vec::new());
@@ -50,29 +59,32 @@ impl OmnipresentVision {
 
             // 2. Persistir temporalmente para OCR si es necesario
             let temp_path = "/tmp/nexus_vision_latest.png";
-            image.save(temp_path)?;
+            let _ = image.save(temp_path);
 
             // 3. OCR Real (Legado de VisionOmega)
-            let ocr_text = Self::ejecutar_ocr(temp_path).await;
+            let ocr_text = Self::ejecutar_ocr_sync(temp_path);
 
             // 4. Actualizar Estado
-            let mut eye = VISION_INSTANCE.write().await;
-            eye.ultimo_frame_b64 = Some(b64);
-            eye.ultimo_texto_ocr = ocr_text;
-            eye.frames_capturados += 1;
+            let rt = tokio::runtime::Handle::current();
+            let _ = rt.block_on(async {
+                let mut eye = VISION_INSTANCE.write().await;
+                eye.ultimo_frame_b64 = Some(b64);
+                eye.ultimo_texto_ocr = ocr_text;
+                eye.frames_capturados += 1;
 
-            info!(
-                "👁️ [VISION] Frame #{} procesado en {:?}",
-                eye.frames_capturados,
-                start.elapsed()
-            );
+                info!(
+                    "👁️ [VISION] Frame #{} procesado en {:?}",
+                    eye.frames_capturados,
+                    start.elapsed()
+                );
+            });
         }
 
         Ok(())
     }
 
-    /// Ejecuta Tesseract OCR sobre el frame capturado
-    async fn ejecutar_ocr(path: &str) -> Option<String> {
+    /// Ejecuta Tesseract OCR sobre el frame capturado (síncrono).
+    fn ejecutar_ocr_sync(path: &str) -> Option<String> {
         let output = Command::new("tesseract")
             .arg(path)
             .arg("stdout")

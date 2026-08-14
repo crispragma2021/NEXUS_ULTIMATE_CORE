@@ -105,8 +105,6 @@ bin/rust_stitch
 # --- ARCHIVOS OCULTOS DEL SISTEMA Y CONFIG LOCAL ---
 .cargo/
 **/.cargo/
-brain/
-**/brain/
 # SSH, agentes, configs locales, sesiones
 .ssh/
 **/.ssh/
@@ -220,6 +218,7 @@ core/src/bin/*
 !**/src/bin/
 **/src/bin/*
 !**/src/bin/*.rs
+!**/src/bin/*.wgsl
 
 # --- Trading portal: se versiona el código fuente; se excluye solo lo sensible ---
 trading-portal/.vault/
@@ -227,9 +226,21 @@ trading-portal/.vault/
 trading-portal/scripts/gestor_credenciales.sh
 **/trading-portal/scripts/gestor_credenciales.sh
 
-# --- Cerebro/mente de NEXUS (sesiones, conocimiento interno, alucinaciones) ---
-brain/
-**/brain/
+# --- Cerebro/mente de NEXUS: SOLO datos locales, NUNCA el código ---
+# El código fuente del cerebro vive en core/src/brain/ y SIEMPRE se sube.
+# Lo que se excluye aquí son solo los datos generados en runtime:
+# sesiones, identidad, conocimiento interno y alucinaciones.
+brain/sessions/
+brain/identity_data/
+brain/logs/
+brain/db/
+**/brain/sessions/
+**/brain/identity_data/
+**/brain/logs/
+**/brain/db/
+# Excepciones explícitas: el código Rust del cerebro nunca se ignora
+!core/src/brain/
+!core/src/brain/**
 
 # --- Datos locales (nunca subir) ---
 
