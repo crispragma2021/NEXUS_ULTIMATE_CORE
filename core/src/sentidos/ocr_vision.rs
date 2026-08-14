@@ -38,6 +38,15 @@ use tracing::{info, warn};
 
 /// Modelo de visión local por defecto (verificado con `ollama list`).
 pub const MODELO_VISION_LOCAL_DEFAULT: &str = "qwen2.5vl:7b";
+/// Cadena de modelos de visión en la nube vía OpenRouter, por disponibilidad:
+/// 1. Gemini 2.5 Flash (primario, el mejor)
+/// 2. Mimo v2.5 (gratis vía OpenCode Zen) si Gemini falla
+/// 3. Hy3 (gratis vía OpenCode Zen) como último respaldo
+pub const CADENA_VISION_NUBE: &[&str] = &[
+    "google/gemini-2.5-flash",
+    "xiaomi/mimo-v2.5",
+    "tencent/hy3",
+];
 /// Modelo de visión en la nube vía OpenRouter (primario, sin Google AI Studio).
 pub const MODELO_VISION_NUBE: &str = "google/gemini-2.5-flash";
 /// Modelo de visión en la nube vía OpenRouter para video (multi-frame).
@@ -308,8 +317,9 @@ pub async fn analizar_con_gemini(
 // Patrón OpenAI-compatible: content con image_url (data URL base64).
 
 /// Envía una imagen a un modelo multimodal vía OpenRouter (primario).
-/// Si OPENROUTER_API_KEY no está, o falla, devuelve Err para que el llamador
-/// pruebe el respaldo Gemini AI Studio directo.
+/// Prueba la cadena completa por disponibilidad: Gemini → Mimo → Hy3.
+/// Si OPENROUTER_API_KEY no está, o toda la cadena falla, devuelve Err
+/// para que el llamador pruebe el respaldo Gemini AI Studio directo.
 pub async fn analizar_con_openrouter(
     image_bytes: &[u8],
     mime_type: &str,
@@ -325,34 +335,46 @@ pub async fn analizar_con_openrouter(
     let b64 = STANDARD.encode(image_bytes);
     let data_url = format!("data:{};base64,{}", mime_type, b64);
 
-    let payload = json!({
-        "model": MODELO_VISION_NUBE,
-        "messages": [{
-            "role": "user",
-            "content": [
-                {"type": "image_url", "image_url": {"url": data_url}},
-                {"type": "text", "text": prompt}
-            ]
-        }],
-        "max_tokens": 4096
-    });
+    let mut ultimo_error = String::new();
+    for modelo in CADENA_VISION_NUBE {
+        let payload = json!({
+            "model": modelo,
+            "messages": [{
+                "role": "user",
+                "content": [
+                    {"type": "image_url", "image_url": {"url": data_url}},
+                    {"type": "text", "text": prompt}
+                ]
+            }],
+            "max_tokens": 4096
+        });
+        match enviar_openrouter(&api_key, &payload).await {
+            Ok(t) => return Ok(t),
+            Err(e) => {
+                warn!("⚠️ [OCR_VISION] Modelo {} falló ({}). Probando siguiente...", modelo, e);
+                ultimo_error = e;
+            }
+        }
+    }
+    Err(format!("❌ Toda la cadena de visión nube falló: {}", ultimo_error))
+}
 
+/// Ejecuta una llamada HTTP a OpenRouter con un payload dado.
+async fn enviar_openrouter(api_key: &str, payload: &Value) -> Result<String, String> {
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(60))
         .build()
         .map_err(|e| format!("❌ Error creando cliente HTTP: {}", e))?;
 
-    info!(
-        "☁️ [OCR_VISION] Enviando imagen a OpenRouter ({})...",
-        MODELO_VISION_NUBE
-    );
+    let modelo = payload["model"].as_str().unwrap_or("?");
+    info!("☁️ [OCR_VISION] Enviando imagen a OpenRouter ({})...", modelo);
     let resp = client
         .post("https://openrouter.ai/api/v1/chat/completions")
         .header("Authorization", format!("Bearer {}", api_key))
         .header("Content-Type", "application/json")
         .header("HTTP-Referer", "https://nexus-omega.app")
         .header("X-Title", "NEXUS Omega")
-        .json(&payload)
+        .json(payload)
         .send()
         .await
         .map_err(|e| format!("❌ Error de conexión con OpenRouter: {}", e))?;
@@ -372,10 +394,19 @@ pub async fn analizar_con_openrouter(
         .await
         .map_err(|e| format!("❌ Fallo parseando respuesta de OpenRouter: {}", e))?;
 
-    data["choices"][0]["message"]["content"]
+    let msg = &data["choices"][0]["message"];
+    // Modelos como Mimo/Hy3 devuelven la respuesta en `reasoning` (thinking)
+    // con `content` null. Intentamos content, luego reasoning.
+    msg["content"]
         .as_str()
         .map(|s: &str| s.trim().to_string())
         .filter(|s| !s.is_empty())
+        .or_else(|| {
+            msg["reasoning"]
+                .as_str()
+                .map(|s: &str| s.trim().to_string())
+                .filter(|s| !s.is_empty())
+        })
         .ok_or_else(|| "⚠️ OpenRouter no devolvió contenido.".to_string())
 }
 
@@ -448,10 +479,19 @@ pub async fn analizar_video_con_openrouter(
         .await
         .map_err(|e| format!("❌ Fallo parseando respuesta de OpenRouter: {}", e))?;
 
-    data["choices"][0]["message"]["content"]
+    let msg = &data["choices"][0]["message"];
+    // Modelos como Mimo/Hy3 devuelven la respuesta en `reasoning` (thinking)
+    // con `content` null. Intentamos content, luego reasoning.
+    msg["content"]
         .as_str()
         .map(|s: &str| s.trim().to_string())
         .filter(|s| !s.is_empty())
+        .or_else(|| {
+            msg["reasoning"]
+                .as_str()
+                .map(|s: &str| s.trim().to_string())
+                .filter(|s| !s.is_empty())
+        })
         .ok_or_else(|| "⚠️ OpenRouter no devolvió contenido.".to_string())
 }
 
