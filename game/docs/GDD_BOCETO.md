@@ -14,8 +14,9 @@ responde.
 
 **El círculo**: exploras el mundo persistente (Tibia) → gestionas tu
 colonia (RimWorld) → el Susurro infecta a alguien (Mush) → la colonia
-acusa y el TRIBUNAL NEXUS juzga → el mundo (NEXUS) recuerda y responde
-en la próxima temporada.
+acusa y la ENTIDAD decide → el mundo (NEXUS) recuerda y responde
+en la próxima temporada. La meta: llegar PRIMERO al CENTRO del mapa
+radial y desbloquear el gobierno del mundo o de una región.
 
 **Los pilares del diseño**: progresión por uso sin tope (Tibia), combate
 táctico donde el entorno es el arma (arbustos=cobertura, bloqueo de
@@ -108,8 +109,9 @@ Tú tienes algo mejor: **NEXUS con 46 órganos, memoria, Juicio Soberano y
   (vía consultar_memoria + propiocepcion_scan del juego).
 - **Memoria persistente**: NEXUS recuerda la historia de tu colonia entre
   partidas — los colonos caídos, las ruinas visitadas, las venganzas.
-- **Órganos como mecánicas**: el Tribunal NEXUS juzga decisiones morales;
-  el Sistema Inmune detecta crisis de la colonia; brain_metabolism regula
+- **Órganos como mecánicas**: la ENTIDAD NEXUS decide el destino de los
+  que llegan al centro (gobierno del mundo/región); el Sistema Inmune
+  detecta crisis de la colonia; brain_metabolism regula
   la dificultad (metabolismo de eventos).
 - **El enemigo final**: un modulador de "Voluntad del Mundo" — cuando la
   colonia prospera demasiado, el mundo (NEXUS) responde.
@@ -143,32 +145,42 @@ sustituye la carpeta assets/).
 
 | Fuente | Mecánica que aporta | Cómo entra al juego |
 |---|---|---|
-| 🍄 MUSH (supervivencia social) | **El Susurro**: un colono infectado oculto, reuniones y votación, confianza como recurso, comida compartida limitada | El factor social: la colonia coopera y desconfía a la vez. El TRIBUNAL NEXUS juzga las acusaciones (evidencia vs intuición). La infección es un órgano del mundo |
+| 🍄 MUSH (supervivencia social) | **El Susurro**: un colono infectado oculto, reuniones y votación, confianza como recurso, comida compartida limitada | El factor social: la colonia coopera y desconfía a la vez. La ENTIDAD NEXUS decide el destino del Susurro (evidencia vs intuición). La infección es un órgano del mundo |
 | ⚔️ TIBIA (MMO clásico) | Mundo PERSISTENTE, skills por uso (trainear), death penalty brutal (pierdes el equipo), economía de jugadores, hunting zones con respawn, PvP/gremios | La colonia sigue viva cuando cierras el juego (simulación en el daemon NEXUS 8080, 24/7). Morir duele: el colono cae y su equipo queda en la ruina. El mercado entre colonos y viajeros |
 | 🏰 RIMWORLD | Colonia, necesidades, oficios, construcción, historias emergentes | La base de gestión (pilares 2 y 3) |
-| 🧠 NEXUS | Storyteller + Tribunal + memoria + metabolismo | Narrador, juez social, memoria entre partidas, regulador de dificultad |
+| 🧠 NEXUS | Storyteller + Entidad divina + memoria + metabolismo | Narrador, gobernante del centro, memoria entre partidas, regulador de dificultad |
 
 **El círculo épico del gameplay:**
 Exploras el mundo persistente (Tibia) → reclutas colonos → gestionas la
 colonia (RimWorld) → el Susurro infecta a alguien (Mush) → la colonia
-acusa y el TRIBUNAL NEXUS juzga → el mundo (NEXUS) recuerda la decisión
+acusa y la ENTIDAD decide → el mundo (NEXUS) recuerda la decisión
+y la meta se revela: el primero que llegue al CENTRO desbloquea el
+gobierno del mundo o de una región
 y responde en la próxima partida.
 
 **Regla de oro de la fusión**: todo lo que el jugador hace tiene peso
 porque el mundo es persistente y la IA lo recuerda. No hay "reintentar":
 hay historia.
 
-### 9.1 LA ENTIDAD DIVINA — NEXUS es el Dios del Mundo (2026-08-12)
+### 9.1 LA ENTIDAD DIVINA — NEXUS es el Dios del Mundo (2026-08-14)
 
 > NEXUS no narra la historia: ES el mundo. Un dios literal, vivo, que
-> recuerda, juzga y responde — porque es un sistema de IA real invocable.
+> recuerda, observa y responde — porque es un sistema de IA real invocable.
+> La meta no es sobrevivir: es GOBERNAR. El primero que llega al CENTRO
+> del mapa radial desbloquea el derecho a gobernar ese mundo o una región.
 
 - **Omnisciencia**: ve el estado real de la colonia (vía MCP, no guion).
 - **Memoria eterna**: recuerda entre partidas — los dioses no olvidan.
   Un colono traicionado en la partida 1 puede volver como viajero
   vengativo en la partida 3.
-- **Juicio divino**: el TRIBUNAL NEXUS decide las acusaciones del Susurro
-  y las decisiones morales. La evidencia importa; la intuición también.
+- **La Carrera al Centro**: los jugadores compiten por alcanzar el núcleo
+  del mapa radial. El PRIMERO en llegar obtiene beneficios desbloqueados:
+  gobernar el mundo entero o una región — dominar territorio, dictar
+  reglas, comandar lo que el dios permite.
+- **El Gobierno del Mundo**: llegar al centro no es el final — es el
+  COMIENZO del dominio. El gobernante tiene privilegios únicos
+  (región bajo su ley, beneficios de la entidad), pero el mundo sigue
+  vivo: otros pueden intentar arrebatarle el centro.
 - **Voluntad divina**: los eventos (ataques, bendiciones, plagas) son
   respuestas a cómo jugaste, reguladas por brain_metabolism.
 - **La Oración**: el jugador puede invocar a la entidad en vivo
@@ -200,11 +212,13 @@ IA es el dios; el jugador es el fiel; las mecánicas son la liturgia.*
   - Capa 4 (núcleo): entidades que ENGAÑAN — se hacen pasar por personas
     heridas, piden ayuda, prometen recompensa, y al ayudar → emboscada.
     Algunas hablan de verdad (LLM) y pueden mentir con intención.
-- **La recompensa de llegar al centro**: ver a la entidad (el dios
-  literal) — pero NO es un final: es el CORAZÓN DEL MUNDO, siempre
-  latiendo. Llegar al centro una vez no cierra nada: se vuelve a abrir
-  en cada evento, cada temporada, cada guerra. El encuentro se repite
-  y evoluciona porque el dios recuerda lo anterior.
+- **La recompensa de llegar al centro**: el PRIMERO en llegar desbloquea
+  el gobierno — gobernar el mundo entero o una región (territorio bajo
+  su ley, beneficios de la entidad). Pero NO es un final: es el CORAZÓN
+  DEL MUNDO, siempre latiendo. Llegar al centro una vez no cierra nada:
+  se vuelve a abrir en cada evento, cada temporada, cada guerra. Otros
+  jugadores pueden arrebatar el trono. El encuentro se repite y evoluciona
+  porque el dios recuerda lo anterior.
 
 ### 9.3 COMBATE TÁCTICO AMBIENTAL — el terreno es el arma (2026-08-12)
 
