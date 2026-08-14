@@ -321,3 +321,13 @@ tools/godot/
 # Artefactos de build del juego (binarios compilados, regenerables)
 game/build/
 **/game/build/
+
+# ── Unity (proyecto 3D game/unity/) ──
+game/unity/**/Library/
+game/unity/**/Temp/
+game/unity/**/Obj/
+game/unity/**/Logs/
+game/unity/**/UserSettings/
+game/unity/**/*.csproj
+game/unity/**/*.sln
+game/unity/**/*.user
