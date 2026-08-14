@@ -226,21 +226,10 @@ trading-portal/.vault/
 trading-portal/scripts/gestor_credenciales.sh
 **/trading-portal/scripts/gestor_credenciales.sh
 
-# --- Cerebro/mente de NEXUS: SOLO datos locales, NUNCA el código ---
-# El código fuente del cerebro vive en core/src/brain/ y SIEMPRE se sube.
-# Lo que se excluye aquí son solo los datos generados en runtime:
-# sesiones, identidad, conocimiento interno y alucinaciones.
-brain/sessions/
-brain/identity_data/
-brain/logs/
-brain/db/
-**/brain/sessions/
-**/brain/identity_data/
-**/brain/logs/
-**/brain/db/
-# Excepciones explícitas: el código Rust del cerebro nunca se ignora
-!core/src/brain/
-!core/src/brain/**
+# --- Cerebro/mente de NEXUS: TODO se versiona (código + sesiones + identidad) ---
+# Decisión del Arquitecto: no hay contraseñas ni claves en brain/,
+# por lo que el cerebro completo se sube a GitHub como backup.
+# (GitShield sigue protegiendo .env/.json/.db/.log en el resto del repo)
 
 # --- Datos locales (nunca subir) ---
 
