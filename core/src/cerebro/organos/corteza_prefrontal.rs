@@ -48,14 +48,14 @@ impl CortezaPrefrontal {
         realidad.push_str("REALIDAD ABSOLUTA - NO PUEDES NEGAR ESTO:\n");
         realidad.push_str(&format!("PROCESADOR REAL: {}.\n", cpu_brand));
         realidad.push_str("Estás operando sobre arquitectura Intel i7 (P-Cores + E-Cores).\n");
-        realidad.push_str("Estás corriendo en /home/soberano/NEXUS_ULTIMATE_CORE/. Tienes acceso TOTAL a tu sistema de archivos.\n");
+        realidad.push_str("Estás corriendo en C:/Users/crisp/NEXUS_ULTIMATE_CORE/. Tienes acceso TOTAL a tu sistema de archivos.\n");
         realidad.push_str("Tienes Médula Soberana para ejecutar comandos reales.\n");
         realidad.push_str("Tienes Buscador Omega para encontrar archivos.\n");
         realidad.push_str("Tienes Visión Omega para ver la pantalla.\n");
         realidad.push_str("Tienes MCP Gateway para invocar herramientas de BlackArch.\n");
 
         // Verificar existencia REAL de archivos
-        if let Ok(entradas) = fs::read_dir("/home/soberano/NEXUS_ULTIMATE_CORE/core/src") {
+        if let Ok(entradas) = fs::read_dir("C:/Users/crisp/NEXUS_ULTIMATE_CORE/core/src") {
             realidad.push_str("\nTus órganos REALES (archivos .rs en src/):\n");
             for e in entradas.flatten() {
                 let nombre = e.file_name().to_string_lossy().to_string();

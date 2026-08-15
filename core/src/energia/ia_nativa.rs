@@ -25,7 +25,7 @@ use tokio::sync::RwLock;
 use tracing::{info, warn};
 
 /// Ruta base del workspace NEXUS.
-const NEXUS_ROOT: &str = "/home/soberano/NEXUS_ULTIMATE_CORE";
+const NEXUS_ROOT: &str = "C:/Users/crisp/NEXUS_ULTIMATE_CORE";
 
 /// Modelos GGUF candidatos, en orden de prioridad.
 /// mistral.rs soporta una amplia gama de arquitecturas, por lo que basta
@@ -33,23 +33,23 @@ const NEXUS_ROOT: &str = "/home/soberano/NEXUS_ULTIMATE_CORE";
 const MODELOS_CANDIDATOS: &[&str] = &[
     // Qwen3-4B Q4_K_M — repo oficial Qwen/Qwen3-4B-GGUF (instruct, razonamiento)
     concat!(
-        "/home/soberano/NEXUS_ULTIMATE_CORE/brain/swarm/models/",
+        "C:/Users/crisp/NEXUS_ULTIMATE_CORE/brain/swarm/models/",
         "Qwen3-4B-Q4_K_M.gguf"
     ),
     concat!(
-        "/home/soberano/NEXUS_ULTIMATE_CORE/brain/swarm/models/",
+        "C:/Users/crisp/NEXUS_ULTIMATE_CORE/brain/swarm/models/",
         "qwen2.5-coder-3b-instruct-q4_k_m.gguf"
     ),
     concat!(
-        "/home/soberano/NEXUS_ULTIMATE_CORE/models/gguf/",
+        "C:/Users/crisp/NEXUS_ULTIMATE_CORE/models/gguf/",
         "tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf"
     ),
     concat!(
-        "/home/soberano/NEXUS_ULTIMATE_CORE/brain/swarm/models/",
+        "C:/Users/crisp/NEXUS_ULTIMATE_CORE/brain/swarm/models/",
         "Llama-3.2-3B-Instruct-Q4_K_M.gguf"
     ),
     concat!(
-        "/home/soberano/NEXUS_ULTIMATE_CORE/models/gguf/",
+        "C:/Users/crisp/NEXUS_ULTIMATE_CORE/models/gguf/",
         "qwen1.5b-q4_k_m.gguf"
     ),
 ];

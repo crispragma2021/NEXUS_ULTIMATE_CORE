@@ -207,7 +207,7 @@ impl BootSequencer {
         let hippocampus = Arc::new(ArtificialHippocampus::new(
             ctx.db_manager.clone(),
             None,
-            "/home/soberano/NEXUS_ULTIMATE_CORE/data/memory/vector_memories",
+            "C:/Users/crisp/NEXUS_ULTIMATE_CORE/data/memory/vector_memories",
         ));
         ctx.hippocampus = Some(hippocampus.clone());
         info!("🗂️ [BOOT] ArtificialHippocampus: memoria consciente creada");
@@ -301,8 +301,8 @@ impl BootSequencer {
 
         // 2.1 Verificar/crear rutas críticas
         let rutas_criticas = [
-            "/home/soberano/NEXUS_ULTIMATE_CORE/data",
-            "/home/soberano/NEXUS_ULTIMATE_CORE/data/memory",
+            "C:/Users/crisp/NEXUS_ULTIMATE_CORE/data",
+            "C:/Users/crisp/NEXUS_ULTIMATE_CORE/data/memory",
         ];
         for ruta in &rutas_criticas {
             let p = std::path::Path::new(ruta);
@@ -430,7 +430,7 @@ impl BootSequencer {
         let juicio_limbico = Arc::new(TokioMutex::new(JuicioSoberano::new()));
         let sentimiento = Arc::new(TokioMutex::new(SentimientoSoberano::new()));
         let db_path_buf =
-            std::path::PathBuf::from("/home/soberano/NEXUS_ULTIMATE_CORE/data/intelligence.db");
+            std::path::PathBuf::from("C:/Users/crisp/NEXUS_ULTIMATE_CORE/data/intelligence.db");
         let nexo_persona = Arc::new(TokioRwLock::new(NexoPersonaModule::new(db_path_buf)));
 
         let limbico_arc = Arc::new(TokioMutex::new(SistemaLimbico::new(
@@ -517,7 +517,7 @@ impl BootSequencer {
             Arc::new(ArtificialHippocampus::new(
                 ctx.db_manager.clone(),
                 None,
-                "/home/soberano/NEXUS_ULTIMATE_CORE/data/memory/vector_memories",
+                "C:/Users/crisp/NEXUS_ULTIMATE_CORE/data/memory/vector_memories",
             ))
         });
 

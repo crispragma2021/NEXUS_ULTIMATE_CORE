@@ -120,7 +120,7 @@ async fn main() -> Result<()> {
 }
 
 fn inyectar_llave_en_env(key: &str) -> Result<()> {
-    let env_path = "/home/soberano/NEXUS_ULTIMATE_CORE/.env";
+    let env_path = "C:/Users/crisp/NEXUS_ULTIMATE_CORE/.env";
     let content = std::fs::read_to_string(env_path)?;
 
     if content.contains("GEMINI_ACCOUNT_3_KEYS") {

@@ -46,7 +46,7 @@ pub static NEXUS_ROOT: Lazy<PathBuf> = Lazy::new(|| {
     }
     #[cfg(not(target_os = "windows"))]
     {
-        let home = env::var("HOME").unwrap_or_else(|_| "/home/soberano".to_string());
+        let home = env::var("HOME").unwrap_or_else(|_| "C:/Users/crisp".to_string());
         PathBuf::from(home).join("NEXUS_ULTIMATE_CORE")
     }
 });

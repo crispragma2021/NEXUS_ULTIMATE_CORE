@@ -209,7 +209,7 @@ impl OlfatoDigital {
 
     /// Olfatear TODOS los logs del directorio de NEXUS
     pub fn olfatear_sistema(&mut self) -> Vec<AnomaliaDetectada> {
-        let log_dir = Path::new("/home/soberano/NEXUS_ULTIMATE_CORE/logs");
+        let log_dir = Path::new("C:/Users/crisp/NEXUS_ULTIMATE_CORE/logs");
         let mut todas_anomalias = Vec::new();
 
         if !log_dir.exists() {

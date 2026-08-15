@@ -8,7 +8,7 @@ use std::collections::HashMap;
 use std::sync::Mutex;
 use tracing::error;
 
-const VAULT_PATH: &str = "/home/soberano/NEXUS_ULTIMATE_CORE/.vault/identidades.enc";
+const VAULT_PATH: &str = "C:/Users/crisp/NEXUS_ULTIMATE_CORE/.vault/identidades.enc";
 
 /// Vault cifrado con AES-256-GCM para credenciales
 pub struct NexusVault {

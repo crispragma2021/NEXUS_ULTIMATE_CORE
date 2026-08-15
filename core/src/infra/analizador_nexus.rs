@@ -31,7 +31,7 @@ impl AnalizadorNexus {
             .args([
                 "check",
                 "--manifest-path",
-                "/home/soberano/NEXUS_ULTIMATE_CORE/Cargo.toml",
+                "C:/Users/crisp/NEXUS_ULTIMATE_CORE/Cargo.toml",
             ])
             .output();
 
@@ -52,7 +52,7 @@ impl AnalizadorNexus {
             .args([
                 "clippy",
                 "--manifest-path",
-                "/home/soberano/NEXUS_ULTIMATE_CORE/Cargo.toml",
+                "C:/Users/crisp/NEXUS_ULTIMATE_CORE/Cargo.toml",
                 "--",
                 "-D",
                 "warnings",
@@ -75,7 +75,7 @@ impl AnalizadorNexus {
         let mut dependencias: HashMap<String, usize> = HashMap::new();
 
         if let Ok(contenido) =
-            std::fs::read_to_string("/home/soberano/NEXUS_ULTIMATE_CORE/Cargo.toml")
+            std::fs::read_to_string("C:/Users/crisp/NEXUS_ULTIMATE_CORE/Cargo.toml")
         {
             let mut en_deps = false;
             for linea in contenido.lines() {
@@ -104,7 +104,7 @@ impl AnalizadorNexus {
     /// Cuenta líneas de código por archivo.
     pub fn contar_lineas_proyecto(&self) -> Vec<(String, usize)> {
         let mut resultados = Vec::new();
-        if let Ok(entradas) = std::fs::read_dir("/home/soberano/NEXUS_ULTIMATE_CORE/core/src") {
+        if let Ok(entradas) = std::fs::read_dir("C:/Users/crisp/NEXUS_ULTIMATE_CORE/core/src") {
             for e in entradas.flatten() {
                 let path = e.path();
                 if path.extension().is_some_and(|ext| ext == "rs") {
@@ -194,7 +194,7 @@ impl AnalizadorNexus {
             .args([
                 "-rEho",
                 r"\b(1420|3035|4321[0-9])\b", // Patrón específico para tus rangos conocidos
-                "/home/soberano/NEXUS_ULTIMATE_CORE",
+                "C:/Users/crisp/NEXUS_ULTIMATE_CORE",
                 "--exclude-dir=target",
                 "--exclude-dir=.git",
                 "--exclude-dir=legado",
@@ -229,7 +229,7 @@ impl AnalizadorNexus {
             .args([
                 "-rl",
                 "43211",
-                "/home/soberano/NEXUS_ULTIMATE_CORE",
+                "C:/Users/crisp/NEXUS_ULTIMATE_CORE",
                 "--exclude-dir=target",
                 "--exclude-dir=.git",
                 "--exclude-dir=legado",

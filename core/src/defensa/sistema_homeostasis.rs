@@ -32,7 +32,7 @@ impl SistemaHomeostasis {
     ) -> Result<(), Box<dyn std::error::Error>> {
         // 1. Obtener las sesiones recientes en caliente y exportarlas
         if let Ok(sesiones) = self.pulso_memoria.obtener_sesiones_recientes(limite) {
-            let path_dir = PathBuf::from("/home/soberano/NEXUS_ULTIMATE_CORE/brain/history");
+            let path_dir = PathBuf::from("C:/Users/crisp/NEXUS_ULTIMATE_CORE/brain/history");
             let _ = std::fs::create_dir_all(&path_dir);
 
             for sesion_id in sesiones {
@@ -52,7 +52,7 @@ impl SistemaHomeostasis {
     /// 🧠 [NERVIO 3] Alimentar el Hipocampo con la sesión más reciente de Antigravity.
     /// Lee el transcript.jsonl directamente con rusqlite — sin dependencia circular.
     pub fn consolidar_en_hipocampo(&self) -> Result<(), Box<dyn std::error::Error>> {
-        let brain_dir = std::path::Path::new("/home/soberano/.gemini/antigravity-ide/brain");
+        let brain_dir = std::path::Path::new("C:/Users/crisp/NEXUS_ULTIMATE_CORE/brain");
         if !brain_dir.exists() {
             return Ok(()); // Silencioso si Antigravity no está activo
         }
@@ -108,7 +108,7 @@ impl SistemaHomeostasis {
                                 .and_then(|a| a.get("TargetFile"))
                                 .and_then(|v| v.as_str())
                             {
-                                let short = p.replace("/home/soberano/NEXUS_ULTIMATE_CORE/", "");
+                                let short = p.replace("C:/Users/crisp/NEXUS_ULTIMATE_CORE/", "");
                                 if !archivos.contains(&short) {
                                     archivos.push(short);
                                 }
@@ -156,14 +156,14 @@ impl SistemaHomeostasis {
         md.push_str("---\n*Leer este archivo al inicio de la próxima sesión para recuperar contexto completo.*\n");
 
         // Exportar a brain/sessions/latest.md
-        let sessions_dir = PathBuf::from("/home/soberano/NEXUS_ULTIMATE_CORE/brain/sessions");
+        let sessions_dir = PathBuf::from("C:/Users/crisp/NEXUS_ULTIMATE_CORE/brain/sessions");
         let _ = std::fs::create_dir_all(&sessions_dir);
         std::fs::write(sessions_dir.join("latest.md"), &md)?;
         let date_str = chrono::Local::now().format("%Y-%m-%d_%H-%M").to_string();
         let _ = std::fs::write(sessions_dir.join(format!("sesion_{}.md", date_str)), &md);
 
         // Insertar en hipocampo.db directamente
-        let hipocampo_db = "/home/soberano/NEXUS_ULTIMATE_CORE/data/hipocampo.db";
+        let hipocampo_db = "C:/Users/crisp/NEXUS_ULTIMATE_CORE/data/hipocampo.db";
         if let Ok(conn) = Connection::open(hipocampo_db) {
             let _ = conn.execute(
                 "CREATE TABLE IF NOT EXISTS memorias (id INTEGER PRIMARY KEY AUTOINCREMENT, contenido TEXT NOT NULL, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)",

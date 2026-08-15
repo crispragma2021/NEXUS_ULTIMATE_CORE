@@ -49,7 +49,7 @@ impl DudaSistematica {
         let mut confianza: f32 = 0.85;
 
         // Paths absolutos conocidos = alta confianza
-        if proposicion.contains("/home/soberano/NEXUS_ULTIMATE_CORE") {
+        if proposicion.contains("C:/Users/crisp/NEXUS_ULTIMATE_CORE") {
             confianza += 0.10;
         }
         // Datos técnicos específicos

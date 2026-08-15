@@ -11,7 +11,7 @@ use std::fs;
 use std::sync::RwLock;
 
 const GEMINI_CALIBRATION_PATH: &str = "nexus_gemini_calibration.json";
-const GEMINI_MD_PATH: &str = "/home/soberano/NEXUS_ULTIMATE_CORE/docs/identity/identity.md";
+const GEMINI_MD_PATH: &str = "C:/Users/crisp/NEXUS_ULTIMATE_CORE/docs/identity/identity.md";
 
 #[derive(Serialize)]
 pub struct GeminiRequest {

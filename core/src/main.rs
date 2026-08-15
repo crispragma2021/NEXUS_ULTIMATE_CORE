@@ -68,7 +68,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let hippocampus = Arc::new(ArtificialHippocampus::new(
         None,
         None,
-        "/home/soberano/NEXUS_ULTIMATE_CORE/data/memory/vector_memories",
+        "C:/Users/crisp/NEXUS_ULTIMATE_CORE/data/memory/vector_memories",
     ));
     let orquestador = Orquestador::new(hippocampus).await;
 

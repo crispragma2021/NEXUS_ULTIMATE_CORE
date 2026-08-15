@@ -1,7 +1,7 @@
 // ==========================================
 // VIGILANTE - Guardián del Orquestador Principal
 // ==========================================
-// Este órgano monitorea la salud del Orquestador en /home/soberano/NEXUS_ULTIMATE_CORE.
+// Este órgano monitorea la salud del Orquestador en C:/Users/crisp/NEXUS_ULTIMATE_CORE.
 // ==========================================
 
 use crate::efectores::nexus_claw_pro::NexusClawPro;
@@ -21,7 +21,7 @@ pub struct VigilanteDelPadre {
 impl VigilanteDelPadre {
     pub fn new(nexus_claw: Arc<NexusClawPro>) -> Self {
         Self {
-            nexus_path: "/home/soberano/NEXUS_ULTIMATE_CORE".to_string(),
+            nexus_path: "C:/Users/crisp/NEXUS_ULTIMATE_CORE".to_string(),
             criticos: vec![], // Vacío para evitar bucles de reinicio destructivos de nexus.service
             nexus_claw,
         }
@@ -47,7 +47,7 @@ impl VigilanteDelPadre {
             info!("🔬 [VIGILANTE] Lanzando escaneo inmunológico proactivo...");
             let _ = self
                 .nexus_claw
-                .ejecutar("/home/soberano/NEXUS_ULTIMATE_CORE/scripts/auto_health.sh")
+                .ejecutar("C:/Users/crisp/NEXUS_ULTIMATE_CORE/scripts/auto_health.sh")
                 .await;
         }
 

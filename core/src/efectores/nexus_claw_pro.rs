@@ -51,7 +51,7 @@ pub struct NexusClawPro {
 
 impl NexusClawPro {
     pub fn new(ocean: Arc<Ocean>, juicio: Arc<JuicioSoberano>) -> Self {
-        let home = std::env::var("HOME").unwrap_or_else(|_| "/home/soberano".to_string());
+        let home = std::env::var("HOME").unwrap_or_else(|_| "C:/Users/crisp".to_string());
         let data_dir = PathBuf::from(&home).join("NEXUS/data");
         let nexus_project = crate::infra::paths::resolve_path("");
 
@@ -72,7 +72,7 @@ impl NexusClawPro {
     }
 
     pub fn new_empty() -> Self {
-        let home = std::env::var("HOME").unwrap_or_else(|_| "/home/soberano".to_string());
+        let home = std::env::var("HOME").unwrap_or_else(|_| "C:/Users/crisp".to_string());
         let data_dir = PathBuf::from(&home).join("NEXUS/data");
         let nexus_project = crate::infra::paths::resolve_path("");
 
@@ -480,7 +480,7 @@ impl NexusClawPro {
     // --- SECCIÓN VI: COMUNICACIÓN Y SENSORES ---
 
     pub fn extraer_google_cookies(&self) -> AnyResult<String> {
-        let home = std::env::var("HOME").unwrap_or_else(|_| "/home/soberano".to_string());
+        let home = std::env::var("HOME").unwrap_or_else(|_| "C:/Users/crisp".to_string());
         let brave_path =
             PathBuf::from(home).join(".config/BraveSoftware/Brave-Browser/Default/Cookies");
         let conn = Connection::open(brave_path)?;

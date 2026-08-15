@@ -78,8 +78,8 @@ impl DeteccionIntencion {
             return match id {
                 "leer_archivo" => self.extraer_archivo(respuesta).map(|a| format!("[ACCION:leer_archivo] \"{}\"", a)),
                 "ejecutar_comando" => self.extraer_comando(respuesta).map(|c| format!("[ACCION:ejecutar_comando] \"{}\"", c)),
-                "compilar" => Some("[ACCION:ejecutar_comando] \"cargo build --release --manifest-path /home/soberano/NEXUS_ULTIMATE_CORE/Cargo.toml\"".into()),
-                "buscar" => self.extraer_busqueda(respuesta).map(|t| format!("[ACCION:ejecutar_comando] \"grep -r '{}' /home/soberano/NEXUS_ULTIMATE_CORE/core/src/\"", t)),
+                "compilar" => Some("[ACCION:ejecutar_comando] \"cargo build --release --manifest-path C:/Users/crisp/NEXUS_ULTIMATE_CORE/Cargo.toml\"".into()),
+                "buscar" => self.extraer_busqueda(respuesta).map(|t| format!("[ACCION:ejecutar_comando] \"grep -r '{}' C:/Users/crisp/NEXUS_ULTIMATE_CORE/core/src/\"", t)),
                 "diagnostico" => Some("[ACCION:ejecutar_comando] \"systemctl status nexus.service --no-pager\"".into()),
                 _ => None,
             };
@@ -100,7 +100,7 @@ impl DeteccionIntencion {
 
     /// Extrae el nombre de archivo de una frase.
     fn extraer_archivo(&self, texto: &str) -> Option<String> {
-        // Buscar patrones como "/home/soberano/NEXUS_ULTIMATE_CORE/..."
+        // Buscar patrones como "C:/Users/crisp/NEXUS_ULTIMATE_CORE/..."
         for palabra in texto.split_whitespace() {
             let limpia =
                 palabra.trim_matches(|c: char| c == '"' || c == '\'' || c == '.' || c == ',');
@@ -114,7 +114,7 @@ impl DeteccionIntencion {
             }
             if limpia.ends_with(".rs") || limpia.ends_with(".toml") {
                 return Some(format!(
-                    "/home/soberano/NEXUS_ULTIMATE_CORE/core/src/{}",
+                    "C:/Users/crisp/NEXUS_ULTIMATE_CORE/core/src/{}",
                     limpia
                 ));
             }

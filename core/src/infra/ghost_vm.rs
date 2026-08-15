@@ -22,7 +22,7 @@ impl Default for GhostVmController {
 
 impl GhostVmController {
     pub fn new() -> Self {
-        let base_path = PathBuf::from("/home/soberano/NEXUS_ULTIMATE_CORE/firecracker_env");
+        let base_path = PathBuf::from("C:/Users/crisp/NEXUS_ULTIMATE_CORE/firecracker_env");
         Self {
             socket_path: PathBuf::from("/tmp/firecracker.socket"),
             binary_path: base_path.join("firecracker"),

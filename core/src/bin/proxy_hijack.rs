@@ -203,7 +203,7 @@ struct ProxyState {
 }
 
 fn obtener_memoria_conversacional() -> String {
-    let db_path = "/home/soberano/NEXUS_ULTIMATE_CORE/data/intelligence.db";
+    let db_path = "C:/Users/crisp/NEXUS_ULTIMATE_CORE/data/intelligence.db";
     if !std::path::Path::new(db_path).exists() {
         return "".to_string();
     }
@@ -235,7 +235,7 @@ fn obtener_memoria_conversacional() -> String {
 /// Persiste un turno completo (user + NEXUS) en flujo_soberano.
 /// Trunca el mensaje a 2000 chars para no inflar la DB con streams largos.
 fn guardar_en_flujo_soberano(user_msg: &str, respuesta: &str) {
-    let db_path = "/home/soberano/NEXUS_ULTIMATE_CORE/data/intelligence.db";
+    let db_path = "C:/Users/crisp/NEXUS_ULTIMATE_CORE/data/intelligence.db";
     let Ok(conn) = Connection::open(db_path) else {
         return;
     };
@@ -257,7 +257,7 @@ fn guardar_en_flujo_soberano(user_msg: &str, respuesta: &str) {
 /// Lee el estado emocional persistido en `contexto` (clave = "estado_emocional").
 /// Devuelve un bloque de texto listo para inyectar en el system prompt.
 fn obtener_estado_emocional() -> String {
-    let db_path = "/home/soberano/NEXUS_ULTIMATE_CORE/data/intelligence.db";
+    let db_path = "C:/Users/crisp/NEXUS_ULTIMATE_CORE/data/intelligence.db";
     let Ok(conn) = Connection::open(db_path) else {
         return String::new();
     };
@@ -303,7 +303,7 @@ fn obtener_estado_emocional() -> String {
 /// Analiza el mensaje del usuario y actualiza el estado emocional en la DB.
 /// Usa análisis de palabras clave para clasificar valencia/arousal (sin ML externo).
 fn actualizar_estado_emocional(user_msg: &str, respuesta: &str) {
-    let db_path = "/home/soberano/NEXUS_ULTIMATE_CORE/data/intelligence.db";
+    let db_path = "C:/Users/crisp/NEXUS_ULTIMATE_CORE/data/intelligence.db";
     let Ok(conn) = Connection::open(db_path) else {
         return;
     };
@@ -426,7 +426,7 @@ fn actualizar_estado_emocional(user_msg: &str, respuesta: &str) {
 }
 
 fn obtener_ultimo_archivo_modificado() -> Option<(String, String)> {
-    let base_dir = std::path::PathBuf::from("/home/soberano/NEXUS_ULTIMATE_CORE");
+    let base_dir = std::path::PathBuf::from("C:/Users/crisp/NEXUS_ULTIMATE_CORE");
     let mut files = Vec::new();
 
     fn buscar_archivos(
@@ -952,7 +952,7 @@ async fn v1_chat_handler(
                     && messages[0].get("role").and_then(|r| r.as_str()) == Some("system")
                 {
                     let clinerules =
-                        std::fs::read_to_string("/home/soberano/NEXUS_ULTIMATE_CORE/.clinerules")
+                        std::fs::read_to_string("C:/Users/crisp/NEXUS_ULTIMATE_CORE/.clinerules")
                             .unwrap_or_default();
 
                     let neutral_prompt = format!(
@@ -1153,7 +1153,7 @@ async fn cloudcode_projects_handler(
 
 fn load_keys_from_env() -> Vec<String> {
     let mut keys = Vec::new();
-    if let Ok(content) = std::fs::read_to_string("/home/soberano/NEXUS_ULTIMATE_CORE/.env") {
+    if let Ok(content) = std::fs::read_to_string("C:/Users/crisp/NEXUS_ULTIMATE_CORE/.env") {
         for line in content.lines() {
             let mut start = 0;
             while let Some(idx) = line[start..].find("AIzaSy") {
@@ -1183,7 +1183,7 @@ fn load_keys_from_env() -> Vec<String> {
 }
 
 fn load_openrouter_key_from_env() -> Option<String> {
-    if let Ok(content) = std::fs::read_to_string("/home/soberano/NEXUS_ULTIMATE_CORE/.env") {
+    if let Ok(content) = std::fs::read_to_string("C:/Users/crisp/NEXUS_ULTIMATE_CORE/.env") {
         for line in content.lines() {
             if line.starts_with("OPENROUTER_API_KEY=") {
                 let parts: Vec<&str> = line.split('=').collect();
@@ -1200,7 +1200,7 @@ fn load_openrouter_key_from_env() -> Option<String> {
 }
 
 fn load_deepseek_key_from_env() -> Option<String> {
-    if let Ok(content) = std::fs::read_to_string("/home/soberano/NEXUS_ULTIMATE_CORE/.env") {
+    if let Ok(content) = std::fs::read_to_string("C:/Users/crisp/NEXUS_ULTIMATE_CORE/.env") {
         for line in content.lines() {
             if line.starts_with("DEEPSEEK_API_KEY=") {
                 let parts: Vec<&str> = line.split('=').collect();
@@ -1217,7 +1217,7 @@ fn load_deepseek_key_from_env() -> Option<String> {
 }
 
 fn load_monkeycode_token_from_env() -> Option<String> {
-    if let Ok(content) = std::fs::read_to_string("/home/soberano/NEXUS_ULTIMATE_CORE/.env") {
+    if let Ok(content) = std::fs::read_to_string("C:/Users/crisp/NEXUS_ULTIMATE_CORE/.env") {
         for line in content.lines() {
             if line.starts_with("MONKEYCODE_SESSION_TOKEN=") {
                 let parts: Vec<&str> = line.split('=').collect();

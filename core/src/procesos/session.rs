@@ -13,7 +13,7 @@ impl Session {
         let hippocampus = Arc::new(ArtificialHippocampus::new(
             None,
             None,
-            "/home/soberano/NEXUS_ULTIMATE_CORE/data/nexus_memory",
+            "C:/Users/crisp/NEXUS_ULTIMATE_CORE/data/nexus_memory",
         ));
 
         Ok(Self {

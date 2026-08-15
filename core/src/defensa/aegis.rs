@@ -24,7 +24,7 @@ impl Default for NexusAegis {
 impl NexusAegis {
     pub fn new() -> Self {
         Self {
-            workshop: "/home/soberano/NEXUS_ULTIMATE_CORE/workshop".to_string(),
+            workshop: "C:/Users/crisp/NEXUS_ULTIMATE_CORE/workshop".to_string(),
             socket_path: "/tmp/nexus_internal_os.sock".to_string(),
         }
     }

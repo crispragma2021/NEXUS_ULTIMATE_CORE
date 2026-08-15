@@ -486,7 +486,7 @@ mod tests {
 
     #[test]
     fn test_registro_resuelve_constelacion_orion() {
-        let root = PathBuf::from("/home/soberano/NEXUS_ULTIMATE_CORE");
+        let root = PathBuf::from("C:/Users/crisp/NEXUS_ULTIMATE_CORE");
         let registro = RegistroCelestial::new(root);
         let orion = registro
             .buscar_constelacion("Orion")
@@ -496,7 +496,7 @@ mod tests {
 
     #[test]
     fn test_registro_resuelve_planeta_cerebro() {
-        let root = PathBuf::from("/home/soberano/NEXUS_ULTIMATE_CORE");
+        let root = PathBuf::from("C:/Users/crisp/NEXUS_ULTIMATE_CORE");
         let registro = RegistroCelestial::new(root);
         let cerebro = registro.planeta("cerebro").expect("cerebro debe existir");
         assert!(cerebro.ruta.to_string_lossy().contains("cerebro"));
@@ -504,7 +504,7 @@ mod tests {
 
     #[test]
     fn test_registro_mapa_estelar_no_vacio() {
-        let root = PathBuf::from("/home/soberano/NEXUS_ULTIMATE_CORE");
+        let root = PathBuf::from("C:/Users/crisp/NEXUS_ULTIMATE_CORE");
         let registro = RegistroCelestial::new(root);
         let mapa = registro.mapa_estelar();
         assert!(mapa.contains("PLANETAS"), "El mapa debe listar planetas");
@@ -516,7 +516,7 @@ mod tests {
 
     #[test]
     fn test_registro_planetas_de_constelacion() {
-        let root = PathBuf::from("/home/soberano/NEXUS_ULTIMATE_CORE");
+        let root = PathBuf::from("C:/Users/crisp/NEXUS_ULTIMATE_CORE");
         let registro = RegistroCelestial::new(root);
         let planetas = registro
             .planetas_de_constelacion("Fénix")

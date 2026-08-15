@@ -1,4 +1,4 @@
-// file:///home/soberano/NEXUS_ULTIMATE_CORE/core/src/cerebro/synapse/consolidacion.rs
+// file://C:/Users/crisp/NEXUS_ULTIMATE_CORE/core/src/cerebro/synapse/consolidacion.rs
 // ============================================================================
 // 🧬 CONSOLIDACIÓN SINÁPTICA — Monitor Cognitivo OMEGA
 // ============================================================================
@@ -304,7 +304,7 @@ impl MonitorCognitivo {
     pub fn recuperar_contexto(&self, file_path: &str, limit: usize) -> Result<Vec<String>> {
         let relative_path = file_path
             .replace("/opt/NEXUS_ULTIMATE_CORE/", "")
-            .replace("/home/soberano/NEXUS_ULTIMATE_CORE/", "");
+            .replace("C:/Users/crisp/NEXUS_ULTIMATE_CORE/", "");
 
         let conn = self.conectar()?;
         let mut stmt = conn.prepare(

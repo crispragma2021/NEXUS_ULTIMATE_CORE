@@ -20,7 +20,7 @@ pub fn engage_panic_defense(target: &str) {
             "☣️ NEXUS PÁNICO: Amenaza interna detectada: {}. Aplicando Cuarentena.",
             target
         );
-        let _ = fs::create_dir_all("/home/soberano/NEXUS_ULTIMATE_CORE/archive/quarantine");
+        let _ = fs::create_dir_all("C:/Users/crisp/NEXUS_ULTIMATE_CORE/archive/quarantine");
         // Aquí moveríamos el archivo sospechoso si tuviéramos la ruta exacta
     }
 

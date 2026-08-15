@@ -12,7 +12,7 @@ impl MemoriaConsulta {
         let conn = Connection::open(&db_path)?;
 
         let identidad_cache =
-            std::fs::read_to_string("/home/soberano/NEXUS_ULTIMATE_CORE/docs/identity/identity.md") // Load from unified identity.md
+            std::fs::read_to_string("C:/Users/crisp/NEXUS_ULTIMATE_CORE/docs/identity/identity.md") // Load from unified identity.md
                 .unwrap_or_else(|_| {
                     "Eres NEXUS. No se pudo cargar la identidad unificada.".to_string()
                 });

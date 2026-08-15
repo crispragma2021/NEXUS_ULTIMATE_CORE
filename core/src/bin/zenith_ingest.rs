@@ -5,7 +5,7 @@ use std::io::{BufRead, BufReader};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let vault_path = "/home/soberano/.gemini/antigravity/brain/afc40ae2-c59d-41a2-98ae-818a94bb350b/scratch/zenith_memory_vault_full.jsonl";
+    let vault_path = "C:/Users/crisp/NEXUS_ULTIMATE_CORE/brain/afc40ae2-c59d-41a2-98ae-818a94bb350b/scratch/zenith_memory_vault_full.jsonl";
     let skip_count = 0;
 
     let ingestor = NeuralIngest::new("", None, None)?;

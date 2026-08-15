@@ -64,8 +64,8 @@ async fn main() {
     );
 
     // ─── PASO 1: Cargar traumas reales desde intelligence.db ─────────────
-    let db_path_intel = PathBuf::from("/home/soberano/NEXUS_ULTIMATE_CORE/data/intelligence.db");
-    let db_path_ocean = PathBuf::from("/home/soberano/NEXUS_ULTIMATE_CORE/data/ocean.db");
+    let db_path_intel = PathBuf::from("C:/Users/crisp/NEXUS_ULTIMATE_CORE/data/intelligence.db");
+    let db_path_ocean = PathBuf::from("C:/Users/crisp/NEXUS_ULTIMATE_CORE/data/ocean.db");
 
     println!("\x1b[1;33m📂 Verificando bases de datos...\x1b[0m");
     println!(

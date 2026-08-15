@@ -25,7 +25,7 @@ use std::time::{Instant, SystemTime, UNIX_EPOCH};
 const FAILURE_LOG_PATH: &str = "nexus_key_failures.json";
 const MAX_REPLAY_BUFFER: usize = 1000;
 const DQN_WEIGHTS_PATH: &str = "nexus_dqn";
-const IDENTITY_PATH: &str = "/home/soberano/NEXUS_ULTIMATE_CORE/docs/identity/identity.md";
+const IDENTITY_PATH: &str = "C:/Users/crisp/NEXUS_ULTIMATE_CORE/docs/identity/identity.md";
 
 const LEARNING_RATE: f64 = 1e-4; // Tasa de aprendizaje para el optimizador
 const TAU: f64 = 0.005; // Factor para el soft update de la red target
@@ -283,7 +283,7 @@ impl DeepSeekAPI {
         let tasa_pre = self.calcular_tasa_exito_reciente(50); // Tasa antes de la curación
 
         // 1. Escaneo somático para datos frescos y exportación del mapa corporal
-        let soma_map_raw = self.realizar_escaneo_somatico("/home/soberano/NEXUS_ULTIMATE_CORE")?;
+        let soma_map_raw = self.realizar_escaneo_somatico("C:/Users/crisp/NEXUS_ULTIMATE_CORE")?;
 
         // 2. Diagnóstico
         let estado = self.capturar_estado_actual();
@@ -310,7 +310,7 @@ impl DeepSeekAPI {
                     let plan = NexusPlan {
                         agent: "nexusclaw".to_string(),
                         task: "limpiar archivos basura y logs antiguos".to_string(),
-                        params: json!({"command": "find /home/soberano/NEXUS_ULTIMATE_CORE -name '*.log' -mtime +7 -delete"}),
+                        params: json!({"command": "find C:/Users/crisp/NEXUS_ULTIMATE_CORE -name '*.log' -mtime +7 -delete"}),
                         priority: 1,
                         key_pool: "official".to_string(),
                         fallback_agent: None,
@@ -430,7 +430,7 @@ impl DeepSeekAPI {
             }
         });
 
-        let path = "/home/soberano/NEXUS_ULTIMATE_CORE/status.json";
+        let path = "C:/Users/crisp/NEXUS_ULTIMATE_CORE/status.json";
         let content = serde_json::to_string_pretty(&status)?;
 
         // Escritura atómica vía swap temporal para evitar lecturas de archivo vacío
@@ -594,13 +594,13 @@ impl DeepSeekAPI {
                     let output_path = if plan.task.to_lowercase().contains("documento")
                         || plan.task.to_lowercase().contains("documents")
                     {
-                        "/home/soberano/Documents/mapa_cuerpo.txt"
+                        "C:/Users/crisp/Documents/mapa_cuerpo.txt"
                     } else {
-                        "/home/soberano/NEXUS_ULTIMATE_CORE/mapa_cuerpo.txt"
+                        "C:/Users/crisp/NEXUS_ULTIMATE_CORE/mapa_cuerpo.txt"
                     };
                     let result = self
                         .realizar_escaneo_completo(
-                            "/home/soberano/NEXUS_ULTIMATE_CORE",
+                            "C:/Users/crisp/NEXUS_ULTIMATE_CORE",
                             output_path,
                         )
                         .await?;
@@ -943,7 +943,7 @@ impl DeepSeekAPI {
 
     /// Actualiza los sensores somáticos del Cerebelo (NEXUS 17.0)
     pub async fn actualizar_sensores(&self) -> Result<()> {
-        let _ = self.realizar_escaneo_somatico("/home/soberano/NEXUS_ULTIMATE_CORE");
+        let _ = self.realizar_escaneo_somatico("C:/Users/crisp/NEXUS_ULTIMATE_CORE");
         Ok(())
     }
 

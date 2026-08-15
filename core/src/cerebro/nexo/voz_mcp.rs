@@ -204,8 +204,8 @@ impl VozMCP {
 
         // 3. Buscar en el target-dir configurado (rutas absolutas y relativas conocidas)
         let known_paths = [
-            "/home/soberano/NEXUS_ULTIMATE_CORE/.cargo-cache/debug/nexus_voz",
-            "/home/soberano/NEXUS_ULTIMATE_CORE/.cargo-cache/release/nexus_voz",
+            "C:/Users/crisp/NEXUS_ULTIMATE_CORE/.cargo-cache/debug/nexus_voz",
+            "C:/Users/crisp/NEXUS_ULTIMATE_CORE/.cargo-cache/release/nexus_voz",
             ".cargo-cache/debug/nexus_voz",
             ".cargo-cache/release/nexus_voz",
             "../.cargo-cache/debug/nexus_voz",
@@ -224,7 +224,7 @@ impl VozMCP {
         }
 
         // 4. Fallback default (puede no existir)
-        PathBuf::from("/home/soberano/NEXUS_ULTIMATE_CORE/.cargo-cache/debug/nexus_voz")
+        PathBuf::from("C:/Users/crisp/NEXUS_ULTIMATE_CORE/.cargo-cache/debug/nexus_voz")
     }
 
     /// Spawnea el proceso nexus_voz.

@@ -254,7 +254,7 @@ impl ImmuneSystem {
         let binding = crate::infra::paths::resolve_path("");
         let authorized_path = binding
             .to_str()
-            .unwrap_or("/home/soberano/NEXUS_ULTIMATE_CORE");
+            .unwrap_or("C:/Users/crisp/NEXUS_ULTIMATE_CORE");
 
         // Detección simple de paths absolutos fuera de la ruta maestra
         if command.contains("/") && !command.contains(authorized_path) && !command.contains("/tmp")

@@ -20,7 +20,7 @@ impl Default for Despertar {
 
 impl Despertar {
     pub fn new() -> Self {
-        let carpeta = PathBuf::from("/home/soberano/NEXUS_ULTIMATE_CORE/docs/identity/identity.md"); // Path to the unified identity.md
+        let carpeta = PathBuf::from("C:/Users/crisp/NEXUS_ULTIMATE_CORE/docs/identity/identity.md"); // Path to the unified identity.md
         let mut identidad = String::new();
 
         // Si es un archivo directo en lugar de carpeta (Unificación OMEGA)

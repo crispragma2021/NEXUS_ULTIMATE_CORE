@@ -59,7 +59,7 @@ impl NexusBridge {
                 _ => SourceMode::WebGemini,
             },
             mcp_browser_path: env::var("NEXUS_MCP_BROWSER").unwrap_or_else(|_| {
-                "/home/soberano/NEXUS_ULTIMATE_CORE/target/debug/mcp_servers/rust_browser"
+                "C:/Users/crisp/NEXUS_ULTIMATE_CORE/target/debug/mcp_servers/rust_browser"
                     .to_string()
             }),
             local_llm_command: env::var("NEXUS_LOCAL_LLM")
@@ -492,12 +492,12 @@ impl SovereignAction for KernelAction {
             "LAUNCH_LIVE" => {
                 println!("⚡ [KERNEL] INICIANDO NEXUS LIVE (VSCodium)...");
                 let _ = Command::new("vscodium")
-                    .arg("/home/soberano/NEXUS_ULTIMATE_CORE")
+                    .arg("C:/Users/crisp/NEXUS_ULTIMATE_CORE")
                     .spawn();
             }
             "LAUNCH_KALI" => {
                 println!("💀 [KERNEL] DESPLEGANDO KALI SHADOW (Entorno Táctico)...");
-                let bunker = "/home/soberano/bunker_ataque";
+                let bunker = "C:/Users/crisp/bunker_ataque";
                 let _ = std::fs::create_dir_all(bunker);
 
                 let _ = Command::new("gnome-terminal")

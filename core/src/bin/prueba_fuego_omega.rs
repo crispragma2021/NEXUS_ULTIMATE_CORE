@@ -20,7 +20,7 @@ use tracing_subscriber::fmt;
 const OLLAMA_URL: &str = "http://127.0.0.1:11434";
 const MODELO_EMBEDDING: &str = "nomic-embed-text";
 const MODELO_LLM: &str = "deepseek-r1:7b";
-const LANCEDB_URI: &str = "/home/soberano/NEXUS_ULTIMATE_CORE/data/lancedb";
+const LANCEDB_URI: &str = "C:/Users/crisp/NEXUS_ULTIMATE_CORE/data/lancedb";
 
 #[tokio::main]
 async fn main() -> Result<()> {

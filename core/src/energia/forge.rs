@@ -113,7 +113,7 @@ impl Forge {
         let env_path_buf = crate::infra::paths::resolve_path(".env");
         let env_path = env_path_buf
             .to_str()
-            .unwrap_or("/home/soberano/NEXUS_ULTIMATE_CORE/.env");
+            .unwrap_or("C:/Users/crisp/NEXUS_ULTIMATE_CORE/.env");
         let contenido = format!(
             "\n# Forjada por NEXUS Forge - {}\nGEMINI_KEY_{}={}\n",
             chrono::Local::now().format("%Y-%m-%d %H:%M:%S"),

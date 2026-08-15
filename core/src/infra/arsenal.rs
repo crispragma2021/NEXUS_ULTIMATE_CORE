@@ -57,7 +57,7 @@ impl ArsenalSoberano {
                 "vault": "Bóveda de secretos y API Keys (Vertex, DeepSeek, OpenRouter)"
             },
             "herencia_legacy": {
-                "directorio": "/home/soberano/NEXUS_ULTIMATE_CORE/legacy",
+                "directorio": "C:/Users/crisp/NEXUS_ULTIMATE_CORE/legacy",
                 "estado": "TRANS-MUTANDO",
                 "adn_recuperado": ["Selectores de Éxito", "Lógica de Resurrección", "Puentes de Vórtex"]
             }
