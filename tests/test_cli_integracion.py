@@ -8,10 +8,12 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import socket
 import subprocess
 import sys
 import threading
+import uuid
 from pathlib import Path
 
 import pytest
@@ -109,27 +111,38 @@ def correr_cli(args, socket_path, env_extra=None):
 
 
 @pytest.fixture()
-def daemon(tmp_path):
-    with DaemonFalso(tmp_path / "nexus.sock") as servidor:
-        yield servidor
+def daemon():
+    """Socket en una ruta CORTA.
+
+    ``sun_path`` esta limitado a ~104 bytes y el ``tmp_path`` de pytest en
+    macOS (/private/var/folders/...) lo supera: el bind fallaba con
+    "AF_UNIX path too long".
+    """
+    corto = os.path.join("/tmp", "nx" + uuid.uuid4().hex[:8])
+    os.makedirs(corto, exist_ok=True)
+    try:
+        with DaemonFalso(os.path.join(corto, "n.sock")) as servidor:
+            yield servidor
+    finally:
+        shutil.rmtree(corto, ignore_errors=True)
 
 
 # --------------------------------------------------------------------------
-def test_cli_screen(daemon, tmp_path):
+def test_cli_screen(daemon):
     proc = correr_cli(["screen"], daemon.ruta)
     assert proc.returncode == 0, proc.stderr
     assert "1080x2400" in proc.stdout
     assert daemon.peticiones[-1] == {"action": "GetScreenSize"}
 
 
-def test_cli_shot_devuelve_la_ruta_portable(daemon, tmp_path):
+def test_cli_shot_devuelve_la_ruta_portable(daemon):
     proc = correr_cli(["shot"], daemon.ruta)
     assert proc.returncode == 0, proc.stderr
     assert "/ruta/portable/nexus_shot.png" in proc.stdout
     assert "/sdcard" not in proc.stdout
 
 
-def test_cli_tap_envia_coordenadas(daemon, tmp_path):
+def test_cli_tap_envia_coordenadas(daemon):
     proc = correr_cli(["tap", "100", "250"], daemon.ruta)
     assert proc.returncode == 0, proc.stderr
     assert daemon.peticiones[-1] == {
@@ -138,7 +151,7 @@ def test_cli_tap_envia_coordenadas(daemon, tmp_path):
     }
 
 
-def test_cli_exec_con_comillas_no_rompe_el_protocolo(daemon, tmp_path):
+def test_cli_exec_con_comillas_no_rompe_el_protocolo(daemon):
     """Un apóstrofe en el comando ya no rompe el JSON (antes se interpolaba)."""
     comando = "echo 'hola mundo' && cat fichero"
     proc = correr_cli(["exec", comando], daemon.ruta)
@@ -149,31 +162,31 @@ def test_cli_exec_con_comillas_no_rompe_el_protocolo(daemon, tmp_path):
     }
 
 
-def test_cli_sin_argumentos_muestra_uso(daemon, tmp_path):
+def test_cli_sin_argumentos_muestra_uso(daemon):
     proc = correr_cli([], daemon.ruta)
     assert proc.returncode == 0
     assert "Uso: nexus" in proc.stdout
 
 
-def test_cli_tap_sin_argumentos_falla(daemon, tmp_path):
+def test_cli_tap_sin_argumentos_falla(daemon):
     proc = correr_cli(["tap"], daemon.ruta)
     assert proc.returncode == 1
     assert "Uso: nexus tap" in proc.stdout
 
 
-def test_cli_exec_sin_comando_falla(daemon, tmp_path):
+def test_cli_exec_sin_comando_falla(daemon):
     proc = correr_cli(["exec"], daemon.ruta)
     assert proc.returncode == 1
     assert "Uso: nexus exec" in proc.stdout
 
 
-def test_cli_daemon_status(daemon, tmp_path):
+def test_cli_daemon_status(daemon):
     proc = correr_cli(["daemon", "status"], daemon.ruta)
     assert proc.returncode == 0
     assert "Daemon inactivo" in proc.stdout or "Daemon activo" in proc.stdout
 
 
-def test_cli_doctor_reporta_rutas(daemon, tmp_path):
+def test_cli_doctor_reporta_rutas(daemon):
     env = {"DEEPSEEK_API_KEY": "sk-prueba"}
     proc = correr_cli(["doctor"], daemon.ruta, env)
     assert proc.returncode == 0, proc.stderr
@@ -181,14 +194,14 @@ def test_cli_doctor_reporta_rutas(daemon, tmp_path):
     assert "gemini-3.8-flash" in proc.stdout
 
 
-def test_cli_doctor_sin_llaves_avisa(daemon, tmp_path):
+def test_cli_doctor_sin_llaves_avisa(daemon):
     env = {k: "" for k in ("DEEPSEEK_API_KEY", "NEXUS_GEMINI_KEYS", "GEMINI_API_KEY")}
     proc = correr_cli(["doctor"], daemon.ruta, env)
     assert proc.returncode == 1
     assert "Sin llaves" in proc.stdout
 
 
-def test_cli_daemon_start_con_socket_vivo_no_reinicia(daemon, tmp_path):
+def test_cli_daemon_start_con_socket_vivo_no_reinicia(daemon):
     """Si el socket responde, el CLI no intenta arrancar nada."""
     proc = correr_cli(["daemon", "start"], daemon.ruta, {"NEXUS_DAEMON_BIN": "/no/existe"})
     assert proc.returncode == 0, proc.stderr

@@ -25,7 +25,7 @@ def test_termux_se_detecta_por_prefix():
     assert plataforma.is_termux(TERMUX_ENV) is True
 
 
-def test_pc_linux_sin_prefix_no_es_android():
+def test_pc_linux_sin_prefix_no_es_android(pc_linux):
     assert plataforma.detect_platform(PC_ENV) == "linux"
     assert plataforma.is_android(PC_ENV) is False
     assert plataforma.is_termux(PC_ENV) is False
@@ -73,6 +73,13 @@ def test_termux_cae_a_home_tmp_sin_tmpdir_ni_prefix(android, tmp_path):
     assert plataforma.temp_root(env) == esperado
 
 
+def ruta_inservible(tmp_path, nombre="bloqueador"):
+    """Ruta que no se puede crear en ningun SO: su padre es un archivo."""
+    padre = tmp_path / nombre
+    padre.write_text("no soy un directorio")
+    return str(padre / "sub" / "tmp")
+
+
 def test_termux_nunca_devuelve_tmp_duro(android, tmp_path):
     """Ninguna resolución puede salirse del árbol de Termux simulado.
 
@@ -85,7 +92,7 @@ def test_termux_nunca_devuelve_tmp_duro(android, tmp_path):
         env,
         dict(env, TMPDIR=""),
         dict(env, TMPDIR="", PREFIX=""),
-        dict(env, TMPDIR="/no/existe/nexus", PREFIX="/tampoco"),
+        dict(env, TMPDIR=ruta_inservible(tmp_path), PREFIX=ruta_inservible(tmp_path, "b2")),
     ):
         resuelto = plataforma.temp_root(variante)
         assert resuelto.startswith(arbol_valido), (variante, resuelto)
@@ -129,16 +136,16 @@ def test_override_explicito_gana_siempre(tmp_path):
 def test_directorio_inusable_se_descarta(android, tmp_path):
     """Una ruta imposible no puede colar: debe caer en un candidato válido."""
     env = termux_env_en(tmp_path)
-    env["TMPDIR"] = "/proc/no/escribible/nexus"
+    env["TMPDIR"] = ruta_inservible(tmp_path)
     assert plataforma.temp_root(env) == str(Path(env["PREFIX"]) / "tmp")
 
 
 def test_temp_root_nunca_lanza(android, tmp_path):
     """Un agente no puede morir por no encontrar un temporal."""
     env = {
-        "PREFIX": "/ruta/inexistente",
-        "TMPDIR": "/ruta/inexistente/tmp",
-        "HOME": "/ruta/inexistente/home",
+        "PREFIX": ruta_inservible(tmp_path, "p"),
+        "TMPDIR": ruta_inservible(tmp_path, "t"),
+        "HOME": ruta_inservible(tmp_path, "h"),
     }
     resuelto = plataforma.temp_root(env)
     assert resuelto and os.path.isdir(resuelto)

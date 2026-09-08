@@ -327,9 +327,13 @@ mod tests {
     #[test]
     fn no_queda_sdcard_duro_en_el_codigo() {
         let fuente = include_str!("main.rs");
+        // Se construye la aguja: si se escribiera literal, este propio test
+        // (que include_str! incorpora al fuente) se haria fallar a si mismo.
+        let aguja = ["/", "sdcard", "/"].concat();
+        let produccion = fuente.split("#[cfg(test)]").next().unwrap_or(fuente);
         assert!(
-            !fuente.contains("/sdcard/"),
-            "queda una ruta /sdcard dura en main.rs"
+            !produccion.contains(&aguja),
+            "queda una ruta dura de almacenamiento compartido en main.rs"
         );
     }
 }
