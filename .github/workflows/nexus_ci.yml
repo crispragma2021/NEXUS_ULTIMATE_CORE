@@ -44,12 +44,13 @@ jobs:
         run: |
           python -m pytest tests/ -v 2>&1 | tee pytest.log
           estado=${PIPESTATUS[0]}
-          {
-            echo "### pytest — ${{ matrix.os }} / py${{ matrix.python-version }}"
-            echo '```'
-            tail -n 150 pytest.log
-            echo '```'
-          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$estado" -ne 0 ]; then
+            # El detalle se emite como anotaciones: es la unica salida del job
+            # que se puede consultar por API cuando el host de logs no responde.
+            grep -E "^(FAILED|ERROR) " pytest.log | head -n 25 | sed 's/^/::error::/'
+            sed -n '/=\+ FAILURES =\+/,/short test summary/p' pytest.log \
+              | tail -n 40 | sed 's/^/::error::/'
+          fi
           exit "$estado"
 
   daemon-rust:
@@ -72,12 +73,11 @@ jobs:
         run: |
           cargo test --manifest-path daemon/Cargo.toml -- --test-threads=1 2>&1 | tee cargo.log
           estado=${PIPESTATUS[0]}
-          {
-            echo "### cargo test — daemon"
-            echo '```'
-            tail -n 120 cargo.log
-            echo '```'
-          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$estado" -ne 0 ]; then
+            grep -E "^(error|warning: unused|test .* FAILED|---- )" cargo.log \
+              | head -n 40 | sed 's/^/::error::/'
+            tail -n 40 cargo.log | sed 's/^/::error::/'
+          fi
           exit "$estado"
 
   android-aarch64:
@@ -130,10 +130,9 @@ jobs:
           PREFIX="$PREFIX" TMPDIR="$PREFIX/tmp" \
             python -m pytest tests/ -v 2>&1 | tee pytest.log
           estado=${PIPESTATUS[0]}
-          {
-            echo "### pytest — entorno Termux simulado"
-            echo '```'
-            tail -n 150 pytest.log
-            echo '```'
-          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$estado" -ne 0 ]; then
+            grep -E "^(FAILED|ERROR) " pytest.log | head -n 25 | sed 's/^/::error::/'
+            sed -n '/=\+ FAILURES =\+/,/short test summary/p' pytest.log \
+              | tail -n 40 | sed 's/^/::error::/'
+          fi
           exit "$estado"
