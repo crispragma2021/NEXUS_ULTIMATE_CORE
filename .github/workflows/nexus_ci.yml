@@ -14,6 +14,12 @@ env:
   CARGO_TERM_COLOR: always
   NEXUS_TRANSPORT_DEBUG: "0"
 
+# `shell: bash` en todos los pasos con lógica: en Windows el shell por defecto
+# es pwsh y ahí no existen PIPESTATUS ni los heredocs.
+defaults:
+  run:
+    shell: bash
+
 jobs:
   agents-python:
     name: Agentes (Python) ${{ matrix.os }} / py${{ matrix.python-version }}
@@ -35,7 +41,16 @@ jobs:
         run: python -m pip install --upgrade pip pytest
 
       - name: Ejecutar suite de agentes
-        run: python -m pytest tests/ -v
+        run: |
+          python -m pytest tests/ -v 2>&1 | tee pytest.log
+          estado=${PIPESTATUS[0]}
+          {
+            echo "### pytest — ${{ matrix.os }} / py${{ matrix.python-version }}"
+            echo '```'
+            tail -n 150 pytest.log
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit "$estado"
 
   daemon-rust:
     name: Daemon host (Rust)
@@ -54,7 +69,16 @@ jobs:
       # Sin `cargo fmt --check`: el daemon ya no era fmt-clean antes de estos
       # cambios (imports sin reordenar) y bloquearía el pipeline por ruido.
       - name: Tests del daemon
-        run: cargo test --manifest-path daemon/Cargo.toml -- --test-threads=1
+        run: |
+          cargo test --manifest-path daemon/Cargo.toml -- --test-threads=1 2>&1 | tee cargo.log
+          estado=${PIPESTATUS[0]}
+          {
+            echo "### cargo test — daemon"
+            echo '```'
+            tail -n 120 cargo.log
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit "$estado"
 
   android-aarch64:
     name: Compilación Android aarch64
@@ -91,9 +115,9 @@ jobs:
 
       # El check va en un archivo, no en un heredoc: dentro de `run: |` el cuerpo
       # queda indentado y Python lo rechaza con IndentationError.
+      # El prefijo incluye `com.termux` a proposito para ejercitar la heuristica
+      # real de deteccion, no solo el override NEXUS_PLATFORM.
       - name: Verificar resolución de rutas con $PREFIX de Termux
-        # El prefijo incluye `com.termux` a proposito: asi se ejercita la
-        # heuristica real de deteccion, no solo el override NEXUS_PLATFORM.
         run: |
           PREFIX="$RUNNER_TEMP/com.termux/files/usr"
           mkdir -p "$PREFIX/tmp"
@@ -103,4 +127,13 @@ jobs:
         run: |
           PREFIX="$RUNNER_TEMP/com.termux/files/usr"
           mkdir -p "$PREFIX/tmp"
-          PREFIX="$PREFIX" TMPDIR="$PREFIX/tmp" python -m pytest tests/ -q
+          PREFIX="$PREFIX" TMPDIR="$PREFIX/tmp" \
+            python -m pytest tests/ -v 2>&1 | tee pytest.log
+          estado=${PIPESTATUS[0]}
+          {
+            echo "### pytest — entorno Termux simulado"
+            echo '```'
+            tail -n 150 pytest.log
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit "$estado"
