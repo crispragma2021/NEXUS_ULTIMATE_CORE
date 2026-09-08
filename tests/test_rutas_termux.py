@@ -10,6 +10,8 @@ import os
 import sys
 from pathlib import Path
 
+import pytest
+
 import nexo_plataforma as plataforma
 from conftest import PC_ENV, TERMUX_ENV, termux_env_en
 
@@ -27,6 +29,18 @@ def test_pc_linux_sin_prefix_no_es_android():
     assert plataforma.detect_platform(PC_ENV) == "linux"
     assert plataforma.is_android(PC_ENV) is False
     assert plataforma.is_termux(PC_ENV) is False
+
+
+def test_override_explicito_de_plataforma():
+    """NEXUS_PLATFORM gana: util en contenedores, CI y Termux no estandar."""
+    assert plataforma.detect_platform({"NEXUS_PLATFORM": "android"}) == "android"
+    assert plataforma.detect_platform({"NEXUS_PLATFORM": "linux"}) == "linux"
+    assert plataforma.is_android({"NEXUS_PLATFORM": "android"}) is True
+
+
+def test_prefijo_generico_sin_termux_no_es_android(pc_linux):
+    """Un $PREFIX cualquiera (p. ej. de un build) no debe fingir ser Android."""
+    assert plataforma.detect_platform({"PREFIX": "/usr/local/build"}) == "linux"
 
 
 def test_windows_se_detecta(monkeypatch):
@@ -77,9 +91,14 @@ def test_termux_nunca_devuelve_tmp_duro(android, tmp_path):
         assert resuelto.startswith(arbol_valido), (variante, resuelto)
 
 
-def test_pc_linux_conserva_tmp_original(monkeypatch):
-    """El PC se queda exactamente como estaba: /tmp."""
-    monkeypatch.setattr(sys, "platform", "linux")
+@pytest.mark.skipif(os.name == "nt", reason="/tmp solo existe en POSIX")
+def test_pc_linux_conserva_tmp_original(pc_linux, monkeypatch):
+    """El PC Linux se queda exactamente como estaba: /tmp.
+
+    Se fija ``tempfile.gettempdir`` porque en macOS devuelve /var/folders/... y
+    en Windows %TEMP%; simular un PC Linux exige ese valor concreto.
+    """
+    monkeypatch.setattr(plataforma.tempfile, "gettempdir", lambda: "/tmp")
     resuelto = plataforma.temp_root(dict(PC_ENV))
     assert resuelto in ("/tmp", os.path.realpath("/tmp"))
 
@@ -145,17 +164,12 @@ def test_home_tmp_es_candidato_valido_en_termux(android, tmp_path):
     assert Path(esperado).is_dir()  # se creó al vuelo
 
 
-def test_ultimo_recurso_es_el_cwd(android, tmp_path):
-    """Con todo inservible se usa el cwd: temp_root no lanza nunca."""
-    readonly = tmp_path / "ro"
-    readonly.mkdir()
-    os.chmod(readonly, 0o500)
-    env = {"TMPDIR": "", "PREFIX": "", "HOME": str(readonly)}
-    try:
-        resuelto = plataforma.temp_root(env)
-        assert os.path.isdir(resuelto)
-    finally:
-        os.chmod(readonly, 0o700)
+def test_ultimo_recurso_no_de_pende_de_os_environ(android, tmp_path):
+    """El ultimo recurso no lee os.environ a espaldas del env recibido."""
+    env = {"TMPDIR": "", "PREFIX": "", "HOME": ""}
+    resuelto = plataforma.temp_root(env)
+    assert os.path.isdir(resuelto)
+    assert resuelto == os.path.normpath(os.getcwd())
 
 
 # --------------------------------------------------------------------------

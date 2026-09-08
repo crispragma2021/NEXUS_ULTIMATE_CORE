@@ -39,8 +39,19 @@ def detect_platform(env: Optional[dict] = None) -> str:
     """Devuelve 'android' | 'windows' | 'macos' | 'linux'.
 
     `env` es inyectable para pruebas; por defecto usa ``os.environ``.
+
+    Orden de decisión:
+      1. ``NEXUS_PLATFORM`` explícito (contenedores, CI, Termux no estándar).
+      2. ``sys.platform`` empieza por ``android``.
+      3. ``$PREFIX`` contiene ``com.termux`` (heurística de Termux).
+      4. El ``sys.platform`` que toque.
     """
     env = os.environ if env is None else env
+
+    forzado = str(env.get("NEXUS_PLATFORM", "")).strip().lower()
+    if forzado in ("android", "windows", "macos", "linux"):
+        return forzado
+
     prefix = str(env.get("PREFIX", ""))
     if sys.platform.startswith("android") or "com.termux" in prefix:
         return "android"
@@ -124,13 +135,14 @@ def temp_root(env: Optional[dict] = None) -> str:
         if cand and os.path.isabs(cand) and _dir_is_usable(cand):
             return os.path.normpath(cand)
 
-    # Ningún candidato es usable: usar el temporal del sistema y, como último
-    # extremo, el directorio de trabajo. temp_root() nunca lanza: un agente no
-    # debe morir por no encontrar dónde escribir temporales.
-    for ultimo in (tempfile.gettempdir(), os.getcwd()):
+    # Ningún candidato es usable: degradar al directorio de trabajo y por último
+    # a HOME. No se consulta tempfile.gettempdir() aquí porque lee os.environ a
+    # espaldas del `env` recibido, lo que haría el resultado impredecible.
+    # temp_root() nunca lanza: un agente no debe morir por una ruta temporal.
+    for ultimo in (os.getcwd(), env.get("HOME") or os.path.expanduser("~")):
         if _dir_is_usable(ultimo):
             return os.path.normpath(ultimo)
-    return os.path.normpath(env.get("HOME") or os.path.expanduser("~"))
+    return os.path.normpath(os.getcwd())
 
 
 def temp_path(*parts: str, env: Optional[dict] = None) -> str:

@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 
 import nexo_shell
 import nexus_core_agent as agente
@@ -45,27 +46,38 @@ def test_truncate_acepta_bytes():
     assert nexo_shell.truncate_output(b"abc", 4096) == "abc"
 
 
+# Los comandos se expresan con sys.executable y no con utilidades POSIX
+# (python3, true, sleep) para que la misma suite corra en Windows.
+PY = sys.executable
+
+
+def _py(codigo):
+    return '"{}" -c "{}"'.format(PY, codigo)
+
+
 def test_run_shell_acota_la_salida_real():
-    salida = nexo_shell.run_shell(
-        "python3 -c \"print('y'*400000)\"", max_output_bytes=8192
-    )
+    salida = nexo_shell.run_shell(_py("print('y'*400000)"), max_output_bytes=8192)
     assert len(salida.encode()) <= 8192 + 200
+    assert "bytes omitidos" in salida
 
 
 def test_run_shell_devuelve_stdout():
-    assert "hola" in nexo_shell.run_shell("echo hola")
+    assert "hola" in nexo_shell.run_shell(_py("print('hola')"))
 
 
 def test_run_shell_devuelve_stderr_cuando_no_hay_stdout():
-    assert "fallo" in nexo_shell.run_shell("echo fallo >&2")
+    salida = nexo_shell.run_shell(
+        _py("import sys; sys.stderr.write('fallo')")
+    )
+    assert "fallo" in salida
 
 
 def test_run_shell_sin_salida():
-    assert nexo_shell.run_shell("true") == "(Sin salida)"
+    assert nexo_shell.run_shell(_py("pass")) == "(Sin salida)"
 
 
 def test_run_shell_timeout_no_cuelga():
-    salida = nexo_shell.run_shell("sleep 5", timeout=1)
+    salida = nexo_shell.run_shell(_py("import time; time.sleep(30)"), timeout=1)
     assert "Timeout" in salida
 
 
@@ -246,7 +258,8 @@ def test_cache_audit_se_imprime_en_perfil_normal(monkeypatch, tmp_path, capsys):
 # --------------------------------------------------------------------------
 def test_memory_path_en_pc_conserva_home(pc_linux):
     """En PC el historial se queda en $HOME, como estaba originalmente."""
-    assert agente.memory_path({"HOME": "/home/crisp"}) == "/home/crisp/nexus_chat_memory.json"
+    esperado = os.path.join("/home/crisp", "nexus_chat_memory.json")
+    assert agente.memory_path({"HOME": "/home/crisp"}) == esperado
 
 
 def test_memory_path_en_termux_va_bajo_el_prefijo(android, tmp_path):

@@ -240,6 +240,12 @@ def capture_screenshot(socket_path: Optional[str] = None, *, timeout: float = 20
     """
     import socket as _socket
 
+    if not hasattr(_socket, "AF_UNIX"):
+        raise VisionError(
+            "La captura via nexus_host_daemon necesita un socket Unix "
+            "(Android/Termux, Linux o macOS). En Windows usa --imagen <ruta>."
+        )
+
     target = socket_path or os.environ.get("NEXUS_SOCKET_PATH")
     if not target:
         home = os.environ.get("HOME") or os.path.expanduser("~")
