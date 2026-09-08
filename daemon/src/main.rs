@@ -40,10 +40,10 @@ fn get_rish_binary() -> String {
 
 fn run_with_shizuku(cmd_str: &str) -> Result<String, String> {
     let rish_bin = get_rish_binary();
-    
-    // Intento 1: Ejecutar vía rish pasando el entorno PATH completo
+
     let output = Command::new("sh")
         .env("PATH", "/data/data/com.termux/files/usr/bin:/system/bin:/system/xbin")
+        .env("RISH_APPLICATION_ID", "com.termux")
         .arg("-c")
         .arg(format!("{} -c '{}'", rish_bin, cmd_str))
         .output();
@@ -54,7 +54,6 @@ fn run_with_shizuku(cmd_str: &str) -> Result<String, String> {
         }
         Ok(out) => {
             let err = String::from_utf8_lossy(&out.stderr).trim().to_string();
-            // Intento 2 (Fallback): Si rish no existe o falla, intentar ejecución directa
             let fallback = Command::new("sh")
                 .env("PATH", "/data/data/com.termux/files/usr/bin:/system/bin:/system/xbin")
                 .arg("-c")
