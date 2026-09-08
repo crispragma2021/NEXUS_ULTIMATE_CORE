@@ -1,10 +1,18 @@
+use std::env;
 use std::fs;
 use std::io::{BufRead, BufReader, Write};
 use std::os::unix::net::{UnixListener, UnixStream};
+use std::path::PathBuf;
 use std::process::Command;
 use serde::{Deserialize, Serialize};
 
-const SOCKET_PATH: &str = "/data/data/com.termux/files/home/.nexus_host.sock";
+fn get_socket_path() -> PathBuf {
+    if let Ok(custom) = env::var("NEXUS_SOCKET_PATH") {
+        return PathBuf::from(custom);
+    }
+    let home = env::var("HOME").unwrap_or_else(|_| ".".to_string());
+    PathBuf::from(home).join(".nexus_host.sock")
+}
 
 #[derive(Deserialize, Debug)]
 #[serde(tag = "action", content = "payload")]
@@ -23,81 +31,86 @@ struct ActionResponse {
 }
 
 fn run_with_shizuku(cmd_str: &str) -> Result<String, String> {
-    let wrapper_path = "/data/data/com.termux/files/home/.local/bin/rish-exec";
-    let output = Command::new(wrapper_path)
-        .env("RISH_APPLICATION_ID", "com.termux")
-        .args(&["-c", cmd_str])
-        .output();
+    let output = Command::new("sh")
+        .arg("-c")
+        .arg(format!("rish -c '{}'", cmd_str))
+        .output()
+        .map_err(|e| format!("Failed to exec: {}", e))?;
 
-    match output {
-        Ok(out) => {
-            let stdout = String::from_utf8_lossy(&out.stdout).to_string();
-            let stderr = String::from_utf8_lossy(&out.stderr).to_string();
-            if out.status.success() {
-                Ok(if stdout.is_empty() { "OK".to_string() } else { stdout.trim().to_string() })
-            } else {
-                Err(if stderr.is_empty() { format!("Error: {}", out.status) } else { stderr.trim().to_string() })
-            }
-        }
-        Err(e) => Err(format!("Fallo al ejecutar rish-exec: {}", e)),
+    if output.status.success() {
+        Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
+    } else {
+        Err(String::from_utf8_lossy(&output.stderr).trim().to_string())
     }
 }
 
 fn handle_client(mut stream: UnixStream) {
-    let reader = BufReader::new(stream.try_clone().unwrap());
+    let reader = BufReader::new(stream.try_clone().expect("Cannot clone stream"));
     for line in reader.lines() {
-        if let Ok(line_str) = line {
-            if line_str.trim().is_empty() { continue; }
-
-            let response = match serde_json::from_str::<ActionRequest>(&line_str) {
+        if let Ok(req_str) = line {
+            let res = match serde_json::from_str::<ActionRequest>(&req_str) {
                 Ok(ActionRequest::Tap { x, y }) => {
                     let cmd = format!("input tap {} {}", x, y);
-                    let res = run_with_shizuku(&cmd);
-                    ActionResponse { ok: res.is_ok(), result: res.unwrap_or_else(|e| e) }
+                    match run_with_shizuku(&cmd) {
+                        Ok(r) => ActionResponse { ok: true, result: r },
+                        Err(e) => ActionResponse { ok: false, result: e },
+                    }
                 }
                 Ok(ActionRequest::Type { text }) => {
                     let cmd = format!("input text '{}'", text.replace("'", "'\\''"));
-                    let res = run_with_shizuku(&cmd);
-                    ActionResponse { ok: res.is_ok(), result: res.unwrap_or_else(|e| e) }
+                    match run_with_shizuku(&cmd) {
+                        Ok(r) => ActionResponse { ok: true, result: r },
+                        Err(e) => ActionResponse { ok: false, result: e },
+                    }
                 }
                 Ok(ActionRequest::Screenshot) => {
-                    let path = format!("/sdcard/DCIM/Screenshots/nexus_{}.png", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs());
-                    let cmd = format!("screencap -p {}", path);
-                    let res = run_with_shizuku(&cmd);
-                    ActionResponse {
-                        ok: res.is_ok(),
-                        result: if res.is_ok() { path } else { res.unwrap_err() },
+                    let cmd = "screencap -p /sdcard/Download/nexus_shot.png";
+                    match run_with_shizuku(cmd) {
+                        Ok(_) => ActionResponse { ok: true, result: "/sdcard/Download/nexus_shot.png".to_string() },
+                        Err(e) => ActionResponse { ok: false, result: e },
+                    }
+                }
+                Ok(ActionRequest::Exec { command }) => {
+                    match run_with_shizuku(&command) {
+                        Ok(r) => ActionResponse { ok: true, result: r },
+                        Err(e) => ActionResponse { ok: false, result: e },
                     }
                 }
                 Ok(ActionRequest::GetScreenSize) => {
-                    let res = run_with_shizuku("wm size");
-                    ActionResponse { ok: res.is_ok(), result: res.unwrap_or_else(|e| e) }
+                    match run_with_shizuku("wm size") {
+                        Ok(r) => ActionResponse { ok: true, result: r },
+                        Err(e) => ActionResponse { ok: false, result: e },
+                    }
                 }
-                Ok(ActionRequest::Exec { command }) => {
-                    let res = run_with_shizuku(&command);
-                    ActionResponse { ok: res.is_ok(), result: res.unwrap_or_else(|e| e) }
-                }
-                Err(e) => ActionResponse { ok: false, result: format!("JSON error: {}", e) },
+                Err(e) => ActionResponse {
+                    ok: false,
+                    result: format!("JSON parse error: {}", e),
+                },
             };
 
-            if let Ok(json_res) = serde_json::to_string(&response) {
-                let _ = writeln!(stream, "{}", json_res);
-                let _ = stream.flush();
+            if let Ok(resp_json) = serde_json::to_string(&res) {
+                let _ = writeln!(stream, "{}", resp_json);
             }
         }
     }
 }
 
 fn main() {
-    let _ = fs::remove_file(SOCKET_PATH);
-    let listener = UnixListener::bind(SOCKET_PATH).expect("No se pudo crear socket UNIX");
+    let socket_path = get_socket_path();
+
+    if socket_path.exists() {
+        let _ = fs::remove_file(&socket_path);
+    }
+
+    println!("Iniciando Nexus Host Daemon en {:?}", socket_path);
+    let listener = UnixListener::bind(&socket_path).expect("No se pudo enlazar al socket Unix");
 
     for stream in listener.incoming() {
         match stream {
-            Ok(s) => {
-                std::thread::spawn(move || handle_client(s));
+            Ok(stream) => {
+                std::thread::spawn(|| handle_client(stream));
             }
-            Err(_) => break,
+            Err(e) => eprintln!("Error en conexión entrante: {}", e),
         }
     }
 }

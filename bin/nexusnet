@@ -1,4 +1,4 @@
-#!/data/data/com.termux/files/usr/bin/bash
+#!/usr/bin/env bash
 PROMPT="$*"
 API_KEY="sk-41da49172d2b4e4fb457463f1721e92f"
 
