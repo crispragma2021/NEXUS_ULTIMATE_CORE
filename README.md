@@ -87,6 +87,35 @@ intermedio y sin un `str` gigante que después haya que `.encode()`.
 Forzable con `NEXUS_MEM_PROFILE`. El recorte de `execute_cmd` conserva cabeza y
 cola, que es donde suele estar el error real.
 
+## Cascada de proveedores
+
+El agente no depende de una sola API: recorre **proveedores distintos**, no
+llaves del mismo proveedor. Rotar llaves no suma cuota —Gemini limita por
+proyecto de Google Cloud y OpenRouter gobierna la capacidad globalmente—, así
+que la redundancia real está entre pools independientes.
+
+```
+deepseek -> groq -> cerebras -> github -> openrouter -> gemini -> ollama
+```
+
+Ante `429`, `402`, `5xx` o un fallo de red salta al siguiente y anota el
+presupuesto consumido en `~/.cache/nexus/`, respetando el `Retry-After` que
+devuelva el proveedor. Un proveedor agotado se enfría hasta la medianoche UTC y
+deja de recibir tráfico, así que no se queman peticiones en llamadas condenadas
+(OpenRouter descuenta del cupo diario incluso los intentos fallidos).
+
+Con **una sola llave** ya funciona; cada llave extra es un tanque de reserva.
+
+```bash
+nexus doctor          # cuánta cuota le queda hoy a cada proveedor
+```
+
+Sobrescribe el orden con `NEXUS_PROVIDERS=groq,openrouter,gemini` y el modelo de
+un proveedor con `NEXUS_<PROVEEDOR>_MODEL`.
+
+> **Google AI Studio:** activar la facturación en un proyecto que usaba el nivel
+> gratuito **elimina el nivel gratuito**. No lo hagas esperando ganar cuota.
+
 ## Tests
 
 ```bash

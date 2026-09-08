@@ -29,6 +29,7 @@ if __package__ in (None, ""):
 import nexo_api  # noqa: E402
 import nexo_cache  # noqa: E402
 import nexo_plataforma as plataforma  # noqa: E402
+import nexo_proveedores  # noqa: E402
 import nexo_shell  # noqa: E402
 
 # --------------------------------------------------------------------------
@@ -180,14 +181,24 @@ def query_agent(
         "tool_choice": "auto",
         "temperature": 0.2,
     }
-    send = chat_fn or (
-        lambda p: nexo_api.chat(
+
+    # La cascada recorre PROVEEDORES distintos. Rotar llaves del mismo proveedor
+    # no suma cuota (Gemini limita por proyecto; OpenRouter gobierna la
+    # capacidad globalmente), así que la redundancia real es entre proveedores.
+    def send(p):
+        if chat_fn is not None:
+            return chat_fn(p)
+        if nexo_proveedores.armados(os_env):
+            respuesta, usado, modelo = nexo_api.chat_cascade(p, env=os_env)
+            print("[proveedor] {}:{}".format(usado, modelo))
+            return respuesta
+        # Sin proveedores armados: ruta directa de siempre, para no romper nada.
+        return nexo_api.chat(
             p,
             url=get_chat_url(os_env),
             api_key=api_key,
             timeout=float(os_env.get("NEXUS_CHAT_TIMEOUT", 30)),
         )
-    )
 
     try:
         res = send(payload)

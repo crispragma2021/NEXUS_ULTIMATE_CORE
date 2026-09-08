@@ -195,10 +195,18 @@ def test_cli_doctor_reporta_rutas(daemon):
 
 
 def test_cli_doctor_sin_llaves_avisa(daemon):
-    env = {k: "" for k in ("DEEPSEEK_API_KEY", "NEXUS_GEMINI_KEYS", "GEMINI_API_KEY")}
+    """Hay que vaciar TODAS las variables del registro, no solo las obvias.
+
+    El entorno de ejecución puede traer GITHUB_TOKEN o similares, y la cascada
+    los detecta como proveedor armado (que es el comportamiento correcto).
+    """
+    import nexo_proveedores
+
+    env = {p.var_key: "" for p in nexo_proveedores.REGISTRO}
+    env.update({"NEXUS_GEMINI_KEYS": "", "NEXUS_PROVIDERS": ""})
     proc = correr_cli(["doctor"], daemon.ruta, env)
     assert proc.returncode == 1
-    assert "Sin llaves" in proc.stdout
+    assert "Sin proveedores armados" in proc.stdout
 
 
 def test_cli_daemon_start_con_socket_vivo_no_reinicia(daemon):

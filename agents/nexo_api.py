@@ -398,6 +398,30 @@ def call_gemini(
     raise TransportError("Cadena de modelos agotada", attempts)
 
 
+def retry_after_seconds(status: Optional[int], body: Any, headers: Any = None) -> Optional[float]:
+    """Extrae `Retry-After` si el proveedor lo manda: hay que respetarlo."""
+    if headers:
+        try:
+            valor = headers.get("Retry-After") or headers.get("retry-after")
+        except AttributeError:
+            valor = None
+        if valor:
+            try:
+                return max(0.0, float(valor))
+            except (TypeError, ValueError):
+                pass
+    if isinstance(body, dict):
+        err = body.get("error")
+        if isinstance(err, dict):
+            for clave in ("retry_after", "retry_after_seconds"):
+                if err.get(clave) is not None:
+                    try:
+                        return max(0.0, float(err[clave]))
+                    except (TypeError, ValueError):
+                        continue
+    return None
+
+
 # --------------------------------------------------------------------------
 # Fachada estilo OpenAI (DeepSeek u otro proveedor compatible)
 # --------------------------------------------------------------------------
@@ -445,3 +469,89 @@ def chat(
             if not is_retryable(status, parsed):
                 break
     raise TransportError("Proveedor chat agotado", attempts)
+
+
+# --------------------------------------------------------------------------
+# Cascada multiproveedor
+# --------------------------------------------------------------------------
+def chat_cascade(
+    payload: Dict[str, Any],
+    *,
+    env: Optional[dict] = None,
+    estado=None,
+    timeout: float = 60.0,
+    sleep=time.sleep,
+    debug: Optional[bool] = None,
+) -> Any:
+    """Recorre PROVEEDORES distintos, no llaves del mismo proveedor.
+
+    Rotar llaves dentro de un proveedor no suma cuota (Gemini limita por
+    proyecto y OpenRouter gobierna la capacidad globalmente), así que la
+    redundancia real viene de encadenar proveedores con pools independientes.
+
+    Devuelve ``(respuesta, proveedor_usado, modelo_usado)``.
+    """
+    import nexo_proveedores as proveedores
+
+    env = os.environ if env is None else env
+    if debug is None:
+        debug = str(env.get("NEXUS_TRANSPORT_DEBUG", "1")) not in ("0", "false", "False")
+    if estado is None:
+        estado = proveedores.cargar_estado(env=env)
+
+    cuerpo_base = dict(payload)
+    cuerpo_base.pop("model", None)
+    intentos: List[Attempt] = []
+    motivo_final: List[str] = []
+
+    for prov, modelo in proveedores.cascada(env):
+        permitido, motivo = proveedores.puede_llamar(prov, estado)
+        if not permitido:
+            motivo_final.append("{} ({})".format(prov.nombre, motivo))
+            if debug:
+                print("[cascada] salta {} -> {}".format(prov.nombre, motivo))
+            continue
+
+        api_key = prov.llave(env)
+        headers = {"Content-Type": "application/json"}
+        if prov.nombre != "ollama":
+            headers["Authorization"] = "Bearer {}".format(api_key)
+
+        cuerpo = dict(cuerpo_base)
+        cuerpo["model"] = modelo
+        raw = json.dumps(cuerpo).encode("utf-8")
+
+        try:
+            status, parsed = _http_post(prov.base_url, raw, headers, timeout)
+        except Exception as exc:
+            intentos.append(Attempt(modelo, 0, type(exc).__name__))
+            estado.registrar_fallo(prov, retry_after=15.0)
+            if debug:
+                print("[cascada] {} red {} -> siguiente".format(prov.nombre, type(exc).__name__))
+            continue
+
+        if status == 200 and isinstance(parsed, dict) and parsed.get("choices"):
+            estado.registrar_exito(prov)
+            intentos.append(Attempt(modelo, 200, "OK"))
+            if debug and len(intentos) > 1:
+                print("[cascada] responde {}:{}".format(prov.nombre, modelo))
+            return parsed, prov.nombre, modelo
+
+        reason = _error_reason(parsed) if isinstance(parsed, dict) else "EMPTY"
+        intentos.append(Attempt(modelo, status, reason))
+        espera = retry_after_seconds(status, parsed)
+        agotado = status == 429 and estado.restantes_hoy(prov) <= 1
+        estado.registrar_fallo(prov, agotado=agotado, retry_after=espera)
+        if debug:
+            print(
+                "[cascada] {} -> {} ({}) -> siguiente proveedor".format(
+                    prov.nombre, status, reason
+                )
+            )
+
+    proveedores.guardar_estado(estado, env=env)
+    detalle = "; ".join(motivo_final)
+    raise TransportError(
+        "Ningun proveedor pudo responder{}".format(": " + detalle if detalle else ""),
+        intentos,
+    )
