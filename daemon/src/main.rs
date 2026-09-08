@@ -44,30 +44,30 @@ fn run_with_shizuku(cmd_str: &str) -> Result<String, String> {
     let output = Command::new("sh")
         .env("PATH", "/data/data/com.termux/files/usr/bin:/system/bin:/system/xbin")
         .env("RISH_APPLICATION_ID", "com.termux")
+        .env("LD_LIBRARY_PATH", "/data/data/com.termux/files/usr/lib")
         .arg("-c")
         .arg(format!("{} -c '{}'", rish_bin, cmd_str))
         .output();
 
     match output {
-        Ok(out) if out.status.success() => {
-            Ok(String::from_utf8_lossy(&out.stdout).trim().to_string())
-        }
         Ok(out) => {
-            let err = String::from_utf8_lossy(&out.stderr).trim().to_string();
-            let fallback = Command::new("sh")
-                .env("PATH", "/data/data/com.termux/files/usr/bin:/system/bin:/system/xbin")
-                .arg("-c")
-                .arg(cmd_str)
-                .output();
+            let stdout_str = String::from_utf8_lossy(&out.stdout).trim().to_string();
+            let stderr_str = String::from_utf8_lossy(&out.stderr).trim().to_string();
 
-            match fallback {
-                Ok(fb_out) if fb_out.status.success() => {
-                    Ok(String::from_utf8_lossy(&fb_out.stdout).trim().to_string())
+            if out.status.success() {
+                if !stdout_str.is_empty() {
+                    Ok(stdout_str)
+                } else if !stderr_str.is_empty() {
+                    Ok(stderr_str)
+                } else {
+                    Ok("OK".to_string())
                 }
-                _ => Err(format!("Shizuku error: [{}]. Fallback direct error: [{}]", err, String::from_utf8_lossy(&fallback.unwrap().stderr).trim()))
+            } else {
+                let err_detail = if !stderr_str.is_empty() { stderr_str } else { stdout_str };
+                Err(format!("Command failed with exit code {:?}: {}", out.status.code(), err_detail))
             }
         }
-        Err(e) => Err(format!("Failed to execute wrapper: {}", e)),
+        Err(e) => Err(format!("Failed to spawn process: {}", e)),
     }
 }
 
