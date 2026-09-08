@@ -42,6 +42,7 @@ jobs:
 
       - name: Ejecutar suite de agentes
         run: |
+          set +e   # GitHub usa `bash -eo pipefail`: sin esto el paso aborta aqui
           python -m pytest tests/ -v 2>&1 | tee pytest.log
           estado=${PIPESTATUS[0]}
           if [ "$estado" -ne 0 ]; then
@@ -71,6 +72,7 @@ jobs:
       # cambios (imports sin reordenar) y bloquearía el pipeline por ruido.
       - name: Tests del daemon
         run: |
+          set +e   # GitHub usa `bash -eo pipefail`: sin esto el paso aborta aqui
           cargo test --manifest-path daemon/Cargo.toml -- --test-threads=1 2>&1 | tee cargo.log
           estado=${PIPESTATUS[0]}
           if [ "$estado" -ne 0 ]; then
@@ -127,6 +129,7 @@ jobs:
         run: |
           PREFIX="$RUNNER_TEMP/com.termux/files/usr"
           mkdir -p "$PREFIX/tmp"
+          set +e   # GitHub usa `bash -eo pipefail`: sin esto el paso aborta aqui
           PREFIX="$PREFIX" TMPDIR="$PREFIX/tmp" \
             python -m pytest tests/ -v 2>&1 | tee pytest.log
           estado=${PIPESTATUS[0]}
