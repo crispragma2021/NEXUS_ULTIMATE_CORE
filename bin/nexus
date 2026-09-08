@@ -1,33 +1,115 @@
 #!/usr/bin/env bash
-PROMPT="$*"
-if [ -z "$PROMPT" ]; then
-    echo "Uso: nexus 'Tu mensaje aquí'"
-    exit 1
-fi
+set -e
 
-python3 -c '
-import sys, urllib.request, json
+CORE_DIR="$HOME/NEXUS_ULTIMATE_CORE"
+SOCKET="$HOME/.nexus_host.sock"
+DAEMON_BIN="$HOME/.local/bin/nexus_host_daemon"
 
-prompt = sys.argv[1]
-url = "http://127.0.0.1:8080/completion"
+export RISH_APPLICATION_ID="com.termux"
+export LD_LIBRARY_PATH="/data/data/com.termux/files/usr/lib:$LD_LIBRARY_PATH"
 
-system_prompt = "Eres NEXUS, un agente de IA ejecutándose localmente en Termux (Android ARM64). Responde de forma directa, técnica y precisa."
-formatted_prompt = f"<|im_start|>system\n{system_prompt}<|im_end|>\n<|im_start|>user\n{prompt}<|im_end|>\n<|im_start|>assistant\n"
+start_daemon_if_needed() {
+    if ! pgrep -f "nexus_host_daemon" > /dev/null; then
+        echo "[*] Iniciando Nexus Host Daemon de fondo..."
+        "$DAEMON_BIN" > /dev/null 2>&1 &
+        sleep 1
+    fi
+}
 
-data = json.dumps({
-    "prompt": formatted_prompt,
-    "n_predict": 512,
-    "temperature": 0.6,
-    "stop": ["<|im_end|>", "<|im_start|>"],
-    "stream": False
-}).encode("utf-8")
+case "$1" in
+    daemon)
+        case "$2" in
+            start)
+                start_daemon_if_needed
+                echo "[OK] Nexus Host Daemon corriendo."
+                ;;
+            stop)
+                pkill -f "nexus_host_daemon" 2>/dev/null && echo "[OK] Daemon detenido." || echo "[!] No había daemon en ejecución."
+                ;;
+            status)
+                if pgrep -f "nexus_host_daemon" > /dev/null; then
+                    echo "[OK] Daemon activo (PID: $(pgrep -f 'nexus_host_daemon' | tr '\n' ' '))"
+                else
+                    echo "[!] Daemon inactivo."
+                fi
+                ;;
+            *)
+                echo "Uso: nexus daemon {start|stop|status}"
+                ;;
+        esac
+        ;;
 
-req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json"})
+    screen)
+        start_daemon_if_needed
+        python3 -c "
+import socket, json
+s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+s.connect('$SOCKET')
+s.sendall(b'{\"action\":\"GetScreenSize\"}\n')
+res = json.loads(s.recv(1024).decode())
+print(res.get('result', 'Error'))
+s.close()
+"
+        ;;
 
-try:
-    with urllib.request.urlopen(resp := req) as response:
-        res = json.loads(response.read().decode("utf-8"))
-        print(res["content"].strip())
-except Exception as e:
-    print(f"[!] Servidor local no activo en puerto 8080. ({e})")
-' "$PROMPT"
+    shot)
+        start_daemon_if_needed
+        python3 -c "
+import socket, json
+s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+s.connect('$SOCKET')
+s.sendall(b'{\"action\":\"Screenshot\"}\n')
+res = json.loads(s.recv(1024).decode())
+print('[OK] Captura guardada en:', res.get('result', 'Error'))
+s.close()
+"
+        ;;
+
+    tap)
+        if [ -z "$2" ] || [ -z "$3" ]; then
+            echo "Uso: nexus tap <X> <Y>"
+            exit 1
+        fi
+        start_daemon_if_needed
+        python3 -c "
+import socket, json
+s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+s.connect('$SOCKET')
+s.sendall(b'{\"action\":\"Tap\",\"payload\":{\"x\":$2,\"y\":$3}}\n')
+res = json.loads(s.recv(1024).decode())
+print('[OK] Tap emitido:', res)
+s.close()
+"
+        ;;
+
+    exec)
+        shift
+        CMD="$*"
+        if [ -z "$CMD" ]; then
+            echo "Uso: nexus exec <comando shell>"
+            exit 1
+        fi
+        start_daemon_if_needed
+        python3 -c "
+import socket, json
+s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+s.connect('$SOCKET')
+payload = json.dumps({\"action\":\"Exec\",\"payload\":{\"command\": \"\"\"$CMD\"\"\"}})
+s.sendall(f'{payload}\n'.encode())
+res = json.loads(s.recv(4096).decode())
+print(res.get('result', 'Error'))
+s.close()
+"
+        ;;
+
+    agent)
+        start_daemon_if_needed
+        shift
+        python3 "$CORE_DIR/agents/nexus_core_agent.py" "$@"
+        ;;
+
+    *)
+        echo "Comando Nexus CLI"
+        echo "Uso: nexus [daemon|screen|shot|tap|exec|agent] [opciones]"
+        ;;
+esac
