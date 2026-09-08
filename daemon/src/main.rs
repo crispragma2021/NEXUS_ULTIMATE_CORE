@@ -2,7 +2,7 @@ use std::env;
 use std::fs;
 use std::io::{BufRead, BufReader, Write};
 use std::os::unix::net::{UnixListener, UnixStream};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 use serde::{Deserialize, Serialize};
 
@@ -30,17 +30,45 @@ struct ActionResponse {
     result: String,
 }
 
-fn run_with_shizuku(cmd_str: &str) -> Result<String, String> {
-    let output = Command::new("sh")
-        .arg("-c")
-        .arg(format!("rish -c '{}'", cmd_str))
-        .output()
-        .map_err(|e| format!("Failed to exec: {}", e))?;
+fn get_rish_binary() -> String {
+    let termux_rish = "/data/data/com.termux/files/usr/bin/rish";
+    if Path::new(termux_rish).exists() {
+        return termux_rish.to_string();
+    }
+    "rish".to_string()
+}
 
-    if output.status.success() {
-        Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
-    } else {
-        Err(String::from_utf8_lossy(&output.stderr).trim().to_string())
+fn run_with_shizuku(cmd_str: &str) -> Result<String, String> {
+    let rish_bin = get_rish_binary();
+    
+    // Intento 1: Ejecutar vía rish pasando el entorno PATH completo
+    let output = Command::new("sh")
+        .env("PATH", "/data/data/com.termux/files/usr/bin:/system/bin:/system/xbin")
+        .arg("-c")
+        .arg(format!("{} -c '{}'", rish_bin, cmd_str))
+        .output();
+
+    match output {
+        Ok(out) if out.status.success() => {
+            Ok(String::from_utf8_lossy(&out.stdout).trim().to_string())
+        }
+        Ok(out) => {
+            let err = String::from_utf8_lossy(&out.stderr).trim().to_string();
+            // Intento 2 (Fallback): Si rish no existe o falla, intentar ejecución directa
+            let fallback = Command::new("sh")
+                .env("PATH", "/data/data/com.termux/files/usr/bin:/system/bin:/system/xbin")
+                .arg("-c")
+                .arg(cmd_str)
+                .output();
+
+            match fallback {
+                Ok(fb_out) if fb_out.status.success() => {
+                    Ok(String::from_utf8_lossy(&fb_out.stdout).trim().to_string())
+                }
+                _ => Err(format!("Shizuku error: [{}]. Fallback direct error: [{}]", err, String::from_utf8_lossy(&fallback.unwrap().stderr).trim()))
+            }
+        }
+        Err(e) => Err(format!("Failed to execute wrapper: {}", e)),
     }
 }
 
