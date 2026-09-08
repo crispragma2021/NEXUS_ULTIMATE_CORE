@@ -1,6 +1,12 @@
 target/
 *.db
 *.sock
+.env
 *.env
+!.env.example
 __pycache__/
 *.pyc
+.pytest_cache/
+.nexus/
+*.bak.*
+nexus_chat_memory.json

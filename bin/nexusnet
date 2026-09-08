@@ -1,34 +1,72 @@
 #!/usr/bin/env bash
+# Consulta rápida de una sola línea, sin herramientas ni memoria.
+# La llave se lee del entorno: nunca del código (ver .env.example).
+set -e
+
 PROMPT="$*"
-API_KEY="sk-41da49172d2b4e4fb457463f1721e92f"
+API_KEY="${DEEPSEEK_API_KEY:-${NEXUS_CHAT_API_KEY:-}}"
+CHAT_URL="${NEXUS_CHAT_URL:-https://api.deepseek.com/v1/chat/completions}"
+CHAT_MODEL="${NEXUS_CHAT_MODEL:-deepseek-chat}"
 
 if [ -z "$PROMPT" ]; then
     echo "Uso: nexusnet 'Tu mensaje aquí'"
     exit 1
 fi
 
-python3 -c '
-import sys, urllib.request, json
+if [ -z "$API_KEY" ]; then
+    echo "[!] Sin llave: exporta DEEPSEEK_API_KEY o cópiala de .env.example a .env"
+    exit 1
+fi
+
+# Python: en Termux es python; en muchos PC solo existe python3.
+if command -v python3 > /dev/null 2>&1; then
+    PY=python3
+else
+    PY=python
+fi
+
+# prompt/llave/modelo viajan por argv y variables de entorno, nunca interpolados
+# en el fuente: un apóstrofe en el prompt ya no rompe el script.
+NEXUSNET_URL="$CHAT_URL" NEXUSNET_MODEL="$CHAT_MODEL" NEXUSNET_KEY="$API_KEY" \
+"$PY" - "$PROMPT" <<'PYEOF'
+import json
+import os
+import sys
+import urllib.error
+import urllib.request
 
 prompt = sys.argv[1]
-api_key = sys.argv[2]
-url = "https://api.deepseek.com/chat/completions"
+url = os.environ["NEXUSNET_URL"]
+modelo = os.environ["NEXUSNET_MODEL"]
+clave = os.environ["NEXUSNET_KEY"]
 
-data = json.dumps({
-    "model": "deepseek-chat",
-    "messages": [{"role": "user", "content": prompt}]
-}).encode("utf-8")
+cuerpo = json.dumps(
+    {"model": modelo, "messages": [{"role": "user", "content": prompt}]}
+).encode("utf-8")
 
-req = urllib.request.Request(url, data=data, headers={
-    "Content-Type": "application/json",
-    "Authorization": f"Bearer {api_key}"
-})
+peticion = urllib.request.Request(
+    url,
+    data=cuerpo,
+    headers={
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + clave,
+    },
+)
 
 try:
-    with urllib.request.urlopen(req) as response:
-        res = json.loads(response.read().decode("utf-8"))
-        text = res["choices"][0]["message"]["content"]
-        print(text)
-except Exception as e:
-    print(f"[Error nexusnet]: {e}")
-' "$PROMPT" "$API_KEY"
+    with urllib.request.urlopen(peticion, timeout=60) as respuesta:
+        datos = json.loads(respuesta.read().decode("utf-8"))
+except urllib.error.HTTPError as error:
+    detalle = error.read().decode("utf-8", errors="replace")
+    print("[Error nexusnet] HTTP {}: {}".format(error.code, detalle[:300]))
+    sys.exit(1)
+except Exception as error:  # red caída, DNS, timeout...
+    print("[Error nexusnet] {}".format(error))
+    sys.exit(1)
+
+try:
+    print(datos["choices"][0]["message"]["content"])
+except (KeyError, IndexError, TypeError):
+    print("[Error nexusnet] respuesta inesperada: {}".format(datos))
+    sys.exit(1)
+PYEOF

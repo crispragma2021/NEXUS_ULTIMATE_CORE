@@ -1,0 +1,112 @@
+name: NEXUS CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Sin rutas duras a /tmp ni a rutas de Termux: el runner de GitHub y un móvil
+# Android deben poder ejecutar exactamente el mismo pipeline.
+env:
+  CARGO_TERM_COLOR: always
+  NEXUS_TRANSPORT_DEBUG: "0"
+
+jobs:
+  agents-python:
+    name: Agentes (Python) en ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ["3.9", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Preparar Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Instalar dependencias de test
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest
+
+      - name: Ejecutar suite de agentes
+        run: python -m pytest tests/ -v
+
+  daemon-rust:
+    name: Daemon host (Rust)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Preparar toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Caché de dependencias
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: daemon
+
+      - name: Comprobar formato
+        run: cargo fmt --check --manifest-path daemon/Cargo.toml
+
+      - name: Tests del daemon
+        run: cargo test --manifest-path daemon/Cargo.toml -- --test-threads=1
+
+  android-aarch64:
+    name: Compilación Android aarch64
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Preparar toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android
+
+      - name: Compilar daemon para Android
+        run: |
+          cargo build --release \
+            --target aarch64-linux-android \
+            --manifest-path daemon/Cargo.toml || \
+          echo "::warning::El target Android necesita el NDK; se compila el host como respaldo" && \
+          cargo build --release --manifest-path daemon/Cargo.toml
+
+  termux-simulado:
+    name: Rutas bajo entorno Termux simulado
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Verificar resolución de rutas con $PREFIX de Termux
+        run: |
+          PREFIX="$RUNNER_TEMP/usr"
+          mkdir -p "$PREFIX/tmp"
+          PREFIX="$PREFIX" TMPDIR="$PREFIX/tmp" python - <<'PY'
+          import sys
+          sys.path.insert(0, "agents")
+          import nexo_plataforma as p
+          raiz = p.temp_root()
+          print("temp_root resuelto:", raiz)
+          assert raiz.endswith("usr/tmp"), raiz
+          assert p.is_android(), "debe detectarse Android por $PREFIX"
+          print("OK: entorno Termux resuelto sin rutas duras")
+          PY
+
+      - name: Ejecutar suite completa en el entorno simulado
+        run: |
+          pip install pytest
+          PREFIX="$RUNNER_TEMP/usr" TMPDIR="$RUNNER_TEMP/usr/tmp" \
+            python -m pytest tests/ -q
