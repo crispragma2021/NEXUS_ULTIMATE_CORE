@@ -1,0 +1,6 @@
+target/
+*.db
+*.sock
+*.env
+__pycache__/
+*.pyc

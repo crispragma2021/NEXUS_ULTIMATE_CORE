@@ -1,0 +1,33 @@
+#!/data/data/com.termux/files/usr/bin/bash
+PROMPT="$*"
+if [ -z "$PROMPT" ]; then
+    echo "Uso: nexus 'Tu mensaje aquí'"
+    exit 1
+fi
+
+python3 -c '
+import sys, urllib.request, json
+
+prompt = sys.argv[1]
+url = "http://127.0.0.1:8080/completion"
+
+system_prompt = "Eres NEXUS, un agente de IA ejecutándose localmente en Termux (Android ARM64). Responde de forma directa, técnica y precisa."
+formatted_prompt = f"<|im_start|>system\n{system_prompt}<|im_end|>\n<|im_start|>user\n{prompt}<|im_end|>\n<|im_start|>assistant\n"
+
+data = json.dumps({
+    "prompt": formatted_prompt,
+    "n_predict": 512,
+    "temperature": 0.6,
+    "stop": ["<|im_end|>", "<|im_start|>"],
+    "stream": False
+}).encode("utf-8")
+
+req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json"})
+
+try:
+    with urllib.request.urlopen(resp := req) as response:
+        res = json.loads(response.read().decode("utf-8"))
+        print(res["content"].strip())
+except Exception as e:
+    print(f"[!] Servidor local no activo en puerto 8080. ({e})")
+' "$PROMPT"
