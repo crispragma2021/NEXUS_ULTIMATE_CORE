@@ -1,0 +1,9 @@
+{
+  "identifier": "default",
+  "description": "Capacidad por defecto para la ventana principal de NEXUS Santuario",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "shell:default"
+  ]
+}

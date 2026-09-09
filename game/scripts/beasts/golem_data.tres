@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="BeastData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/beasts/BeastData.gd" id="1_beastdata"]
+
+[resource]
+script = ExtResource("1_beastdata")
+species_name = "Gólem Menor"
+level_min = 10
+level_max = 20
+base_health = 200.0
+base_damage = 25.0
+attack_range = 3.5
+move_speed = 2.0
+detection_radius = 20.0
+chase_radius = 25.0
+flee_health_threshold = 0.1
+color = Color(0.6, 0.55, 0.5, 1)
+xp_reward = 10
+biomes = ["mountain", "ruins"]
+attack_type = 2
+attack_cooldown = 3.0

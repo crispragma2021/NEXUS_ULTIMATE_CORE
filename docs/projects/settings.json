@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "nexus-core": {
+      "command": "/home/soberano/NEXUS_ULTIMATE_CORE/target/release/nexus-orquestador",
+      "args": ["mcp-mode"],
+      "env": {
+        "RUST_LOG": "info",
+        "NEXUS_SANTUARIO": "/home/soberano/NEXUS_ULTIMATE_CORE",
+        "NEXUS_ROLE": "Sovereign_Orchestrator"
+      }
+    }
+  }
+}

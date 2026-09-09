@@ -1,0 +1,18 @@
+[Unit]
+Description=NEXUS Ultimate Core - Hardware Sovereignty & Resource Balancer
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+User=soberano
+WorkingDirectory=/home/soberano/NEXUS_ULTIMATE_CORE
+ExecStart=/home/soberano/NEXUS_ULTIMATE_CORE/target/release/nexus_ultimate_core
+Restart=always
+RestartSec=5
+# Give the balancer itself a higher priority so it can manage others
+Nice=-10
+Environment=DATABASE_URL=postgres://nexus_admin:nexus_pass@localhost:5432/nexus_core
+Environment=CARGO_BUILD_JOBS=12
+
+[Install]
+WantedBy=default.target

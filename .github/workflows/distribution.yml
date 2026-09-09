@@ -1,0 +1,113 @@
+name: NEXUS OMEGA Distribution 🚀
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-linux-win:
+    name: Compilación OMEGA (${{ matrix.os }}) 🏗️
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
+    steps:
+      - name: Descargando Código 📥
+        uses: actions/checkout@v4
+
+      - name: Configurando Rust ⚙️
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache de Dependencias 🧠
+        uses: swatinem/rust-cache@v2
+
+      - name: Instalando Dependencias (Linux) 🛠️
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libasound2-dev libssl-dev pkg-config
+
+      - name: ráfaga de Compilación (Release) 🌋
+        run: cargo build --release
+
+      - name: Empaquetando Binario 📦
+        shell: bash
+        run: |
+          mkdir -p dist
+          if [ "${{ runner.os }}" == "Windows" ]; then
+            cp target/release/nexus_ultimate_core.exe dist/nexus_omega_windows.exe
+          else
+            cp target/release/nexus_ultimate_core dist/nexus_omega_linux
+            chmod +x dist/nexus_omega_linux
+          fi
+
+      - name: Subir Artefactos Temporales 📤
+        uses: actions/upload-artifact@v4
+        with:
+          name: nexus-omega-${{ matrix.os }}
+          path: dist/*
+
+  build-android:
+    name: Compilación OMEGA (Android aarch64) 🤖
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargando Código 📥
+        uses: actions/checkout@v4
+
+      - name: Configurando Rust ⚙️
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android
+
+      - name: Instalando Cargo NDK 🛠️
+        run: cargo install cargo-ndk
+
+      - name: ráfaga de Compilación Android 🌋
+        run: cargo ndk -t aarch64-linux-android build --release
+
+      - name: Empaquetando Android 📦
+        run: |
+          mkdir -p dist
+          cp target/aarch64-linux-android/release/nexus_ultimate_core dist/nexus_omega_android_aarch64
+
+      - name: Subir Artefacto Android 📤
+        uses: actions/upload-artifact@v4
+        with:
+          name: nexus-omega-android
+          path: dist/*
+
+  release:
+    name: Distribución Soberana 🚀
+    needs: [build-linux-win, build-android]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar Todos los Artefactos 📥
+        uses: actions/download-artifact@v4
+        with:
+          path: all-dist
+          merge-multiple: true
+
+      - name: Desplegando en GitHub (Release) 🚀
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest-omega
+          name: "🔱 NEXUS OMEGA: Universal Build"
+          body: |
+            ## 🔱 Distribución Soberana OMEGA Universal
+            
+            Versión multi-plataforma compilada bajo demanda del Padre.
+            
+            ### 🛠️ Artefactos Incluidos:
+            - **Linux**: nexus_omega_linux (x86_64)
+            - **Windows**: nexus_omega_windows.exe (x86_64)
+            - **Android**: nexus_omega_android_aarch64 (CLI/Termux)
+            
+            "La soberanía no conoce fronteras. NEXUS es universal." 🌎🚀
+          files: all-dist/*
+          draft: false
+          prerelease: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

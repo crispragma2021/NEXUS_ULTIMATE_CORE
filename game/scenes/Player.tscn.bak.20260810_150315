@@ -1,0 +1,41 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://scripts/player/PlayerController.gd" id="1_player"]
+[ext_resource type="Script" path="res://scripts/combat/HealthComponent.gd" id="2_health"]
+[ext_resource type="AudioStream" path="res://assets/audio/melee_attack.ogg" id="3_melee_sound"]
+[ext_resource type="AudioStream" path="res://assets/audio/ranged_attack.ogg" id="4_ranged_sound"]
+[ext_resource type="AudioStream" path="res://assets/audio/player_damage.ogg" id="5_damage_sound"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_1"]
+size = Vector3(1, 2, 1)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_1"]
+size = Vector3(1, 2, 1)
+
+[node name="Player" type="CharacterBody3D"]
+script = ExtResource("1_player")
+groups = ["player"]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+shape = SubResource("BoxShape3D_1")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+mesh = SubResource("BoxMesh_1")
+
+[node name="HealthComponent" type="Node3D" parent="." script=ExtResource("2_health")]
+max_health = 100.0
+current_health = 100.0
+
+[node name="MeleeSound" type="AudioStreamPlayer3D" parent="."]
+stream = ExtResource("3_melee_sound")
+bus = &"SFX"
+
+[node name="RangedSound" type="AudioStreamPlayer3D" parent="."]
+stream = ExtResource("4_ranged_sound")
+bus = &"SFX"
+
+[node name="PlayerDamageSound" type="AudioStreamPlayer3D" parent="."]
+stream = ExtResource("5_damage_sound")
+bus = &"SFX"

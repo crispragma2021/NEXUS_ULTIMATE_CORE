@@ -1,0 +1,54 @@
+[gd_scene load_steps=10 format=3]
+
+[ext_resource type="Script" path="res://scripts/beasts/Beast.gd" id="1_beast"]
+[ext_resource type="Script" path="res://scripts/beasts/BeastAI.gd" id="2_beastai"]
+[ext_resource type="Script" path="res://scripts/combat/HealthComponent.gd" id="3_health"]
+[ext_resource type="Script" path="res://scripts/beasts/BeastData.gd" id="4_beastdata"]
+[ext_resource type="AudioStream" path="res://assets/audio/beast_damage.ogg" id="5_beast_damage_sound"]
+[ext_resource type="AudioStream" path="res://assets/audio/beast_death.ogg" id="6_beast_death_sound"]
+
+[sub_resource type="CapsuleShape3D" id="CollisionShape3D"]
+radius = 0.5
+height = 1.5
+
+[sub_resource type="SphereShape3D" id="DetectionShape"]
+radius = 15.0
+
+[sub_resource type="StandardMaterial3D" id="BeastMaterial"]
+albedo_color = Color(0.5, 0.5, 0.5, 1)
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh"]
+radius = 0.5
+height = 1.5
+
+[node name="Beast" type="CharacterBody3D" script=ExtResource("1_beast")]
+collision_layer = 4
+collision_mask = 3
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+mesh = SubResource("CapsuleMesh")
+material_override = SubResource("BeastMaterial")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("CollisionShape3D")
+
+[node name="DetectionArea" type="Area3D" parent="."]
+monitoring = true
+monitorable = false
+collision_layer = 0
+collision_mask = 2
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="DetectionArea"]
+shape = SubResource("DetectionShape")
+
+[node name="HealthComponent" type="Node3D" parent="." script=ExtResource("3_health")]
+
+[node name="BeastAI" type="Node" parent="." script=ExtResource("2_beastai")]
+
+[node name="BeastDamageSound" type="AudioStreamPlayer3D" parent="."]
+stream = ExtResource("5_beast_damage_sound")
+bus = &"SFX"
+
+[node name="BeastDeathSound" type="AudioStreamPlayer3D" parent="."]
+stream = ExtResource("6_beast_death_sound")
+bus = &"SFX"

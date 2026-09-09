@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package nexus_telemetry;
+
+service TelemetryOrchestrator {
+    rpc SyncHardware (stream HardwareState) returns (stream NexusCommand);
+    rpc PushNotification (Notification) returns (Ack);
+}
+
+message HardwareState {
+    float cpu_usage = 1;
+    float ram_usage = 2;
+}
+
+message NexusCommand {
+    string command_type = 1;
+    string payload = 2;
+}
+
+message Notification {
+    string title = 1;
+    string body = 2;
+}
+
+message Ack {
+    bool success = 1;
+}

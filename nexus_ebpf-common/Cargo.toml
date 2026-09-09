@@ -1,0 +1,12 @@
+[package]
+name = "nexus_ebpf-common"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+user = ["aya"]
+
+[dependencies]
+aya = { version = "0.13", optional = true }
+aya-ebpf = { version = "0.1", optional = true }
+# Add shared types here

@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "NEXUS Multi-Account Sovereign",
+  "version": "1.0.0",
+  "description": "Gestión soberana de múltiples identidades para WhatsApp, Facebook y más.",
+  "permissions": [
+    "cookies",
+    "storage",
+    "tabs",
+    "declarativeNetRequest",
+    "browsingData",
+    "nativeMessaging"
+  ],
+  "host_permissions": [
+    "*://web.whatsapp.com/*",
+    "*://*.facebook.com/*",
+    "*://*.messenger.com/*"
+  ],
+  "action": {
+    "default_popup": "src/popup.html"
+  },
+  "background": {
+    "service_worker": "src/background.js"
+  }
+}

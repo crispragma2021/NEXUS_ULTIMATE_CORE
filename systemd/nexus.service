@@ -1,0 +1,37 @@
+[Unit]
+Description=NEXUS OMEGA Orquestador
+After=network.target
+# No depender de pipewire — no es necesario en modo headless
+# Reinicio estable: hasta 5 intentos en 120 segundos
+StartLimitIntervalSec=120
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=soberano
+WorkingDirectory=/home/soberano/NEXUS_ULTIMATE_CORE
+
+# 🧹 Liberar puerto 43210 si está ocupado por un proceso huérfano
+ExecStartPre=/bin/bash -c "fuser -k 43210/tcp > /dev/null 2>&1; sleep 0.3; exit 0"
+
+ExecStart=/home/soberano/NEXUS_ULTIMATE_CORE/target/release/nexus-ui --headless
+
+# 🛑 Al detener: matar TODA la jerarquía de procesos (cgroup completo)
+KillMode=control-group
+KillSignal=SIGTERM
+TimeoutStopSec=10
+
+Restart=on-failure
+RestartSec=10
+
+Environment="RUST_LOG=info"
+Environment="RUST_BACKTRACE=1"
+Nice=-5
+IOSchedulingClass=best-effort
+IOSchedulingPriority=2
+# 🛡️ LÍMITE SOBERANO DE MEMORIA — Autorizado por Arquitecto Cris
+MemoryMax=58G
+MemorySwapMax=4G
+
+[Install]
+WantedBy=default.target

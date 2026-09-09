@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  tor-gateway:
+    image: dperson/torproxy:latest
+    container_name: nexus-tor-gateway
+    environment:
+      - TOR_ExitNodes={py} # Prioritize Paraguay if possible, but default is global for better anonymity
+    ports:
+      - "9050:9050" # SOCKS5
+      - "8118:8118" # HTTP Proxy
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 128M
+    restart: always
+
+  headless-vision:
+    image: mcr.microsoft.com/playwright:v1.58.2-jammy
+    container_name: nexus-headless-vision
+    ipc: host
+    environment:
+      - HTTP_PROXY=http://tor-gateway:8118
+      - HTTPS_PROXY=http://tor-gateway:8118
+      - ALL_PROXY=socks5://tor-gateway:9050
+    volumes:
+      - ./scraper:/app
+    working_dir: /app
+    command: tail -f /dev/null # Keep alive for NEXUS rants
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0' # Limit for Ryzen 7 stability
+          memory: 1G
+    depends_on:
+      - tor-gateway

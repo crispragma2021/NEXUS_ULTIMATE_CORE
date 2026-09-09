@@ -1,0 +1,11 @@
+{
+  "identifier": "main-capability",
+  "description": "Permisos básicos para el GHOST-SHELL",
+  "windows": ["main"],
+  "permissions": [
+    "shell:default",
+    "os:default",
+    "global-shortcut:default",
+    "core:default"
+  ]
+}

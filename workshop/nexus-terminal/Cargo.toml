@@ -1,0 +1,16 @@
+[package]
+name = "nexus-terminal"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tokio = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+anyhow = { workspace = true }
+crossterm = "0.28"
+ratatui = "0.28"
+portable-pty = "0.8"
+regex = { workspace = true }
+sysinfo = { workspace = true }
+reqwest = { version = "0.12", features = ["json"] }

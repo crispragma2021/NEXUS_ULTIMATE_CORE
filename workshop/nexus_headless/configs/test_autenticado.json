@@ -1,0 +1,56 @@
+{
+  "name": "Test Autenticado — Sesiones Propias",
+  "description": "Prueba del headless engine con sesiones autenticadas extraídas del perfil persistente",
+  "userDataDir": "/home/soberano/.nexus_profile",
+  "headless": false,
+  "proxy": "socks5://127.0.0.1:9050",
+  "phases": {
+    "searchEngines": true,
+    "portals": false,
+    "directURLs": true
+  },
+  "engines": {
+    "google": true,
+    "duckduckgo": false
+  },
+  "targets": {
+    "Mi Perfil Facebook": {
+      "queries": ["0981961089"],
+      "urls": {
+        "Facebook Perfil": "https://www.facebook.com/me",
+        "Facebook Settings": "https://www.facebook.com/settings"
+      }
+    },
+    "Mi Perfil Instagram": {
+      "queries": ["0981961089 site:instagram.com"],
+      "urls": {
+        "Instagram Perfil": "https://www.instagram.com/accounts/edit/",
+        "Instagram Privacidad": "https://www.instagram.com/accounts/privacy_and_security/"
+      }
+    },
+    "Mi Correo Gmail": {
+      "queries": ["Correo de Gmail de Cristhian Villalba"],
+      "urls": {
+        "Gmail Bandeja Entrada": "https://mail.google.com/mail/u/0/#inbox"
+      }
+    },
+    "Mi Perfil LinkedIn": {
+      "queries": ["0981961089 site:linkedin.com"],
+      "urls": {
+        "LinkedIn Perfil": "https://www.linkedin.com/feed/"
+      }
+    },
+    "Mi Perfil Telegram": {
+      "queries": ["Cristhian Villalba Telegram"],
+      "urls": {
+        "Telegram Web": "https://web.telegram.org/k/"
+      }
+    },
+    "Mi Perfil X (Twitter)": {
+      "queries": ["Cristhian Villalba X (Twitter)"],
+      "urls": {
+        "X (Twitter) Home": "https://x.com/home"
+      }
+    }
+  }
+}

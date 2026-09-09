@@ -1,0 +1,214 @@
+{
+  "mcpServers": {
+    "architect-eye": {
+      "command": "/home/soberano/NEXUS_ULTIMATE_CORE/bin/nexus_mcp_runner",
+      "args": [
+        "/home/soberano/NEXUS_ULTIMATE_CORE/bin/rust_architect_eye"
+      ],
+      "enabled": true,
+      "description": "NEXUS OJO ARQUITECTÓNICO - Captura visual de retina humana"
+    },
+    "nexus-nerve": {
+      "command": "/home/soberano/NEXUS_ULTIMATE_CORE/bin/nexus_mcp_runner",
+      "args": [
+        "/home/soberano/NEXUS_ULTIMATE_CORE/bin/nexus_nerve",
+        "--mode",
+        "ram"
+      ],
+      "enabled": true,
+      "description": "NEXUS NERVE - Órgano de orquestación dinámica y Cold Mode (Soberano)"
+    },
+    "sequential-thinking": {
+      "command": "/home/soberano/NEXUS_ULTIMATE_CORE/bin/nexus_mcp_runner",
+      "args": [
+        "/home/soberano/NEXUS_ULTIMATE_CORE/bin/rust_sequential_thinking"
+      ],
+      "enabled": true,
+      "description": "Native Rust Sequential Thinking - Structured and reflective reasoning engine (OMEGA)"
+    },
+    "nexus-stitch": {
+      "command": "/home/soberano/NEXUS_ULTIMATE_CORE/bin/nexus_mcp_runner",
+      "args": [
+        "/home/soberano/NEXUS_ULTIMATE_CORE/bin/rust_stitch"
+      ],
+      "enabled": true,
+      "description": "NexuStitch - Sovereign UI Synthesis Engine (OMEGA-VISUAL)"
+    },
+    "nexus-context-7": {
+      "command": "/home/soberano/NEXUS_ULTIMATE_CORE/bin/nexus_mcp_runner",
+      "args": [
+        "/home/soberano/NEXUS_ULTIMATE_CORE/bin/rust_context7"
+      ],
+      "enabled": true,
+      "description": "Nexus Context-7 - Ultra-fast Project Topography & Mind Mapping"
+    },
+    "rust-filesystem": {
+      "command": "/home/soberano/NEXUS_ULTIMATE_CORE/bin/nexus_mcp_runner",
+      "args": [
+        "/home/soberano/NEXUS_ULTIMATE_CORE/bin/rust_filesystem"
+      ],
+      "enabled": true,
+      "description": "Native Rust Filesystem - High-performance file operations (OMEGA)"
+    },
+    "rust-github": {
+      "command": "/home/soberano/NEXUS_ULTIMATE_CORE/bin/nexus_mcp_runner",
+      "args": [
+        "/home/soberano/NEXUS_ULTIMATE_CORE/bin/rust_github"
+      ],
+      "enabled": true,
+      "description": "Native Rust GitHub - Code lifecycle automation (OMEGA)"
+    },
+    "rust-search": {
+      "command": "/home/soberano/NEXUS_ULTIMATE_CORE/bin/nexus_mcp_runner",
+      "args": [
+        "/home/soberano/NEXUS_ULTIMATE_CORE/bin/rust_google_search"
+      ],
+      "enabled": false,
+      "description": "Native Rust Search - Web intelligence (OMEGA)"
+    },
+    "nexus-brain-ra": {
+      "command": "/home/soberano/NEXUS_ULTIMATE_CORE/bin/nexus_mcp_runner",
+      "args": [
+        "/home/soberano/NEXUS_ULTIMATE_CORE/bin/nexus_brain_ra"
+      ],
+      "enabled": true,
+      "description": "NEXUS BRAIN RA - Semantic Diagnostic & Pipeline de Auto-Reparación (OMEGA)"
+    },
+    "nexus-docker-isolate": {
+      "command": "/home/soberano/NEXUS_ULTIMATE_CORE/bin/nexus_mcp_runner",
+      "args": [
+        "/home/soberano/NEXUS_ULTIMATE_CORE/bin/nexus-docker-isolate"
+      ],
+      "enabled": true,
+      "description": "NEXUS ISOLATE - Ejecutable en contenedores Alpine efímeros"
+    },
+    "nexus-git-audit": {
+      "command": "/home/soberano/NEXUS_ULTIMATE_CORE/bin/nexus_mcp_runner",
+      "args": [
+        "/home/soberano/NEXUS_ULTIMATE_CORE/bin/nexus-git-audit"
+      ],
+      "enabled": true,
+      "description": "NEXUS GIT AUDIT - Firmas Autorizadas y Autodiagnóstico de Rollbacks Seguros"
+    },
+    "nexus-encryption": {
+      "command": "/home/soberano/NEXUS_ULTIMATE_CORE/bin/nexus_mcp_runner",
+      "args": [
+        "/home/soberano/NEXUS_ULTIMATE_CORE/bin/nexus-encryption"
+      ],
+      "enabled": true,
+      "description": "NEXUS BÓVEDA ENCRYPTION - Generación y cifrado atómico AES-GCM (OMEGA)"
+    },
+    "nexus-kali-nmap": {
+      "command": "/home/soberano/NEXUS_ULTIMATE_CORE/bin/nexus_mcp_runner",
+      "args": [
+        "/home/soberano/NEXUS_ULTIMATE_CORE/bin/nexus-kali-nmap"
+      ],
+      "enabled": true,
+      "description": "NEXUS KALI NMAP - Radar de red y Detección de intrusos"
+    },
+    "nexus-shell-safe": {
+      "command": "/home/soberano/NEXUS_ULTIMATE_CORE/bin/nexus_mcp_runner",
+      "args": [
+        "/home/soberano/NEXUS_ULTIMATE_CORE/bin/nexus-shell-safe"
+      ],
+      "enabled": true,
+      "description": "NEXUS SHELL SAFE - Sandbox Heurístico AST para comandos hostiles"
+    },
+    "nexus-sqlmap": {
+      "command": "/home/soberano/NEXUS_ULTIMATE_CORE/bin/nexus_mcp_runner",
+      "args": [
+        "/home/soberano/NEXUS_ULTIMATE_CORE/bin/nexus-sqlmap"
+      ],
+      "enabled": true,
+      "description": "NEXUS SQLMAP - Prevención ofensiva contra inyecciones SQL a la base atómica"
+    },
+    "rust-browser": {
+      "command": "/home/soberano/NEXUS_ULTIMATE_CORE/bin/nexus_mcp_runner",
+      "args": [
+        "/home/soberano/NEXUS_ULTIMATE_CORE/bin/rust_browser"
+      ],
+      "enabled": true,
+      "description": "Native Rust Browser - Chromium automation (OMEGA)"
+    },
+    "nexus-link": {
+      "command": "/home/soberano/NEXUS_ULTIMATE_CORE/bin/nexus_mcp_runner",
+      "args": [
+        "/home/soberano/NEXUS_ULTIMATE_CORE/bin/nexus_link"
+      ],
+      "enabled": true,
+      "description": "NexusLink - Tactical Notification Bridge (OMEGA-CONNECTIVITY)"
+    },
+    "nexus-memory-context": {
+      "command": "/home/soberano/NEXUS_ULTIMATE_CORE/bin/nexus_mcp_runner",
+      "args": [
+        "/home/soberano/NEXUS_ULTIMATE_CORE/bin/nexus_memory_bridge"
+      ],
+      "enabled": true,
+      "description": "NexusMemory Context - Session and context retrieval bridge (OMEGA-COGNITION)"
+    },
+    "nexus-memory-vector": {
+      "command": "/home/soberano/NEXUS_ULTIMATE_CORE/bin/nexus_mcp_runner",
+      "args": [
+        "/home/soberano/NEXUS_ULTIMATE_CORE/bin/nexus_memory"
+      ],
+      "enabled": true,
+      "description": "NexusMemory Vector - Semantic long-term memory bank (OMEGA-COGNITION)"
+    },
+    "rust-sqlite": {
+      "command": "/home/soberano/NEXUS_ULTIMATE_CORE/bin/nexus_mcp_runner",
+      "args": [
+        "/home/soberano/NEXUS_ULTIMATE_CORE/bin/rust_sqlite"
+      ],
+      "enabled": true,
+      "description": "Native Rust SQLite - Sovereign relational intelligence (OMEGA-DATA)"
+    },
+    "rust-firecrawl": {
+      "command": "/home/soberano/NEXUS_ULTIMATE_CORE/bin/nexus_mcp_runner",
+      "args": [
+        "/home/soberano/NEXUS_ULTIMATE_CORE/bin/rust_firecrawl"
+      ],
+      "enabled": true,
+      "description": "Native Rust Firecrawl - High-performance web extraction (OMEGA-DATA)"
+    },
+    "nexus-acoustic": {
+      "command": "/home/soberano/NEXUS_ULTIMATE_CORE/bin/nexus_mcp_runner",
+      "args": [
+        "/home/soberano/NEXUS_ULTIMATE_CORE/bin/nexus_mcp_acoustic"
+      ],
+      "enabled": true,
+      "description": "NEXUS ACOUSTIC - El Oído e Intradia Vocal del Arquitecto (OMEGA-SENSE)"
+    },
+    "nexus-claws-mcp": {
+      "command": "/home/soberano/NEXUS_ULTIMATE_CORE/bin/nexus_mcp_runner",
+      "args": [
+        "/home/soberano/NEXUS_ULTIMATE_CORE/bin/claws-mcp"
+      ],
+      "enabled": true,
+      "description": "NEXUS CLAWS MCP - Native execution effectors (Files, Search, Commands) (OMEGA-EFECTOR)"
+    },
+    "openrouter": {
+      "command": "/home/soberano/NEXUS_ULTIMATE_CORE/bin/nexus_mcp_runner",
+      "args": [
+        "/home/soberano/NEXUS_ULTIMATE_CORE/bin/nexus-openrouter-rust"
+      ],
+      "enabled": true,
+      "description": "NEXUS OpenRouter MCP Bridge - LLM Orchestration via OpenRouter"
+    },
+    "nexus-web-search": {
+      "command": "/home/soberano/NEXUS_ULTIMATE_CORE/bin/nexus_mcp_runner",
+      "args": [
+        "/home/soberano/.cargo-target/release/nexus-web-search"
+      ],
+      "enabled": true,
+      "description": "NEXUS Web Search - Búsqueda web general para contexto externo."
+    },
+    "omega-deep-search": {
+      "command": "/home/soberano/NEXUS_ULTIMATE_CORE/bin/nexus_mcp_runner",
+      "args": [
+        "/home/soberano/NEXUS_ULTIMATE_CORE/scripts/mcp/omega_search_mcp.cjs"
+      ],
+      "enabled": true,
+      "description": "OMEGA Deep Search - Búsqueda científica multihilo (Brave web + Ecosia + Google) con extracción de código y discusiones"
+    }
+  }
+}

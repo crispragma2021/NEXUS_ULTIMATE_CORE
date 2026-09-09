@@ -1,0 +1,45 @@
+{
+  "name": "nexus-santuario-ui",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "puppeteer": "^24.43.1",
+    "vite": "^6.4.3"
+  },
+  "description": "",
+  "main": "vite.config.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@google/gemini-cli": "^0.40.1",
+    "@google/genai": "^2.15.0",
+    "axios": "^1.19.0",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "google-auth-library": "^10.9.0",
+    "playwright": "^1.62.1",
+    "playwright-extra": "^4.3.6",
+    "playwright-extra-plugin-stealth": "^0.0.1",
+    "playwright-stealth": "^0.0.1",
+    "puppeteer-extra-plugin-stealth": "^2.11.2",
+    "sqlite": "^5.1.1",
+    "sqlite3": "^6.0.1",
+    "ws": "^8.21.0"
+  },
+  "overrides": {
+    "tar": "7.5.22",
+    "undici": "6.28.0",
+    "protobufjs": "7.6.5",
+    "js-yaml": "4.3.1",
+    "brace-expansion": "1.1.18",
+    "postcss": "8.5.26",
+    "esbuild": "0.25.12",
+    "ip-address": "10.4.0"
+  }
+}

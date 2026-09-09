@@ -1,0 +1,59 @@
+syntax = "proto3";
+package colmena;
+
+// El servicio Core que la Madre expone a los Hijos.
+service SwarmControl {
+    // El Hijo se une al enjambre y establecen un stream bidireccional de vida.
+    rpc JoinSwarm (stream NodeStatus) returns (stream SwarmCommand);
+    
+    // El Hijo reporta la ejecución de una tarea delegada.
+    rpc ReportTask (TaskResult) returns (Ack);
+}
+
+// Estado vital enviado por el Hijo en tiempo real.
+message NodeStatus {
+    string node_id = 1;
+    float cpu_temp = 2;
+    uint32 gemini_latency_ms = 3;
+    bool is_idle = 4;
+}
+
+// Comandos de la Madre hacia el Hijo (incluye sincronización de memoria).
+message SwarmCommand {
+    oneof command {
+        Heartbeat ping = 1;
+        TaskRequest execute_task = 2;
+        MemorySync sync_memory = 3;
+        PromoteToMother promote = 4;
+    }
+}
+
+message Heartbeat {
+    uint64 timestamp = 1;
+}
+
+message TaskRequest {
+    string task_id = 1;
+    string prompt = 2;
+    string target_model = 3;
+}
+
+message MemorySync {
+    string sql_statement = 1;
+    bytes lancedb_vector = 2;
+}
+
+message PromoteToMother {
+    string token = 1;
+}
+
+message TaskResult {
+    string task_id = 1;
+    string node_id = 2;
+    bool success = 3;
+    string output = 4;
+}
+
+message Ack {
+    bool received = 1;
+}

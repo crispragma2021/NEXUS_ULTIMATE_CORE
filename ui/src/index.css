@@ -1,0 +1,34 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ====== Antigravity UI — Dark mode nativo, alta densidad ====== */
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  background: #0a0a0f;
+  font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+}
+
+/* LED de estado — verde neón pulsante */
+.led-on {
+  @apply inline-block h-2.5 w-2.5 rounded-full bg-led-on;
+  box-shadow: 0 0 6px #22ff88, 0 0 12px #22ff88;
+  animation: led-pulse 1.6s ease-in-out infinite;
+}
+
+/* LED apagado — gris neutro sin luz */
+.led-off {
+  @apply inline-block h-2.5 w-2.5 rounded-full bg-led-off;
+}
+
+@keyframes led-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+
+/* Scrollbar minimalista */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #0a0a0f; }
+::-webkit-scrollbar-thumb { background: #2a2a38; border-radius: 3px; }

@@ -1,0 +1,31 @@
+{
+  "name": "Test Autenticado — Fallidos",
+  "description": "Re-prueba de URLs que fallaron o dieron timeout en el test inicial",
+  "userDataDir": "/home/soberano/.nexus_profile_usuario",
+  "headless": false,
+  "proxy": "socks5://127.0.0.1:9050",
+  "useProxy": false,
+  "urlTimeout": 60000,
+  "googleTimeout": 60000,
+  "phases": {
+    "searchEngines": true,
+    "portals": false,
+    "directURLs": true
+  },
+  "engines": {
+    "google": true,
+    "duckduckgo": false
+  },
+  "targets": {
+    "Google Search Sin Proxy": {
+      "queries": ["Cristhian Villalba"],
+      "urls": {}
+    },
+    "Mi Perfil LinkedIn (Re-intento)": {
+      "queries": ["0981961089 site:linkedin.com"],
+      "urls": {
+        "LinkedIn Perfil": "https://www.linkedin.com/feed/"
+      }
+    }
+  }
+}

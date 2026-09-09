@@ -1,0 +1,10 @@
+[Unit]
+Description=NEXUS Vertex Token Renewer
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash /home/soberano/NEXUS_ULTIMATE_CORE/scripts/vertex_token.sh
+
+[Install]
+WantedBy=default.target

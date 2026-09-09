@@ -1,0 +1,74 @@
+{
+  "name": "Investigación Plantilla",
+  "_comentario": "Copia este archivo para cada nueva operación y edita los targets/portales",
+  "_version": "1.0",
+  "_estructura": {
+    "targets": {
+      "Nombre del Objetivo": {
+        "queries": ["Nombre Completo", "Nombre Alternativo", "Apodo"],
+        "urls": {
+          "Facebook": "https://facebook.com/USER",
+          "Instagram": "https://instagram.com/USER",
+          "LinkedIn": "https://linkedin.com/in/USER"
+        }
+      }
+    },
+    "portals": {
+      "Portal": { "baseUrl": "URL_BASE", "searchPath": "/buscar" }
+    }
+  },
+  "proxy": "socks5://127.0.0.1:9050",
+  "headless": true,
+  "phases": {
+    "searchEngines": true,
+    "portals": true,
+    "directURLs": true
+  },
+  "engines": {
+    "google": true,
+    "duckduckgo": true
+  },
+  "targets": {
+    "Aldo Francisco Coronel Torres": {
+      "queries": [
+        "Aldo Francisco Coronel Torres",
+        "Aldo Coronel Torres",
+        "Coronel Torres Aldo"
+      ],
+      "urls": {
+        "Facebook Aldo": "https://www.facebook.com/aldofrancisco.coroneltorres/",
+        "Facebook Aldo2": "https://www.facebook.com/aldo.coroneltorres.5/"
+      }
+    },
+    "Oscar Mauricio Cañete": {
+      "queries": [
+        "Oscar Mauricio Cañete",
+        "Mauricio Cañete"
+      ]
+    }
+  },
+  "portals": {
+    "Corte Suprema": {
+      "baseUrl": "https://www.csj.gov.py",
+      "searchPath": "/busqueda-causas",
+      "waitUntil": "networkidle0",
+      "waitAfterLoad": 3000
+    },
+    "Poder Judicial": {
+      "baseUrl": "https://www.pj.gov.py",
+      "searchPath": "/busqueda"
+    },
+    "Ministerio Público": {
+      "baseUrl": "https://www.ministeriopublico.gov.py",
+      "searchPath": "/buscar"
+    },
+    "SET Vehicular": {
+      "baseUrl": "https://www.set.gov.py",
+      "searchPath": "/portal/busqueda"
+    },
+    "Registro Civil": {
+      "baseUrl": "https://www.registrocivil.gov.py",
+      "searchPath": "/buscar"
+    }
+  }
+}

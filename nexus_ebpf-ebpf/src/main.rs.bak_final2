@@ -1,0 +1,164 @@
+#![no_std]
+#![no_main]
+
+use aya_ebpf::{
+    macros::{xdp, map, lsm},
+    programs::{XdpContext, LsmContext},
+    maps::PerCpuHashMap,
+};
+
+#[repr(C)]
+pub struct EthHdr {
+    pub h_dest: [u8; 6],
+    pub h_source: [u8; 6],
+    pub h_proto: u16,
+}
+
+#[repr(C)]
+pub struct Ipv4Hdr {
+    pub _b: u8,
+    pub tos: u8,
+    pub len: u16,
+    pub id: u16,
+    pub off: u16,
+    pub ttl: u8,
+    pub proto: u8,
+    pub csum: u16,
+    pub src: u32,
+    pub dst: u32,
+}
+
+#[map]
+static mut STATS: PerCpuHashMap<u32, u64> = PerCpuHashMap::with_max_entries(16, 0);
+
+#[xdp]
+pub fn nexus_monitor(ctx: XdpContext) -> u32 {
+    let comm = match unsafe { aya_ebpf::helpers::bpf_get_current_comm() } {
+        Ok(c) => c,
+        Err(_) => return 2, // XDP_PASS
+    };
+        if is_ignored(&comm) || (!is_comm_antigravity(&comm) && !is_comm_cargo(&comm)) {
+            return 2; // XDP_PASS (Skip monitor for noisy or non-target processes)
+        }
+    }
+
+    match try_monitor(&ctx) {
+        Ok(ret) => ret,
+        Err(_) => 2, // XDP_PASS
+    }
+}
+
+fn try_monitor(ctx: &XdpContext) -> Result<u32, ()> {
+    let data = ctx.data();
+    let data_end = ctx.data_end();
+
+    // Explicit bounds checking for Ethernet Header
+    let eth_len = core::mem::size_of::<EthHdr>();
+    if data + eth_len > data_end {
+        return Ok(2);
+    }
+
+    let eth = data as *const EthHdr;
+    // Safety: we just checked the bounds
+    if unsafe { u16::from_be((*eth).h_proto) } != 0x0800 {
+        return Ok(2);
+    }
+
+    // Explicit bounds checking for IPv4 Header
+    let ip_offset = 14;
+    let ip_len = core::mem::size_of::<Ipv4Hdr>();
+    if data + ip_offset + ip_len > data_end {
+        return Ok(2);
+    }
+
+    let ip = (data + ip_offset) as *const Ipv4Hdr;
+    // Safety: we just checked the bounds
+    let p = unsafe { (*ip).proto as u32 };
+
+    // Optimized map update for 16-thread Ryzen 7 (Per-CPU)
+    unsafe {
+        if let Some(val) = STATS.get_ptr_mut(&p) {
+            *val += 1;
+        } else {
+            // Initializing new entry if not exists
+            STATS.insert(&p, &1, 0).map_err(|_| ())?;
+        }
+    }
+
+    Ok(2)
+}
+
+    let comm = match unsafe { aya_ebpf::helpers::bpf_get_current_comm() } {
+        Ok(c) => c,
+        Err(_) => return 0, // Permitir si no podemos obtener comm
+    };
+pub fn nexus_ip_guard(ctx: LsmContext) -> i32 {
+    let mut comm = [0u8; 16];
+    if unsafe { aya_ebpf::helpers::bpf_get_current_comm(&mut comm) }.is_err() {
+        return 0;
+    }
+
+    // Selective Attention: Ignore browsers/games
+    if is_ignored(&comm) {
+        return 0;
+    }
+
+    // Surgical Filter V2: Authorize all NEXUS-family binaries
+    let is_authorized = is_comm_antigravity(&comm) 
+        || is_comm_cargo(&comm)
+        || is_comm_codium(&comm)
+        || is_comm_nexus_orquestador(&comm)
+        || is_comm_nexus_core(&comm);
+    
+    if !is_authorized {
+        return 0; // Ignore noise from unauthorized apps
+    }
+
+    // Logic for IP protection goes here for authorized processes
+    0 // 0 = Permitir, <0 = Denegar (ej. -EPERM)
+}
+
+fn is_comm_antigravity(comm: &[u8; 16]) -> bool {
+    // "antigravity"
+    comm[0] == b'a' && comm[1] == b'n' && comm[2] == b't' && comm[3] == b'i' &&
+    comm[4] == b'g' && comm[5] == b'r' && comm[6] == b'a' && comm[7] == b'v' &&
+    comm[10] == b't' && comm[11] == b'y'
+}
+
+fn is_comm_cargo(comm: &[u8; 16]) -> bool {
+    // "cargo"
+    comm[0] == b'c' && comm[1] == b'a' && comm[2] == b'r' && comm[3] == b'g' && comm[4] == b'o'
+}
+
+fn is_comm_codium(comm: &[u8; 16]) -> bool {
+    // "codium"
+    comm[0] == b'c' && comm[1] == b'o' && comm[2] == b'd' && comm[3] == b'i' && comm[4] == b'u' && comm[5] == b'm'
+}
+
+fn is_comm_nexus_orquestador(comm: &[u8; 16]) -> bool {
+    // "nexus-orquesta" (linux comm is limited to 15 chars)
+    comm[0] == b'n' && comm[1] == b'e' && comm[2] == b'x' && comm[3] == b'u' && comm[4] == b's' &&
+    comm[5] == b'-' && comm[6] == b'o' && comm[7] == b'r' && comm[8] == b'q' && comm[9] == b'u' &&
+    comm[10] == b'e' && comm[11] == b's' && comm[12] == b't' && comm[13] == b'a'
+}
+
+fn is_comm_nexus_core(comm: &[u8; 16]) -> bool {
+    // "nexus_core"
+    comm[0] == b'n' && comm[1] == b'e' && comm[2] == b'x' && comm[3] == b'u' && comm[4] == b's' &&
+    comm[5] == b'_' && comm[6] == b'c' && comm[7] == b'o' && comm[8] == b'r' && comm[9] == b'e'
+}
+
+fn is_ignored(comm: &[u8; 16]) -> bool {
+    // Ignore Browsers (chrome, chromium, brave)
+    (comm[0] == b'c' && comm[1] == b'h' && comm[2] == b'r' && comm[3] == b'o' && comm[4] == b'm' && comm[5] == b'e') ||
+    (comm[0] == b'b' && comm[1] == b'r' && comm[2] == b'a' && comm[3] == b'v' && comm[4] == b'e') ||
+    // Ignore Games (steam, dota2, cs2)
+    (comm[0] == b's' && comm[1] == b't' && comm[2] == b'e' && comm[3] == b'a' && comm[4] == b'm') ||
+    (comm[0] == b'd' && comm[1] == b'o' && comm[2] == b't' && comm[3] == b'a')
+}
+
+#[panic_handler]
+fn panic(_info: &core::panic::PanicInfo) -> ! {
+    loop {}
+}
+

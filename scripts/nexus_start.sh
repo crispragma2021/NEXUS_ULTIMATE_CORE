@@ -1,0 +1,1 @@
+/home/soberano/NEXUS_ULTIMATE_CORE/scripts/services/nexus_start.sh

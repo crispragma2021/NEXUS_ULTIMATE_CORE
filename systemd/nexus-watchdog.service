@@ -1,0 +1,12 @@
+[Unit]
+Description=NEXUS Enhanced Autonomy Watchdog
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/bin/bash /home/soberano/NEXUS_ULTIMATE_CORE/scripts/nexus_watchdog.sh
+User=soberano
+WorkingDirectory=/home/soberano/NEXUS_ULTIMATE_CORE
+
+[Install]
+WantedBy=default.target

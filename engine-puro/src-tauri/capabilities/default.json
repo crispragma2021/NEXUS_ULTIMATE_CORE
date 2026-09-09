@@ -1,0 +1,9 @@
+{
+  "identifier": "default",
+  "description": "Permisos por defecto para Cerebro Digital",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "shell:allow-open"
+  ]
+}

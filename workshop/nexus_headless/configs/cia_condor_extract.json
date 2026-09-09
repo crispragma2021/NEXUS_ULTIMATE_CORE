@@ -1,0 +1,61 @@
+{
+  "name": "CIA FOIA — Extraer Links Operación Cóndor",
+  "description": "Extraer todos los document links de los resultados de búsqueda sobre Operación Cóndor",
+  "userDataDir": "/home/soberano/.nexus_profile",
+  "headless": false,
+  "proxy": "socks5://127.0.0.1:9050",
+  "useProxy": true,
+  "urlTimeout": 60000,
+  "urlWaitUntil": "networkidle0",
+
+  "phases": {
+    "searchEngines": false,
+    "portals": false,
+    "directURLs": true,
+    "warmup": ["tor", "browser"],
+    "cooldown": ["report"]
+  },
+
+  "engines": {
+    "browser": "chromium",
+    "google": false,
+    "duckduckgo": false,
+    "ai": "none"
+  },
+
+  "targets": {
+    "CIA FOIA — Operation Condor": {
+      "description": "Resultados de búsqueda de documentos sobre Operation Condor",
+      "urls": {
+        "Resultados Condor": {
+          "url": "https://www.cia.gov/readingroom/search/site/operation%20condor",
+          "timeout": 60000,
+          "scroll": true,
+          "waitUntil": "networkidle0"
+        }
+      }
+    },
+    "CIA FOIA — TESEO 1977": {
+      "description": "Documentos específicos TESEO y CONDOR de 1977",
+      "urls": {
+        "TESEO CONDOR 1977": {
+          "url": "https://www.cia.gov/readingroom/search/site/TESEO%20CONDOR%201977",
+          "timeout": 60000,
+          "scroll": true,
+          "waitUntil": "networkidle0"
+        }
+      }
+    },
+    "CIA FOIA — Paraguay intelligence": {
+      "description": "Documentos inteligencia Paraguay (1,809 items)",
+      "urls": {
+        "Paraguay Intelligence": {
+          "url": "https://www.cia.gov/readingroom/search/site/paraguay%20intelligence",
+          "timeout": 60000,
+          "scroll": true,
+          "waitUntil": "networkidle0"
+        }
+      }
+    }
+  }
+}

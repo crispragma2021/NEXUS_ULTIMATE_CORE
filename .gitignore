@@ -1,12 +1,333 @@
+# ============================================================================
+# 🧬 NEXUS ULTIMATE CORE — .gitignore SOBERANO
+# Solo código fuente. Nada de builds, pesos muertos ni modelos LLM.
+# ============================================================================
+
+# --- Rust build artifacts ---
 target/
-*.db
-*.sock
-.env
-*.env
-!.env.example
+**/target/
+Cargo.lock
+
+# --- JavaScript/Node ---
+node_modules/
+**/node_modules/
+dist/
+*.vsix
+
+# --- Python ---
 __pycache__/
 *.pyc
+*.pyo
+.venv/
+**/.venv/
+venv/
+*.egg-info/
 .pytest_cache/
-.nexus/
-*.bak.*
-nexus_chat_memory.json
+
+# --- Cachés del sistema ---
+.cargo-cache/
+.cache/
+**/.cache/
+.cargo/
+**/.cargo/
+
+# --- Rust cache (sccache) ---
+sccache/
+
+# --- LLM Models (pesan GBs) ---
+*.gguf
+*.bin
+*.safetensors
+models/
+**/models/
+bin/whisper/*.bin
+bin/whisper/*.gguf
+
+# --- Audio / Media ---
+*.mp3
+*.wav
+*.mp4
+*.avi
+*.mov
+*.flac
+*.ogg
+
+# --- Imágenes grandes ---
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.ico
+*.svg
+media/*.png
+media/*.jpg
+
+# --- IDEs / Editors ---
+.vscode/settings.json
+.vscode/*.code-snippets
+.idea/
+*.swp
+*.swo
+*~
+
+# --- OS files ---
+.DS_Store
+Thumbs.db
+*.bak
+*.orig
+
+# --- Logs (directorios enteros, no solo archivos .log) ---
+*.log
+logs/
+**/logs/
+
+# --- Database locks ---
+*.db.lock
+*.db-shm
+*.db-wal
+
+# --- Docker (optional builds) ---
+*.dockerignore
+
+# --- NEXUS Core (binarios compilados internos) ---
+bin/nexus-build-debug
+bin/nexus_memory
+bin/nexus_memory_bridge
+bin/nexus_mcp_runner
+bin/claws-mcp
+bin/mcp_browser_native
+bin/rust_architect_eye
+bin/rust_filesystem
+bin/rust_github
+bin/rust_sqlite
+bin/rust_stitch
+
+# --- ARCHIVOS OCULTOS DEL SISTEMA Y CONFIG LOCAL ---
+.cargo/
+**/.cargo/
+# SSH, agentes, configs locales, sesiones
+.ssh/
+**/.ssh/
+.agent/
+**/.agent/
+.android/
+**/.android/
+.claude/
+**/.claude/
+.cloudflared/
+**/.cloudflared/
+.config/
+**/.config/
+.gitnexus/
+**/.gitnexus/
+.opencode/
+**/.opencode/
+.rustup/
+**/.rustup/
+.suroot/
+**/.suroot/
+.vault/
+**/.vault/
+
+# --- ebpf builds ---
+nexus_ebpf/target/
+nexus_ebpf-ebpf/target/
+nexus_ebpf-common/target/
+
+# --- antigravity builds ---
+antigravity_extension/out/
+antigravity_extension/*.vsix
+
+# --- nexus-sovereign-extension builds ---
+nexus-sovereign-extension/out/
+nexus-sovereign-extension/*.vsix
+
+# --- Tauri (src-tauri builds) ---
+src-tauri/target/
+
+# --- Ghost Shell builds ---
+nexus-ghost-shell/target/
+
+# --- Scratch / Temp ---
+scratch/
+tmp/
+**/tmp/
+
+# --- Datos locales ---
+data/
+DRIVE/
+google_drive/
+backups/
+config/
+**/config/
+
+# --- INFRAESTRUCTURA LOCAL (NUNCA SUBIR) ---
+# Sesiones, perfiles, cachés del sistema NEXUS
+.nexus_internal/
+.nexus_profile/
+.nexus_session/
+.suroot/
+.vault/
+**/.vault/
+memoria/vault/
+**/memoria/vault/
+
+# --- Secretos y credenciales ---
+secrets/
+**/secrets/
+*.pem
+*.key
+*.p12
+*certificate*.pem
+credentials.json
+*_token.json
+sovereign_identity.json
+.env
+.envrc
+.env.local
+.env.production
+**/.env
+**/.envrc
+config.toml
+*.cred
+*.credential
+
+# --- Inteligencia y reportes sensibles ---
+reports/
+**/reports/
+shadowcrawl/
+**/shadowcrawl/
+downloads/
+**/downloads/
+artifacts/
+**/artifacts/
+archive/
+**/archive/
+
+# --- Binarios pre-compilados (no código fuente) ---
+bin/
+**/bin/
+*.so
+*.dll
+*.dylib
+
+# --- EXCEPCIÓN: código fuente Rust dentro de src/bin/ (bins del crate) ---
+!core/src/bin/
+core/src/bin/*
+!core/src/bin/*.rs
+!**/src/bin/
+**/src/bin/*
+!**/src/bin/*.rs
+!**/src/bin/*.wgsl
+
+# --- Trading portal: se versiona el código fuente; se excluye solo lo sensible ---
+trading-portal/.vault/
+**/trading-portal/.vault/
+trading-portal/scripts/gestor_credenciales.sh
+**/trading-portal/scripts/gestor_credenciales.sh
+
+# --- Cerebro/mente de NEXUS: TODO se versiona (código + sesiones + identidad) ---
+# Decisión del Arquitecto: no hay contraseñas ni claves en brain/,
+# por lo que el cerebro completo se sube a GitHub como backup.
+# (GitShield sigue protegiendo .env/.json/.db/.log en el resto del repo)
+
+# --- Datos locales (nunca subir) ---
+
+# --- Credenciales capturadas (NUNCA subir a GitHub) ---
+captured_creds.jsonl
+**/captured_creds.jsonl
+captured_creds*.jsonl
+**/captured_creds*.jsonl
+*.jsonl
+**/*.jsonl
+
+# --- IDE completo (VSCodium entero, decenas de GB) ---
+vscodium/
+**/vscodium/
+
+# --- Perfiles de datos (modelos on-device, pesos) ---
+data/profiles/
+**/data/profiles/
+optimization_guide_model_store/
+**/optimization_guide_model_store/
+OptGuideOnDeviceModel/
+**/OptGuideOnDeviceModel/
+*.ts.bin
+**/*.ts.bin
+weights.bin
+**/weights.bin
+cache.bin
+**/cache.bin
+
+# --- Entornos virtuales de Python en tools ---
+tools/venv_osint/
+**/tools/venv_osint/
+tools/venv*/
+**/tools/venv*/
+
+# --- Modelos locales Ollama (NUNCA subir — inservibles en GitHub) ---
+.ollama/
+**/.ollama/
+ollama/
+**/ollama/
+models/
+**/models/
+*.gguf
+**/*.gguf
+*.safetensors
+**/*.safetensors
+*.bin
+**/*.bin
+
+# --- Imágenes de sistema / kernels / VMs (pesos muertos) ---
+*.ext4
+**/*.ext4
+vmlinux
+**/vmlinux
+*.iso
+**/*.iso
+*.qcow2
+**/*.qcow2
+
+# --- Bases de datos y cookies de sesión (NUNCA subir) ---
+*.db
+**/*.db
+*.redb
+**/*.redb
+*.sqlite
+**/*.sqlite
+*.sqlite3
+**/*.sqlite3
+cookies/
+**/cookies/
+*session_cookies*
+**/*session_cookies*
+
+# --- Backups de credenciales (nunca subir — contienen llaves vivas) ---
+.env.bak*
+**/.env.bak*
+config.toml.bak*
+**/config.toml.bak*
+*.env.bak
+**/*.env.bak
+>>> REPLACE
+
+# Godot editor
+.godot/
+**/.godot/
+# Godot editor binario descargado (144MB, excede limite GitHub)
+tools/godot/
+
+# Artefactos de build del juego (binarios compilados, regenerables)
+game/build/
+**/game/build/
+
+# ── Unity (proyecto 3D game/unity/) ──
+game/unity/**/Library/
+game/unity/**/Temp/
+game/unity/**/Obj/
+game/unity/**/Logs/
+game/unity/**/UserSettings/
+game/unity/**/*.csproj
+game/unity/**/*.sln
+game/unity/**/*.user

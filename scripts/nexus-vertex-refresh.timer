@@ -1,0 +1,9 @@
+[Unit]
+Description=Renueva el token de Vertex cada 50 minutos
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=50min
+
+[Install]
+WantedBy=timers.target

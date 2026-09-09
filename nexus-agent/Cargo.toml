@@ -1,0 +1,32 @@
+# ============================================================================
+# NEXUS-AGENT — Motor agéntico soberano (100% código propio)
+# ----------------------------------------------------------------------------
+# Capa de orquestación agéntica multi-proveedor con instrucción maestra
+# inmutable, bucle de razonamiento-acción-observación y ejecutor en sandbox.
+# Nada de código de terceros: diseño e implementación originales.
+# ============================================================================
+
+[package]
+name = "nexus-agent"
+version = "0.1.0"
+edition = "2021"
+description = "Motor agéntico soberano de NEXUS: multi-proveedor, instrucción maestra inmutable, bucle ReAct con guardarraíl JSON y ejecutor Hermes en sandbox."
+license = "MIT"
+
+[dependencies]
+tokio = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+reqwest = { version = "0.11", features = ["json"] }
+async-trait = { workspace = true }
+anyhow = { workspace = true }
+tracing = { workspace = true }
+regex = { workspace = true }
+walkdir = { workspace = true }
+cron = "0.12"
+chrono = { workspace = true }
+
+[dev-dependencies]
+async-trait = { workspace = true }
+serde_json = { workspace = true }
+wiremock = "0.5"

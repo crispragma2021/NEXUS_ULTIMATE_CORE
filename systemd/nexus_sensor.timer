@@ -1,0 +1,10 @@
+[Unit]
+Description=Run NEXUS State Sensor every 5 minutes
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=5min
+Unit=nexus_sensor.service
+
+[Install]
+WantedBy=timers.target

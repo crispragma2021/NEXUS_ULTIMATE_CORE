@@ -1,0 +1,3 @@
+CONFIDENTIAL: Client Data Export - Project Chimera
+Contains sensitive client information. Access is restricted.
+Sample Entry: Client ID: C001, Name: John Doe, Email: john.doe@example.com, Honeytoken: ThisDataIsFake_Alert_789

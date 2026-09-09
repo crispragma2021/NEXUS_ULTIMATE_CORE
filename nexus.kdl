@@ -1,0 +1,23 @@
+layout {
+    pane size=1 borderless=true {
+        plugin location="zellij:tab-bar"
+    }
+    pane split_direction="vertical" {
+        pane name="ORQUESTADOR" {
+            command "bash"
+            args "-c" "cd /opt/NEXUS_ULTIMATE_CORE && ./target/release/nexus-orquestador"
+        }
+        pane split_direction="horizontal" {
+            pane name="LOGS" {
+                command "tail"
+                args "-f" "/opt/NEXUS_ULTIMATE_CORE/nexus-orquestador/nexus_server.log"
+            }
+            pane name="SHELL_SISTEMA" {
+                command "bash"
+            }
+        }
+    }
+    pane size=2 borderless=true {
+        plugin location="zellij:status-bar"
+    }
+}

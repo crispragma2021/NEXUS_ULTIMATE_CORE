@@ -1,0 +1,117 @@
+{
+  "name": "🕶️ Deep Web V2 — Retry Fallidos + Búsquedas",
+  "description": "Re-intento de sitios que fallaron + búsquedas en deep web",
+  "userDataDir": "/home/soberano/.nexus_profile",
+  "headless": false,
+  "proxy": "socks5://127.0.0.1:9050",
+  "useProxy": true,
+  "urlTimeout": 90000,
+  "urlWaitUntil": "domcontentloaded",
+
+  "phases": {
+    "searchEngines": false,
+    "portals": false,
+    "directURLs": true,
+    "warmup": ["tor", "browser"],
+    "cooldown": ["report"]
+  },
+
+  "engines": {
+    "browser": "chromium",
+    "google": false,
+    "duckduckgo": false,
+    "ai": "none"
+  },
+
+  "targets": {
+    "DuckDuckGo Onion (90s)": {
+      "description": "Buscador anónimo — timeout extendido",
+      "urls": {
+        "Portada": {
+          "url": "https://duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion/",
+          "timeout": 120000,
+          "scroll": false,
+          "waitUntil": "domcontentloaded"
+        }
+      }
+    },
+    "Ahmia Onion (SOCKS retry)": {
+      "description": "Buscador de onions — reintento",
+      "urls": {
+        "Portada": {
+          "url": "http://juhanurmihxlp77nkq76byazcldy2hlmovfu2epvl5ankdibsot4csyd.onion/",
+          "timeout": 90000,
+          "scroll": false,
+          "waitUntil": "domcontentloaded"
+        }
+      }
+    },
+    "The Intercept (Tor)": {
+      "description": "Periodismo de investigación vía Tor",
+      "urls": {
+        "Portada": {
+          "url": "https://theintercept.com/",
+          "timeout": 90000,
+          "scroll": true,
+          "waitUntil": "domcontentloaded"
+        }
+      }
+    },
+    "IntelX Buscar web": {
+      "description": "Búsqueda en IntelX — emails filtrados, brechas",
+      "urls": {
+        "Resultados NEXUS": {
+          "url": "https://intelx.io/?s=nexus+osint&category=ALL",
+          "timeout": 60000,
+          "scroll": true,
+          "waitUntil": "domcontentloaded"
+        },
+        "Resultados Paraguay": {
+          "url": "https://intelx.io/?s=paraguay+government&category=ALL",
+          "timeout": 60000,
+          "scroll": true,
+          "waitUntil": "domcontentloaded"
+        }
+      }
+    },
+    "CIA FOIA — Buscar Paraguay": {
+      "description": "Documentos desclasificados CIA sobre Paraguay",
+      "urls": {
+        "Buscar Paraguay": {
+          "url": "https://www.cia.gov/readingroom/search/site/paraguay",
+          "timeout": 60000,
+          "scroll": true,
+          "waitUntil": "networkidle0"
+        },
+        "Buscar Operacion Condor": {
+          "url": "https://www.cia.gov/readingroom/search/site/operation%20condor",
+          "timeout": 60000,
+          "scroll": true,
+          "waitUntil": "networkidle0"
+        }
+      }
+    },
+    "BBC News Onion — Buscar Paraguay": {
+      "description": "Noticias BBC sobre Paraguay vía Tor",
+      "urls": {
+        "Buscar Paraguay": {
+          "url": "https://www.bbcnewsd73hkzno2ini43t4gblxvycyac5aw4gnv7t2rccijh7745uqd.onion/search?q=paraguay",
+          "timeout": 60000,
+          "scroll": true,
+          "waitUntil": "domcontentloaded"
+        }
+      }
+    },
+    "Facebook Onion vía HTTPS": {
+      "description": "Facebook onion con protocolo correcto",
+      "urls": {
+        "Facebook Onion": {
+          "url": "https://www.facebook.com/",
+          "timeout": 45000,
+          "scroll": false,
+          "waitUntil": "domcontentloaded"
+        }
+      }
+    }
+  }
+}

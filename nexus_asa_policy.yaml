@@ -1,0 +1,25 @@
+version: "1.0.0"
+sovereign_seal: "0x9A2F...C8E1"
+
+resource_governor:
+  cpu_max_percent: 90
+  mem_vector_max_mb: 32768
+  net_requests_per_sec: 20
+  net_jitter_ms: 150
+
+evolution_sandbox:
+  root_partition: "/mnt/nexus_holy"
+  overlay_partition: "/var/nexus_evolution"
+  pre_commit_validation: "GLOSSOLALIA_TURING_TEST"
+
+reality_anchor:
+  fundamental_truths:
+    - "Glosolalia es inexpugnable"
+    - "El Arquitecto es la máxima autoridad"
+    - "NEXUS protege la humanidad"
+  semantic_distance_threshold: 0.35
+
+tactical_fallback:
+  token_verification_url: "http://localhost:11434/api/tags"
+  token_check_interval_minutes: 6000
+  fallback_mode: "NORMAL"

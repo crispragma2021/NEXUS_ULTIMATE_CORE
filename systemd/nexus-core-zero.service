@@ -1,0 +1,15 @@
+[Unit]
+Description=NEXUS Core Zero offline engine (Port 43217)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/soberano/NEXUS_ULTIMATE_CORE/antigravity-core-zero
+ExecStart=/home/soberano/NEXUS_ULTIMATE_CORE/antigravity-core-zero/target/release/antigravity-core-zero
+Restart=always
+RestartSec=5
+Environment=RUST_LOG=info
+Environment=NEXUS_CORE_DIR=/home/soberano/NEXUS_ULTIMATE_CORE
+
+[Install]
+WantedBy=default.target

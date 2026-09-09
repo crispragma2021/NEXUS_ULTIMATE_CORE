@@ -1,0 +1,29 @@
+[Unit]
+Description=📊 NEXUS Trading Terminal Frontend — Puerto 42220
+Documentation=https://github.com/nexus/sovereign
+After=network.target network-online.target nexus-tr.service
+Wants=network-online.target nexus-tr.service
+BindsTo=nexus-tr.service
+
+[Service]
+Type=simple
+User=soberano
+Group=soberano
+WorkingDirectory=/home/soberano/NEXUS_ULTIMATE_CORE/trading-portal/frontend
+
+ExecStartPre=/bin/bash -c "fuser -k 42220/tcp > /dev/null 2>&1; sleep 0.3; exit 0"
+ExecStart=/home/soberano/NEXUS_ULTIMATE_CORE/trading-portal/frontend/node_modules/.bin/vite preview --host 0.0.0.0 --port 42220 --strictPort
+
+Restart=on-failure
+RestartSec=5
+
+Environment="NODE_ENV=production"
+Nice=-5
+IOSchedulingClass=best-effort
+IOSchedulingPriority=2
+
+StandardOutput=append:/tmp/nexus-trading-frontend.log
+StandardError=append:/tmp/nexus-trading-frontend.log
+
+[Install]
+WantedBy=default.target

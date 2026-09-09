@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>NEXUS GHOST</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.7/ace.js" type="text/javascript" charset="utf-8"></script>
+</head>
+<body class="ghost-mode">
+    <!-- El Orbe Interactiva Principal -->
+    <div id="nexus-orb" class="orb active">
+        <img src="assets/logo.png" alt="NEXUS" class="orb-logo">
+        <div class="orb-glow"></div>
+    </div>
+
+    <!-- Panel de Chat / Consola Neuronal (Glassmorphism) -->
+    <div id="ghost-chat" class="chat-container hidden">
+        <div class="chat-header" data-tauri-drag-region>
+            <span class="header-title">🔱 GHOST CONSOLE</span>
+            <div class="header-actions">
+                <button id="toggle-editor-btn" title="Alternar Editor">📝</button>
+                <button id="close-chat" title="Minimizar">✕</button>
+            </div>
+        </div>
+        <div id="chat-messages" class="chat-messages">
+            <div class="msg system">NEXUS Ghost-Shell inicializado. Inferencia offline disponible.</div>
+        </div>
+        <div class="chat-input-area">
+            <input type="text" id="chat-input" placeholder="Comanda a NEXUS..." autocomplete="off">
+            <button id="send-btn">➔</button>
+        </div>
+    </div>
+
+    <!-- NEXUS IDE Container (Oculto por defecto, alternable desde el chat) -->
+    <div id="ghost-ide" class="ide-container hidden">
+        <div class="ide-sidebar">
+            <div class="sidebar-header" data-tauri-drag-region>EXPLORADOR</div>
+            <div id="file-tree" class="file-tree">
+                <div class="tree-item" data-path="BITACORA.md">BITACORA.md</div>
+                <div class="tree-item" data-path="core/src/main.rs">main.rs</div>
+                <div class="tree-item" data-path="nexus-ghost-shell/src/main.rs">ghost_core.rs</div>
+            </div>
+        </div>
+        
+        <div class="ide-main">
+            <div class="ide-tabs" data-tauri-drag-region>
+                <div class="tab active" id="current-filename">NEXUS_ULTIMATE.rs</div>
+                <div class="ide-actions">
+                    <button id="save-btn">GUARDAR</button>
+                    <button id="close-ide">CERRAR</button>
+                </div>
+            </div>
+            <div id="editor">/* 
+ * NEXUS SOBERANO IDE - INICIALIZADO 
+ * Modo Tradicional Activo.
+ */</div>
+        </div>
+    </div>
+
+    <script src="main.js"></script>
+</body>
+</html>
