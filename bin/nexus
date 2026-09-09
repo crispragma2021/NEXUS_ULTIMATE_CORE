@@ -1,33 +1,127 @@
 #!/usr/bin/env bash
+# NEXUS CLI — mismo script en Android/Termux y en PC.
+#
+# Regla: ninguna ruta dura. Todo se deriva de $PREFIX (Termux) o de $HOME (PC),
+# y puede sobreescribirse por variable de entorno.
 set -e
 
-CORE_DIR="$HOME/NEXUS_ULTIMATE_CORE"
-SOCKET="$HOME/.nexus_host.sock"
-DAEMON_BIN="$HOME/.local/bin/nexus_host_daemon"
+CORE_DIR="${NEXUS_CORE_DIR:-$HOME/NEXUS_ULTIMATE_CORE}"
+SOCKET="${NEXUS_SOCKET_PATH:-$HOME/.nexus_host.sock}"
 
-export RISH_APPLICATION_ID="com.termux"
-export LD_LIBRARY_PATH="/data/data/com.termux/files/usr/lib:$LD_LIBRARY_PATH"
+# En Termux $PREFIX apunta a .../files/usr; en un PC no existe y se usa $HOME.
+NEXUS_PREFIX="${PREFIX:-$HOME/.local}"
+DAEMON_BIN="${NEXUS_DAEMON_BIN:-$NEXUS_PREFIX/bin/nexus_host_daemon}"
 
-start_daemon_if_needed() {
-    if ! pgrep -f "nexus_host_daemon" > /dev/null; then
-        echo "[*] Iniciando Nexus Host Daemon de fondo..."
-        "$DAEMON_BIN" > /dev/null 2>&1 &
-        sleep 1
-    fi
+# Termux necesita la librería de su prefijo; en PC no se toca LD_LIBRARY_PATH.
+if [ -n "${PREFIX:-}" ]; then
+    export LD_LIBRARY_PATH="$PREFIX/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+    export RISH_APPLICATION_ID="${RISH_APPLICATION_ID:-com.termux}"
+fi
+
+# Python: en Termux es python; en muchos PC solo existe python3.
+if command -v python3 > /dev/null 2>&1; then
+    PY=python3
+elif command -v python > /dev/null 2>&1; then
+    PY=python
+else
+    echo "[!] No se encontró python3 ni python en el PATH."
+    exit 1
+fi
+
+export NEXUS_SOCKET_PATH="$SOCKET"
+
+daemon_binario_presente() {
+    [ -x "$DAEMON_BIN" ]
 }
 
-case "$1" in
+# Un daemon vivo se detecta por su socket, no por el nombre del proceso: el
+# nombre puede cambiar (rish, shizuku, systemd...) y el socket es lo que de
+# verdad necesita el CLI.
+socket_responde() {
+    [ -S "$SOCKET" ] || return 1
+    "$PY" - "$SOCKET" <<'PYEOF' > /dev/null 2>&1
+import socket
+import sys
+
+cliente = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+cliente.settimeout(3)
+try:
+    cliente.connect(sys.argv[1])
+except OSError:
+    sys.exit(1)
+finally:
+    cliente.close()
+PYEOF
+}
+
+start_daemon_if_needed() {
+    if socket_responde; then
+        return 0
+    fi
+    if pgrep -f "nexus_host_daemon" > /dev/null 2>&1; then
+        # Arrancando todavía: darle un instante para que abra el socket.
+        for _ in 1 2 3 4 5; do
+            socket_responde && return 0
+            sleep 1
+        done
+    fi
+    if ! daemon_binario_presente; then
+        echo "[!] No existe el daemon ejecutable en: $DAEMON_BIN"
+        echo "    Compílalo con: cargo build --release --manifest-path \"$CORE_DIR/daemon/Cargo.toml\""
+        echo "    Y cópialo a:  $DAEMON_BIN"
+        return 1
+    fi
+    echo "[*] Iniciando Nexus Host Daemon de fondo..."
+    "$DAEMON_BIN" > /dev/null 2>&1 &
+    sleep 1
+}
+
+# Llamada al daemon por socket Unix sin reescribir el cliente en cada comando.
+llamar_daemon() {
+    "$PY" - "$SOCKET" "$1" <<'PYEOF'
+import json
+import socket
+import sys
+
+ruta_socket, peticion = sys.argv[1], sys.argv[2]
+cliente = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+try:
+    cliente.connect(ruta_socket)
+    cliente.sendall((peticion + "\n").encode("utf-8"))
+    crudo = b""
+    while b"\n" not in crudo:
+        bloque = cliente.recv(8192)
+        if not bloque:
+            break
+        crudo += bloque
+finally:
+    cliente.close()
+
+if not crudo.strip():
+    print("Error: el daemon no respondió")
+    sys.exit(1)
+respuesta = json.loads(crudo.decode("utf-8"))
+print(respuesta.get("result", "Error"))
+sys.exit(0 if respuesta.get("ok") else 1)
+PYEOF
+}
+
+uso() {
+    echo "Comando Nexus CLI"
+    echo "Uso: nexus [daemon|screen|shot|tap|exec|agent|vision] [opciones]"
+}
+
+case "${1:-}" in
     daemon)
-        case "$2" in
+        case "${2:-}" in
             start)
-                start_daemon_if_needed
-                echo "[OK] Nexus Host Daemon corriendo."
+                start_daemon_if_needed && echo "[OK] Nexus Host Daemon corriendo."
                 ;;
             stop)
                 pkill -f "nexus_host_daemon" 2>/dev/null && echo "[OK] Daemon detenido." || echo "[!] No había daemon en ejecución."
                 ;;
             status)
-                if pgrep -f "nexus_host_daemon" > /dev/null; then
+                if pgrep -f "nexus_host_daemon" > /dev/null 2>&1; then
                     echo "[OK] Daemon activo (PID: $(pgrep -f 'nexus_host_daemon' | tr '\n' ' '))"
                 else
                     echo "[!] Daemon inactivo."
@@ -41,45 +135,22 @@ case "$1" in
 
     screen)
         start_daemon_if_needed
-        python3 -c "
-import socket, json
-s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-s.connect('$SOCKET')
-s.sendall(b'{\"action\":\"GetScreenSize\"}\n')
-res = json.loads(s.recv(1024).decode())
-print(res.get('result', 'Error'))
-s.close()
-"
+        llamar_daemon '{"action":"GetScreenSize"}'
         ;;
 
     shot)
         start_daemon_if_needed
-        python3 -c "
-import socket, json
-s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-s.connect('$SOCKET')
-s.sendall(b'{\"action\":\"Screenshot\"}\n')
-res = json.loads(s.recv(1024).decode())
-print('[OK] Captura guardada en:', res.get('result', 'Error'))
-s.close()
-"
+        RUTA=$(llamar_daemon '{"action":"Screenshot"}') || exit 1
+        echo "[OK] Captura guardada en: $RUTA"
         ;;
 
     tap)
-        if [ -z "$2" ] || [ -z "$3" ]; then
+        if [ -z "${2:-}" ] || [ -z "${3:-}" ]; then
             echo "Uso: nexus tap <X> <Y>"
             exit 1
         fi
         start_daemon_if_needed
-        python3 -c "
-import socket, json
-s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-s.connect('$SOCKET')
-s.sendall(b'{\"action\":\"Tap\",\"payload\":{\"x\":$2,\"y\":$3}}\n')
-res = json.loads(s.recv(1024).decode())
-print('[OK] Tap emitido:', res)
-s.close()
-"
+        llamar_daemon "{\"action\":\"Tap\",\"payload\":{\"x\":$2,\"y\":$3}}"
         ;;
 
     exec)
@@ -90,26 +161,53 @@ s.close()
             exit 1
         fi
         start_daemon_if_needed
-        python3 -c "
-import socket, json
-s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-s.connect('$SOCKET')
-payload = json.dumps({\"action\":\"Exec\",\"payload\":{\"command\": \"\"\"$CMD\"\"\"}})
-s.sendall(f'{payload}\n'.encode())
-res = json.loads(s.recv(4096).decode())
-print(res.get('result', 'Error'))
-s.close()
-"
+        # Se pasa el comando por argv, no interpolado en el JSON, para no romper
+        # el protocolo con comillas ni inyectar nada en el payload.
+        "$PY" - "$SOCKET" "$CMD" <<'PYEOF'
+import json
+import socket
+import sys
+
+ruta_socket, comando = sys.argv[1], sys.argv[2]
+peticion = json.dumps({"action": "Exec", "payload": {"command": comando}})
+cliente = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+try:
+    cliente.connect(ruta_socket)
+    cliente.sendall((peticion + "\n").encode("utf-8"))
+    crudo = b""
+    while b"\n" not in crudo:
+        bloque = cliente.recv(8192)
+        if not bloque:
+            break
+        crudo += bloque
+finally:
+    cliente.close()
+respuesta = json.loads(crudo.decode("utf-8"))
+print(respuesta.get("result", "Error"))
+sys.exit(0 if respuesta.get("ok") else 1)
+PYEOF
         ;;
 
     agent)
-        start_daemon_if_needed
         shift
-        python3 "$CORE_DIR/agents/nexus_core_agent.py" "$@"
+        "$PY" "$CORE_DIR/agents/nexus_core_agent.py" "$@"
+        ;;
+
+    vision)
+        shift
+        "$PY" "$CORE_DIR/agents/nexus_vision_agent.py" "$@"
+        ;;
+
+    doctor)
+        echo "[i] CORE_DIR   : $CORE_DIR"
+        echo "[i] SOCKET     : $SOCKET"
+        echo "[i] DAEMON_BIN : $DAEMON_BIN"
+        echo "[i] PREFIX     : ${PREFIX:-(no definido, entorno PC)}"
+        daemon_binario_presente && echo "[OK] Daemon ejecutable presente." || echo "[!] Daemon ejecutable AUSENTE."
+        "$PY" "$CORE_DIR/agents/nexus_doctor.py"
         ;;
 
     *)
-        echo "Comando Nexus CLI"
-        echo "Uso: nexus [daemon|screen|shot|tap|exec|agent] [opciones]"
+        uso
         ;;
 esac
