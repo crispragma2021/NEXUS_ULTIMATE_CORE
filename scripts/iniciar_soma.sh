@@ -23,7 +23,7 @@ BIN_NAME="nexus_soma_daemon"
 BIN_PATH="$PROJECT_DIR/.cargo-cache/release/$BIN_NAME"
 PID_FILE="/tmp/nexus_soma.pid"
 LOCK_FILE="/tmp/nexus_soma.lock"
-SOMA_FILE="/tmp/nexus_soma.json"
+SOMA_FILE="${TMPDIR:-$PREFIX/tmp}/nexus_soma.json"
 LOG_FILE="/tmp/nexus_soma.log"
 
 # Colores

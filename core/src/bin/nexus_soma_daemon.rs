@@ -25,7 +25,15 @@ use tokio::signal::unix::{signal, SignalKind};
 // ==========================================
 // CONSTANTES
 // ==========================================
-const SOMA_PATH: &str = "/tmp/nexus_soma.json";
+fn get_soma_path() -> std::path::PathBuf {
+    if let Ok(val) = std::env::var("TMPDIR") {
+        std::path::PathBuf::from(val).join("nexus_soma.json")
+    } else if let Ok(prefix) = std::env::var("PREFIX") {
+        std::path::PathBuf::from(prefix).join("tmp").join("nexus_soma.json")
+    } else {
+        std::path::PathBuf::from("/tmp/nexus_soma.json")
+    }
+}
 const SOMA_LOCK: &str = "/tmp/nexus_soma.lock";
 const INTERVAL_MS: u64 = 3_000; // 3 segundos — frecuencia del latido
 const PROC_CRITICOS: &[&str] = &["nexus-ui", "proxy_hijack", "code", "chrome"];
@@ -340,14 +348,14 @@ impl SomaDaemon {
         let payload = self.latido();
 
         // Escribir archivo atómicamente: primero a .tmp, luego rename
-        let tmp_path = format!("{}.tmp", SOMA_PATH);
+        let tmp_path = format!("{}.tmp", get_soma_path().display());
         let json_str = serde_json::to_string_pretty(&payload)?;
         fs::write(&tmp_path, &json_str)?;
-        fs::rename(&tmp_path, SOMA_PATH)?;
+        fs::rename(&tmp_path, get_soma_path())?;
 
         // También escribir una versión comprimida (una línea) para lectura rápida
         let one_line = serde_json::to_string(&payload)?;
-        fs::write("/tmp/nexus_soma.1line", &one_line)?;
+        let one_line_path = get_soma_path().with_extension("1line"); fs::write(&one_line_path, &one_line)?;
 
         Ok(())
     }
@@ -355,7 +363,7 @@ impl SomaDaemon {
     /// 🏃 Bucle principal
     async fn run(&mut self) {
         eprintln!("🧬 [SOMA DAEMON] Nervio sensorial periférico activado.");
-        eprintln!("   📍 Escribiendo en: {}", SOMA_PATH);
+        eprintln!("   📍 Escribiendo en: {}", get_soma_path().display());
         eprintln!("   ⏱️  Intervalo: {}ms", INTERVAL_MS);
 
         // Lock file
@@ -371,7 +379,7 @@ impl SomaDaemon {
         }
 
         eprintln!("🧬 [SOMA DAEMON] Apagado graceful. Eliminando archivos...");
-        let _ = fs::remove_file(SOMA_PATH);
+        let _ = fs::remove_file(get_soma_path());
         let _ = fs::remove_file(SOMA_LOCK);
         let _ = fs::remove_file("/tmp/nexus_soma.1line");
         eprintln!("🧬 [SOMA DAEMON] Archivos sensoriales limpiados. Goodbye.");
