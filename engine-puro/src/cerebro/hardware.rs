@@ -183,7 +183,7 @@ impl HardwareInfo {
 
             let path = std::ffi::CString::new(".").unwrap();
             let mut buf: StatVfs = unsafe { std::mem::zeroed() };
-            let ret = unsafe { statvfs(path.as_ptr(), &mut buf) };
+            let ret = unsafe { statvfs(path.as_ptr() as *const _, &mut buf) };
             if ret == 0 {
                 let espacio = (buf.f_bavail as usize).saturating_mul(buf.f_frsize as usize);
                 if espacio > 0 {

@@ -186,7 +186,7 @@ async fn handle_memoria_buscar(
         let rt = tokio::runtime::Handle::current();
         rt.block_on(async move {
             let cerebro = CerebroHandle::get(); // Acceder al Orquestador
-            cerebro.hippocampus.buscar_semantica(&query, limit) // Usar buscar_semantica
+            cerebro.hippocampus.buscar_semantica(&query, limit).await // Usar buscar_semantica
                 .unwrap_or_else(|e| {
                     error!("Error buscando en memoria semántica: {}", e);
                     Vec::new()

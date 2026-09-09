@@ -60,6 +60,14 @@ impl ArtificialHippocampus {
     }
 
     /// Recupera la experiencia más similar por similitud semántica.
+        pub async fn buscar_semantica(&self, consulta: &str, _limit: usize) -> anyhow::Result<Vec<(i64, String, f32)>> {
+        if let Some(mem) = self.recordar_similar(consulta).await {
+            Ok(vec![(1i64, mem, 1.0f32)])
+        } else {
+            Ok(Vec::new())
+        }
+    }
+
     pub async fn recordar_similar(&self, consulta: &str) -> Option<String> {
         debug!("🧠 Hippocampus: recuperando similar a: {consulta}");
         None

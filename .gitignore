@@ -331,3 +331,5 @@ game/unity/**/UserSettings/
 game/unity/**/*.csproj
 game/unity/**/*.sln
 game/unity/**/*.user
+
+**/gen/schemas/
