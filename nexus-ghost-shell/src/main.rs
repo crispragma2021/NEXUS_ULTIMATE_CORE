@@ -28,7 +28,9 @@ fn main() {
             let window = app.get_webview_window("main").unwrap();
 
             // Configuración OMEGA: Siempre encima y sin bordes
+            #[cfg(not(target_os = "android"))]
             let _ = window.set_always_on_top(true);
+            #[cfg(not(target_os = "android"))]
             let _ = window.set_decorations(false);
 
             println!("🛰️ GHOST-SHELL: Núcleo Rust inicializado.");
