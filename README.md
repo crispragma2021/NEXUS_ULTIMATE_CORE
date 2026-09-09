@@ -1,44 +1,129 @@
-# 🔱 NEXUS OMEGA
+# NEXUS_ULTIMATE_CORE
 
-NEXUS OMEGA es una plataforma de orquestación de modelos de lenguaje que soporta múltiples proveedores de IA a través de un sistema de cascada.
+Arquitectura central del ecosistema NEXUS.
 
-## Configuración
+El mismo código corre en **Android/Termux (aarch64)** y en **PC de escritorio**
+(Linux, macOS, Windows) sin ramas de código por plataforma: las diferencias se
+resuelven en tiempo de ejecución a partir del entorno.
 
-### Variables de Entorno
+## Estructura
 
-#### NEXUS_CASCADE_ORDER
+- `daemon/`: servicio host de bajo nivel en Rust (`nexus_host_daemon`), accesible
+  por socket Unix.
+- `agents/`: agentes cognitivos y orquestación.
+  - `nexus_core_agent.py` — orquestador principal con la herramienta `execute_cmd`.
+  - `nexus_coder.py` — genera comandos GDScript para Godot 4.
+  - `nexus_mcp_agent.py` — motor MCP que escribe archivos en el proyecto Godot.
+  - `nexus_vision_agent.py` — analiza una captura de pantalla con Gemini.
+  - `nexus_doctor.py` — diagnóstico de rutas, memoria y llaves.
+  - `nexo_*.py` — capas internas (transporte, visión, caché, shell, plataforma).
+- `bin/`: utilidades CLI (`nexus`, `nexusnet`).
+- `tests/`: suite de pytest.
 
-Lista ordenada de proveedores activos, separados por comas. Ejemplo:
+## Uso rápido
+
+```bash
+cp .env.example .env      # y rellena tus llaves
+nexus doctor              # comprueba rutas, memoria y llaves
+nexus agent "estado del repo"
+nexus vision "¿qué hay en pantalla?"
+nexusnet "pregunta suelta"
+```
+
+## Portabilidad de rutas
+
+No hay rutas duras a `/tmp` ni a `/sdcard`. Todo pasa por
+`nexo_plataforma.temp_root()` (Python) y `get_temp_root()` (Rust), que resuelven
+en este orden:
+
+| Entorno        | Resolución                                              |
+|----------------|---------------------------------------------------------|
+| Android/Termux | `$NEXUS_TMPDIR` → `$TMPDIR` → `$PREFIX/tmp` → `$HOME/tmp` |
+| PC Linux       | `$NEXUS_TMPDIR` → `$TMPDIR` → `/tmp` (como siempre)      |
+| PC macOS       | `$NEXUS_TMPDIR` → `$TMPDIR` → temporal del sistema       |
+| PC Windows     | `%TEMP%` → `%TMP%` → `%LOCALAPPDATA%\Temp`               |
+
+Android se detecta por `sys.platform` o por un `$PREFIX` de Termux. Si ningún
+candidato es escribible se degrada al temporal del sistema y por último al
+directorio de trabajo: **`temp_root()` nunca lanza**.
+
+## Fallback de modelos
+
+La capa de transporte (`agents/nexo_api.py`) recorre una cadena de modelos y el
+pool de llaves sin intervención manual:
 
 ```
-NEXUS_CASCADE_ORDER=gemini,deepseek,openrouter,groq,github,cerebras,ollama
+NEXUS_GEMINI_MODEL_CHAIN=gemini-3.8-flash,gemini-3.7-flash,gemini-3.5-flash
 ```
 
-Si no está configurada, el sistema usa el orden por defecto definido en `ORDEN_DEFAULT`.
+Clasificación del fallo, que decide **qué** se cambia:
 
-Los proveedores disponibles son:
-- **gemini**: modelos Gemini 3.8 Flash y 3.7 Flash
-- **deepseek**: modelo DeepSeek Chat
-- **openrouter**: modelo meta-llama/llama-3.3-70b-instruct
-- **groq**: modelo openai/gpt-oss-20b
-- **github**: modelo gpt-4.1-mini
+| Fallo                          | Acción                                            |
+|--------------------------------|---------------------------------------------------|
+| `503 UNAVAILABLE`, `500`, `504`| salto **inmediato** al siguiente modelo            |
+| `429 RESOURCE_EXHAUSTED`       | rota de llave (penalizada 30 s) y sigue en el modelo |
+| `400/401/403`                  | aborta la cadena: es configuración, no saturación  |
+| error de red                   | reintenta con backoff exponencial y jitter         |
 
-### ORDEN_DEFAULT
+El cuerpo JSON se serializa una sola vez y se reutiliza en todos los intentos,
+así que cambiar de modelo no vuelve a codificar el base64 de una imagen.
 
-El orden por defecto de proveedores es:
+## Pipeline multimodal
+
+`nexo_vision.build_payload_bytes()` escribe el base64 directamente en el buffer
+del payload mientras lee la captura en trozos de 48 KB: sin archivo temporal
+intermedio y sin un `str` gigante que después haya que `.encode()`.
+
+## Ajuste para poca RAM
+
+`nexo_plataforma.memory_profile()` mide la RAM disponible y ajusta el ciclo:
+
+| Perfil     | RAM libre  | Salida `execute_cmd` | Historial | `[Cache Audit]` |
+|------------|------------|----------------------|-----------|-----------------|
+| `normal`   | ≥ 1 GB     | 64 KB                | 8 turnos  | activo          |
+| `low`      | 448 MB–1 GB| 24 KB                | 4 turnos  | silenciado      |
+| `critical` | < 448 MB   | 8 KB                 | 2 turnos  | silenciado      |
+
+Forzable con `NEXUS_MEM_PROFILE`. El recorte de `execute_cmd` conserva cabeza y
+cola, que es donde suele estar el error real.
+
+## Cascada de proveedores
+
+El agente no depende de una sola API: recorre **proveedores distintos**, no
+llaves del mismo proveedor. Rotar llaves no suma cuota —Gemini limita por
+proyecto de Google Cloud y OpenRouter gobierna la capacidad globalmente—, así
+que la redundancia real está entre pools independientes.
 
 ```
-ORDEN_DEFAULT = ["gemini", "deepseek", "openrouter", "groq", "github", "cerebras", "ollama"]
+deepseek -> groq -> cerebras -> github -> openrouter -> gemini -> ollama
 ```
 
-## Uso
+Ante `429`, `402`, `5xx` o un fallo de red salta al siguiente y anota el
+presupuesto consumido en `~/.cache/nexus/`, respetando el `Retry-After` que
+devuelva el proveedor. Un proveedor agotado se enfría hasta la medianoche UTC y
+deja de recibir tráfico, así que no se queman peticiones en llamadas condenadas
+(OpenRouter descuenta del cupo diario incluso los intentos fallidos).
 
-El sistema selecciona proveedores en el orden especificado. Cuando un proveedor falla o no tiene modelos disponibles, pasa al siguiente en la cascada.
+Con **una sola llave** ya funciona; cada llave extra es un tanque de reserva.
+
+```bash
+nexus doctor          # cuánta cuota le queda hoy a cada proveedor
+```
+
+Sobrescribe el orden con `NEXUS_PROVIDERS=groq,openrouter,gemini` y el modelo de
+un proveedor con `NEXUS_<PROVEEDOR>_MODEL`.
+
+> **Google AI Studio:** activar la facturación en un proyecto que usaba el nivel
+> gratuito **elimina el nivel gratuito**. No lo hagas esperando ganar cuota.
 
 ## Tests
 
-Ejecutar las pruebas unitarias:
-
 ```bash
-pytest tests/test_cascada_proveedores.py -v
+pip install pytest
+python -m pytest tests/ -v                            # agentes
+cargo test --manifest-path daemon/Cargo.toml          # daemon
 ```
+
+CI en `.github/workflows/nexus_ci.yml`: Python en 3 OS × 3 versiones, tests del
+daemon en Rust, compilación aarch64 y una comprobación de rutas bajo un entorno
+Termux simulado.
