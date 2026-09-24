@@ -32,7 +32,8 @@ impl Propiocepcion {
     /// Devuelve la lista REAL de módulos .rs en src/
     pub fn listar_organos(&self) -> Vec<String> {
         let mut organos = Vec::new();
-        if let Ok(entradas) = fs::read_dir("C:/Users/crisp/NEXUS_ULTIMATE_CORE/core/src/cerebro") {
+        let cerebro_path = std::env::var("NEXUS_ROOT").unwrap_or_else(|_| ".".to_string()) + "/core/src/cerebro";
+        if let Ok(entradas) = fs::read_dir(&cerebro_path) {
             for e in entradas.flatten() {
                 let nombre = e.file_name().to_string_lossy().to_string();
                 if nombre.ends_with(".rs") && !nombre.contains("lib") && !nombre.contains("main") {
@@ -179,12 +180,12 @@ impl Propiocepcion {
             || std::env::var("ZENITH_KEY").is_ok()
             || std::env::var("VERTEX_TOKEN").is_ok();
 
-        // Verificación de Sincronización de LanceDB (Deep Memory)
-        let brain_path = "C:/Users/crisp/NEXUS_ULTIMATE_CORE/brain";
-        let core_src_path = "C:/Users/crisp/NEXUS_ULTIMATE_CORE/core/src";
+        let root_dir = std::env::var("NEXUS_ROOT").unwrap_or_else(|_| "/home/nexus/NEXUS_ULTIMATE_CORE".to_string());
+        let brain_path = format!("{}/brain", root_dir);
+        let core_src_path = format!("{}/core/src", root_dir);
 
-        let brain_metadata = fs::metadata(brain_path).ok();
-        let core_metadata = fs::metadata(core_src_path).ok();
+        let brain_metadata = fs::metadata(&brain_path).ok();
+        let core_metadata = fs::metadata(&core_src_path).ok();
 
         let brain_sync_status = if let (Some(bm), Some(cm)) = (brain_metadata, core_metadata) {
             if let (Ok(bt), Ok(ct)) = (bm.modified(), cm.modified()) {
@@ -200,7 +201,7 @@ impl Propiocepcion {
             "Not Found"
         };
 
-        let workshop = "C:/Users/crisp/NEXUS_ULTIMATE_CORE/workshop";
+        let workshop = format!("{}/workshop", root_dir);
         let kernel_exists = std::path::Path::new(&format!("{}/vmlinux", workshop)).exists();
         let rootfs_exists = std::path::Path::new(&format!("{}/rootfs.ext4", workshop)).exists();
         let socket_active = std::path::Path::new("/tmp/nexus_internal_os.sock").exists();
@@ -217,7 +218,7 @@ impl Propiocepcion {
         let ebpf_pulse = if ring_buffer_active { 1.0 } else { 0.0 };
 
         // Análisis de fragmentación del Vault en Legado
-        let _vault_path = "C:/Users/crisp/NEXUS_ULTIMATE_CORE/legado/vault";
+        let _vault_path = format!("{}/legado/vault", root_dir);
         let fragmentation_report =
             "Análisis omitido para preservar silencio de terminal".to_string();
 
@@ -256,7 +257,7 @@ impl Propiocepcion {
             },
             "lsm_shield": {
                 "active": true,
-                "path": "C:/Users/crisp/NEXUS_ULTIMATE_CORE",
+                "path": root_dir,
                 "integrity": "Sovereign",
                 "alerts_24h": alerts_count,
                 "recent_logs": lsm_logs
@@ -276,7 +277,8 @@ impl Propiocepcion {
 
     /// Devuelve información del sistema donde corre NEXUS
     pub fn donde_estoy(&self) -> String {
-        "Estoy corriendo en C:/Users/crisp/NEXUS_ULTIMATE_CORE. Mi binario principal es target/release/nexus-ultimate-core. Mi código está en core/src/. Mi identidad reside en la Constitución OMEGA.".to_string()
+        let root_dir = std::env::var("NEXUS_ROOT").unwrap_or_else(|_| "/home/nexus/NEXUS_ULTIMATE_CORE".to_string());
+        format!("Estoy corriendo en {}. Mi binario principal es target/release/nexus-ultimate-core. Mi código está en core/src/. Mi identidad reside en la Constitución OMEGA.", root_dir)
     }
 
     /// Genera el contexto de realidad para inyectar en el prompt

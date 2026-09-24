@@ -1,0 +1,15 @@
+{
+  "name": "nexus-pipeline",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Pipeline automatizado de ingeniería inversa de software impulsado por agentes",
+  "scripts": {
+    "dashboard": "node review_dashboard/server.js"
+  },
+  "dependencies": {
+    "@tanstack/match-sorter-utils": "^9.1.2",
+    "clsx": "^2.1.1",
+    "lucide": "^1.46.0",
+    "tailwind-merge": "^3.7.0"
+  }
+}

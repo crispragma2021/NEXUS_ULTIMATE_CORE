@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NEXUS TR — Trading Terminal · Sembrador</title>
+  <title>NEXUS TR — Trading Terminal</title>
   <link rel="stylesheet" href="/src/design-system.css" />
   <link rel="stylesheet" href="/src/style.css" />
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -380,10 +380,7 @@
       CVD: --
     </span>
 
-    <nav class="tab-nav">
-      <button class="tab-btn active" data-tab="trading">📊 Trading</button>
-      <button class="tab-btn" data-tab="identidades">🧬 Sembrador</button>
-    </nav>
+
 
     <button class="btn-mode simulated" id="btnTradingMode" title="Alternar entre cuenta simulada y real">
       💼 <span id="modeLabel">SIMULACIÓN</span>
@@ -795,49 +792,7 @@
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════════════════════════════════ -->
-<!-- TAB 2: SEMBRADOR (IDENTIDADES)                                        -->
-<!-- ══════════════════════════════════════════════════════════════════════ -->
-<div class="tab-content" id="tab-identidades">
-  <div class="identity-layout">
-    <!-- Panel de control -->
-    <div class="identity-controls">
-      <div class="panel-header">🧬 Sembrador OMEGA — Generador de Identidades</div>
-      <div class="control-row">
-        <select id="identityTypeSelect" class="identity-select">
-          <option value="temporal">⏳ Temporal (mail.tm)</option>
-          <option value="gmail">📧 Gmail (Chrome)</option>
-          <option value="proton">🔒 Proton Mail</option>
-          <option value="facebook">📘 Facebook</option>
-          <option value="twitter">🐦 Twitter / X</option>
-          <option value="sintetico">🧬 Sintético (local)</option>
-        </select>
-        <button class="btn-nexus" id="btnCreateIdentity">🌱 Sembrar</button>
-      </div>
-      <div class="stats-bar" id="identityStats">
-        <div class="stat-card"><div class="stat-value">—</div><div class="stat-label">Cargando...</div></div>
-      </div>
-    </div>
 
-    <!-- Grid: Lista + Detalle -->
-    <div class="identity-grid">
-      <div class="identity-list-panel">
-        <div class="panel-header">📋 Identidades <span id="identityCount">(0)</span></div>
-        <div class="identity-list" id="identityList">
-          <div class="empty-identities">
-            <div class="empty-icon">🧬</div>
-            <div>Ninguna identidad sembrada aún</div>
-            <div class="empty-hint">Usa "Sembrar" para generar tu primera identidad</div>
-          </div>
-        </div>
-      </div>
-      <div class="identity-detail-panel">
-        <div class="panel-header">📊 Reporte</div>
-        <pre class="identity-json" id="identityReport">{}</pre>
-      </div>
-    </div>
-  </div>
-</div>
 
 <!-- ═══ MODAL CONFIGURACIÓN BINANCE ═══ -->
 <div class="modal-overlay" id="binanceModal" style="display:none;">
@@ -871,10 +826,7 @@
     <span>📊</span>
     <span class="mob-nav-label">Trading</span>
   </button>
-  <button class="mob-nav-btn" id="mobTabSembrador" onclick="switchMobileTab('sembrador')">
-    <span>🧬</span>
-    <span class="mob-nav-label">Sembrar</span>
-  </button>
+
   <button class="mob-nav-btn" onclick="toggleAutoTrading()">
     <span>🤖</span>
     <span class="mob-nav-label">Auto</span>
@@ -882,7 +834,7 @@
 </div>
 
 <script type="module" src="/src/main.js"></script>
-<script type="module" src="/src/identidades.js"></script>
+
 <script>
   // NOTA: El cálculo de riesgo (Monto Max. Entry = Balance × Riesgo%) vive
   // en main.js → actualizarCalculoRiesgo(). Esta es la única fuente de verdad.
@@ -895,11 +847,10 @@
     if (tabName === 'trading') {
       document.getElementById('mobTabTrading').classList.add('active');
       document.getElementById('tab-trading').classList.add('active');
-    } else if (tabName === 'sembrador') {
-      document.getElementById('mobTabSembrador').classList.add('active');
-      document.getElementById('tab-identidades').classList.add('active');
     }
   };
 </script>
+<!-- ⚡ NEXUS UNIVERSAL LIVE EDITOR (Todos los Puertos) -->
+<script src="http://localhost:5180/nexus_live_editor.js"></script>
 </body>
 </html>

@@ -28,13 +28,24 @@ const REGEX_LINE_LIMIT: usize = 4096;
 /// Tiempo máximo de ejecución de un comando shell (segundos)
 const SHELL_TIMEOUT_SECS: u64 = 120;
 
-// ── HerramientasNativas ──────────────────────────────────────────────
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
+
+/// Registro de telemetría y salud para el Protocolo Autogenético de Herramientas (AGP).
+#[derive(Debug, Clone, Default)]
+pub struct Metricasherramienta {
+    pub success_count: u64,
+    pub failure_count: u64,
+    pub latencia_promedio_ms: u64,
+    pub estado_salud: String,
+}
 
 /// Punto de entrada soberano para todas las herramientas del sistema.
 /// Wrapper sobre AgenteEjecutor con funcionalidad extendida.
 pub struct HerramientasNativas {
     executor: AgenteEjecutor,
     workspace_root: PathBuf,
+    telemetria_agp: Arc<Mutex<HashMap<String, Metricasherramienta>>>,
 }
 
 impl HerramientasNativas {
@@ -44,6 +55,7 @@ impl HerramientasNativas {
         Self {
             executor,
             workspace_root,
+            telemetria_agp: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 
@@ -52,6 +64,7 @@ impl HerramientasNativas {
         Self {
             executor,
             workspace_root,
+            telemetria_agp: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 
@@ -131,6 +144,47 @@ impl HerramientasNativas {
             is_dir: meta.is_dir(),
         })
     }
+
+    /// Registrar telemetría y resultado de ejecución de una herramienta (Protocolo AGP).
+    pub fn registrar_telemetria_herramienta(&self, tool_name: &str, exito: bool, latencia_ms: u64) {
+        let mut map = self.telemetria_agp.lock().unwrap();
+        let metricas = map.entry(tool_name.to_string()).or_insert_with(|| Metricasherramienta {
+            success_count: 0,
+            failure_count: 0,
+            latencia_promedio_ms: latencia_ms,
+            estado_salud: "Optimo".to_string(),
+        });
+
+        if exito {
+            metricas.success_count += 1;
+        } else {
+            metricas.failure_count += 1;
+        }
+
+        let total = metricas.success_count + metricas.failure_count;
+        let tasa_exito = metricas.success_count as f32 / total as f32;
+
+        if tasa_exito < 0.5 {
+            metricas.estado_salud = "Degradado".to_string();
+        } else {
+            metricas.estado_salud = "Optimo".to_string();
+        }
+    }
+
+    /// Obtiene la tasa de éxito (0.0 a 1.0) para una herramienta registrada.
+    pub fn obtener_tasa_exito(&self, tool_name: &str) -> f32 {
+        let map = self.telemetria_agp.lock().unwrap();
+        if let Some(m) = map.get(tool_name) {
+            let total = m.success_count + m.failure_count;
+            if total == 0 {
+                1.0
+            } else {
+                m.success_count as f32 / total as f32
+            }
+        } else {
+            1.0
+        }
+    }
 }
 
 /// Metadatos de archivo.
@@ -170,5 +224,18 @@ mod tests {
         // Al menos debe listar algo en la raíz del workspace
         let entries = h.listar_directorio(".").unwrap();
         assert!(!entries.is_empty());
+    }
+
+    #[test]
+    fn test_agp_telemetria_herramientas() {
+        let claw = NexusClawPro::new_empty();
+        let h = HerramientasNativas::new(claw);
+
+        h.registrar_telemetria_herramienta("leer_archivo", true, 12);
+        h.registrar_telemetria_herramienta("leer_archivo", true, 15);
+        h.registrar_telemetria_herramienta("leer_archivo", false, 100);
+
+        let tasa = h.obtener_tasa_exito("leer_archivo");
+        assert!((tasa - 0.666).abs() < 0.05);
     }
 }

@@ -8,6 +8,19 @@ Este archivo es el **alma del proyecto**: aquí queda registro de cada hito, cad
 
 ---
 
+### 🛡️ Hito Consolidado: Despliegue de Ecosistema Multi-Servicio & Lienzo Interactivo (19-Sep-2026)
+
+- **Sincronización del Ecosistema 3-App**:
+  - NEXUS Studio UI (`:5173`), Autopublicador FB (`:5174`) y Nexus Engine 2D (`:5175`) desplegados simultáneamente en servidores Vite.
+- **Daemon Backend Rust PTY (`nexus-daemon`)**:
+  - Servidor Axum con WebSocket PTY activo en `127.0.0.1:43210`. Terminal integrada conectada en vivo.
+- **Lienzo de Capas / ERD Interactivo (`ReactFlow`)**:
+  - Corregida la mutación de estado en ReactFlow (`DEMO_NODES` / `DEMO_EDGES` aislados fuera del renderizado de `App.jsx`). Nodos y cables con arrastre 100% interactivo.
+- **Desinhibición de Modelos Pentesting (Hermes)**:
+  - Habilitados modelos sin restricción `nousresearch/hermes-3-llama-3.1-70b` y `abacusai/dracarys-llama-3.1-70b-instruct` en el catálogo estático y dinámico de Hermes CLI / GUI.
+
+---
+
 ### 🛡️ Hito Consolidado: Singularidad Operativa y Expansión OMEGA (09-Jun-2026)
 
 - **Singularidad Operativa Alcanzada**: Núcleo OMEGA al 100%. Capa Inmortal restaurada. Firecracker PID 49719. Sincronía total.

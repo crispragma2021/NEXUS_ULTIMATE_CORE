@@ -1,0 +1,2100 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NEXUS CORE · Control Engine & Reverse Engineering</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Mermaid.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            nexus: {
+              bg: '#080a0c',
+              card: '#0f1319',
+              cardHover: '#151b24',
+              border: '#1e2633',
+              accent: '#10b981',
+              cyan: '#06b6d4',
+              pink: '#ec4899',
+              amber: '#f59e0b'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    :root {
+      --brand-accent: #10b981;
+    }
+    body {
+      background-color: #080a0c;
+      color: #f4f4f5;
+      font-family: 'Inter', sans-serif;
+    }
+    
+    .nexus-grid {
+      background-size: 32px 32px;
+      background-image: 
+        linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+    }
+
+    .nexus-card {
+      background: #0f1319;
+      border: 1px solid #1e2633;
+      border-radius: 0.875rem;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      cursor: grab;
+      user-select: none;
+    }
+    .nexus-card:active {
+      cursor: grabbing;
+      border-color: #3b82f6;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
+    }
+    .nexus-card:hover {
+      border-color: #2e3a4e;
+      background: #131922;
+    }
+    .nexus-card.selected-card {
+      border-color: #10b981 !important;
+      box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.3) !important;
+    }
+    
+    .inline-editable {
+      outline: none;
+      border-radius: 0.25rem;
+      padding: 0.1rem 0.25rem;
+      transition: background 0.15s, box-shadow 0.15s;
+    }
+    .inline-editable:hover {
+      background: rgba(255, 255, 255, 0.06);
+    }
+    .inline-editable:focus {
+      background: rgba(16, 185, 129, 0.15);
+      box-shadow: 0 0 0 1px #10b981;
+      color: #ffffff;
+    }
+
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #1e2633; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #2e3a4e; }
+
+    .mermaid svg { max-width: 100% !important; height: auto !important; }
+
+    /* Responsive Frame Transition */
+    .viewport-container {
+      transition: max-width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+  </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden bg-zinc-950 text-zinc-100">
+
+  <!-- HEADER NAVBAR LOVABLE · MARCA EXCLUSIVA NEXUS CORE -->
+  <header class="h-14 border-b border-zinc-800/80 bg-zinc-950/90 backdrop-blur-md px-5 flex items-center justify-between z-20 flex-shrink-0">
+    
+    <!-- LOGO NEXUS & NOMBRE DE PROYECTO BLOOMING ICON STUDIO -->
+    <div class="flex items-center space-x-3">
+      <div class="flex items-center space-x-2">
+        <div class="w-7 h-7 rounded-lg bg-emerald-500 text-black font-extrabold flex items-center justify-center text-xs tracking-tighter shadow-md shadow-emerald-500/20">
+          N
+        </div>
+        <span class="font-bold text-sm tracking-tight text-white">NEXUS CORE</span>
+      </div>
+
+      <div class="h-4 w-px bg-zinc-800"></div>
+
+      <button onclick="toggleLeftNav()" title="Alternar panel lateral" class="p-1.5 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-white transition-all">
+        <i data-lucide="panel-left" class="w-4 h-4"></i>
+      </button>
+
+      <!-- DESPLEGABLE NOMBRE DE PROYECTO LOVABLE -->
+      <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-900 border border-zinc-800 text-xs font-semibold text-zinc-200 cursor-pointer hover:border-zinc-700 transition-all">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span>Blooming Icon Studio</span>
+        <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-zinc-400"></i>
+      </div>
+    </div>
+
+    <!-- CENTRO: PESTAÑAS VISTA + HERRAMIENTAS LOVABLE (Vista previa, Archivos, Código, Capas/ERD) -->
+    <div class="flex items-center space-x-3">
+      
+      <!-- PESTAÑAS DE NAVEGACIÓN PRINCIPAL DE LOVABLE -->
+      <div class="flex items-center bg-zinc-900 border border-zinc-800 rounded-lg p-0.5 text-xs font-medium text-zinc-400">
+        <button id="btnTabPreview" onclick="switchMainView('preview')" class="px-3 py-1.5 rounded-md bg-zinc-800 text-zinc-100 transition-all flex items-center gap-1.5 font-semibold">
+          <i data-lucide="globe" class="w-3.5 h-3.5 text-emerald-400"></i> Vista previa
+        </button>
+        <button id="btnTabFiles" onclick="switchMainView('files')" class="px-3 py-1.5 rounded-md hover:text-zinc-200 transition-all flex items-center gap-1.5">
+          <i data-lucide="file-text" class="w-3.5 h-3.5 text-zinc-400"></i> Archivos
+        </button>
+        <button id="btnTabCode" onclick="switchMainView('code')" class="px-3 py-1.5 rounded-md hover:text-zinc-200 transition-all flex items-center gap-1.5">
+          <i data-lucide="code" class="w-3.5 h-3.5 text-cyan-400"></i> Código
+        </button>
+        <button id="btnTabERD" onclick="switchMainView('erd')" class="px-3 py-1.5 rounded-md hover:text-zinc-200 transition-all flex items-center gap-1.5">
+          <i data-lucide="layers" class="w-3.5 h-3.5 text-amber-400"></i> Capas / ERD
+        </button>
+      </div>
+
+      <div class="h-4 w-px bg-zinc-800"></div>
+
+      <!-- DISPOSITIVOS RESPONSIVE Y REFRESH -->
+      <div class="flex items-center bg-zinc-900 border border-zinc-800 rounded-lg p-0.5 text-xs text-zinc-400">
+        <button id="vpDesktop" onclick="setViewport('desktop')" class="px-2 py-1 rounded-md bg-zinc-800 text-zinc-100 transition-all" title="Desktop View">
+          <i data-lucide="monitor" class="w-3.5 h-3.5"></i>
+        </button>
+        <button id="vpMobile" onclick="setViewport('mobile')" class="px-2 py-1 rounded-md hover:text-zinc-200 transition-all" title="Mobile View">
+          <i data-lucide="smartphone" class="w-3.5 h-3.5"></i>
+        </button>
+        <button onclick="loadPipelineArtifacts(); showToast('Recargado', 'info');" class="px-2 py-1 rounded-md hover:text-zinc-200 transition-all" title="Recargar vista">
+          <i data-lucide="rotate-cw" class="w-3.5 h-3.5 text-zinc-400"></i>
+        </button>
+      </div>
+
+      <!-- SELECTOR DE PÁGINAS DE LOVABLE -->
+      <div class="flex items-center gap-1 bg-zinc-900 border border-zinc-800 rounded-lg px-2.5 py-1 text-xs text-zinc-300 cursor-pointer hover:border-zinc-700">
+        <span>Página de Inicio</span>
+        <i data-lucide="chevron-down" class="w-3 h-3 text-zinc-500"></i>
+        <a href="http://localhost:5180" target="_blank" onclick="event.stopPropagation()" class="ml-1 text-zinc-500 hover:text-zinc-200" title="Abrir en ventana nueva">
+          <i data-lucide="external-link" class="w-3 h-3"></i>
+        </a>
+      </div>
+    </div>
+
+    <!-- DERECHA: BOTONES COMPARTIR Y PUBLICAR -->
+    <div class="flex items-center space-x-2">
+      
+      <!-- BOTÓN COMPARTIR -->
+      <button onclick="copyProjectShareLink()" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-white flex items-center gap-1.5 transition-all">
+        <i data-lucide="share-2" class="w-3.5 h-3.5 text-cyan-400"></i> Compartir
+      </button>
+
+      <!-- BOTÓN PUBLICAR LOVABLE (AZUL VIBRANTE) -->
+      <button onclick="openPublishModal()" class="px-4 py-1.5 text-xs font-bold rounded-lg bg-blue-600 hover:bg-blue-500 text-white active:scale-95 transition-all flex items-center gap-1.5 shadow-lg shadow-blue-600/30">
+        <i data-lucide="rocket" class="w-3.5 h-3.5 text-white"></i> Publicar
+      </button>
+
+    </div>
+  </header>
+
+  <!-- CONTENEDOR PRINCIPAL ESTILO LOVABLE -->
+  <div class="flex-grow flex overflow-hidden relative">
+
+    <!-- BARRA NAVEGACIÓN LATERAL IZQUIERDA (EXTREMA IZQUIERDA - ESTILO LOVABLE FOTO 1 Y 2) -->
+    <aside id="lovableLeftNav" class="w-56 border-r border-zinc-800/80 bg-zinc-950 flex flex-col justify-between p-3 z-40 transition-all flex-shrink-0 text-xs select-none">
+      <div class="space-y-4">
+        
+        <!-- SELECTOR DE CUENTA CRISHTIAN'S LOVABLE -->
+        <div class="flex items-center justify-between p-2 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-200 font-bold cursor-pointer hover:border-zinc-700 transition-all">
+          <div class="flex items-center gap-2">
+            <div class="w-6 h-6 rounded-full bg-orange-500 text-white font-extrabold flex items-center justify-center text-[10px]">C</div>
+            <span class="truncate">Cristhian's Lovable</span>
+          </div>
+          <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-zinc-400"></i>
+        </div>
+
+        <!-- MENÚ DE NAVEGACIÓN PRINCIPAL -->
+        <div class="space-y-1 text-zinc-400 font-medium">
+          <div onclick="switchHubView('home')" id="navItemPanel" class="p-2 rounded-xl hover:bg-zinc-900 hover:text-white cursor-pointer flex items-center gap-2.5 transition-all">
+            <i data-lucide="layout-grid" class="w-4 h-4 text-emerald-400"></i> Panel
+          </div>
+          <div onclick="showToast('🔍 Búsqueda global activa', 'info')" class="p-2 rounded-xl hover:bg-zinc-900 hover:text-white cursor-pointer flex items-center gap-2.5 transition-all">
+            <i data-lucide="search" class="w-4 h-4"></i> Buscar
+          </div>
+          <div onclick="switchMainView('erd')" class="p-2 rounded-xl hover:bg-zinc-900 hover:text-white cursor-pointer flex items-center gap-2.5 transition-all">
+            <i data-lucide="link" class="w-4 h-4 text-cyan-400"></i> Conectores
+          </div>
+          <div onclick="switchHubView('home')" class="p-2 rounded-xl hover:bg-zinc-900 hover:text-white cursor-pointer flex items-center gap-2.5 transition-all">
+            <i data-lucide="box" class="w-4 h-4"></i> Todos los proyectos
+          </div>
+          <div onclick="switchHubView('home')" class="p-2 rounded-xl hover:bg-zinc-900 hover:text-white cursor-pointer flex items-center gap-2.5 transition-all">
+            <i data-lucide="user" class="w-4 h-4"></i> Mis proyectos
+          </div>
+          <div onclick="switchHubView('home')" class="p-2 rounded-xl hover:bg-zinc-900 hover:text-white cursor-pointer flex items-center gap-2.5 transition-all">
+            <i data-lucide="users" class="w-4 h-4"></i> Proyectos compartidos
+          </div>
+        </div>
+
+        <!-- SECCIÓN RECIENTES -->
+        <div class="pt-3 border-t border-zinc-800/80 space-y-1">
+          <div class="text-[10px] uppercase tracking-wider font-semibold text-zinc-500 px-2">Recientes</div>
+          <div onclick="switchHubView('workspace')" class="p-2 rounded-xl bg-zinc-900 text-white font-bold cursor-pointer flex items-center justify-between transition-all">
+            <span class="truncate">Blooming Icon Studio</span>
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+          </div>
+          <div onclick="showToast('Abriendo Nexus Engine...', 'info')" class="p-2 rounded-xl hover:bg-zinc-900 hover:text-white cursor-pointer flex items-center gap-2 text-zinc-400 transition-all">
+            <span class="truncate">Nexus Engine</span>
+          </div>
+          <div onclick="switchHubView('home')" class="p-2 rounded-xl hover:bg-zinc-900 hover:text-white cursor-pointer flex items-center gap-2 text-zinc-400 transition-all">
+            <span class="truncate">Todos los proyectos</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- BOTTOM CARD REGALO LOVABLE -->
+      <div class="p-3 rounded-2xl bg-zinc-900 border border-zinc-800 space-y-1 shadow-lg">
+        <div class="font-bold text-white text-[11px] flex items-center justify-between">
+          <span>Compartir Lovable</span>
+          <i data-lucide="gift" class="w-3.5 h-3.5 text-pink-400"></i>
+        </div>
+        <div class="text-[10px] text-zinc-400 leading-snug">
+          100 créditos por cada referido...
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- COLUMNA IZQUIERDA: CHAT ASISTENTE MARCA NEXUS Y ENTRADA DE PROMPT INFERIOR (ANCHO 420px) -->
+    <aside id="nexusChatSidebar" class="w-[420px] border-r border-zinc-800/80 bg-zinc-950 flex flex-col justify-between z-30 transition-all shadow-2xl flex-shrink-0">
+      
+      <div class="px-4 py-3 border-b border-zinc-800/80 flex items-center justify-between bg-zinc-900/40">
+        <div class="flex items-center gap-2">
+          <div class="w-5 h-5 rounded bg-emerald-500 text-black flex items-center justify-center font-bold text-[10px]">
+            N
+          </div>
+          <span class="text-xs font-bold text-zinc-200">Blooming Icon Studio · NEXUS Assistant</span>
+        </div>
+        <button onclick="clearChatHistory()" title="Limpiar historial" class="text-zinc-500 hover:text-zinc-300 transition-colors">
+          <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+        </button>
+      </div>
+
+      <!-- SELECTOR DE APIS Y MODELOS EN CASCADA -->
+      <div class="px-3 py-2 border-b border-zinc-800/60 bg-zinc-950 flex items-center justify-between gap-2">
+        <div class="flex items-center gap-1.5 text-zinc-400 font-mono text-[11px]">
+          <i data-lucide="cpu" class="w-3.5 h-3.5 text-emerald-400"></i>
+          <span>Modelo / API:</span>
+        </div>
+        <select id="apiModelCascade" onchange="switchApiModel(this.value)" class="bg-zinc-900 border border-zinc-800 rounded px-2 py-1 text-[11px] text-emerald-400 font-mono focus:outline-none focus:border-emerald-500 cursor-pointer">
+          <option value="openrouter_70b">⚡ OpenRouter 70B (Default)</option>
+          <option value="claude_35_sonnet">🧠 Claude 3.5 Sonnet</option>
+          <option value="gpt4o">🤖 OpenAI GPT-4o</option>
+          <option value="deepseek_r1">🚀 DeepSeek R1 (Razonamiento)</option>
+          <option value="llama_33">🦙 Llama 3.3 70B</option>
+        </select>
+      </div>
+
+      <!-- HISTORIAL DE CHAT DETALLADO ESTILO LOVABLE -->
+      <div class="flex-grow p-4 space-y-4 overflow-y-auto text-xs" id="chatHistory">
+        <!-- PROMPT INICIAL -->
+        <div class="flex justify-end">
+          <div class="bg-zinc-800 border border-zinc-700/80 rounded-2xl px-4 py-2 text-zinc-100 text-xs shadow-md">
+            crea un icono de una flor
+          </div>
+        </div>
+
+        <!-- TARJETA DETALLADA DE RESPUESTA LOVABLE -->
+        <div class="space-y-3">
+          <div class="p-4 rounded-2xl bg-zinc-900/90 border border-zinc-800/80 space-y-3 shadow-xl">
+            <div class="flex items-center justify-between text-xs font-semibold text-zinc-300 pb-2 border-b border-zinc-800/60">
+              <span class="flex items-center gap-1.5 text-emerald-400">
+                <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Generated Image
+              </span>
+              <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-zinc-500"></i>
+            </div>
+
+            <div class="text-xs text-zinc-200 leading-relaxed">
+              ¡Listo! Creé el icono de una flor con pétalos en rosa y naranja, centro amarillo y hoja verde, en estilo plano y con fondo transparente. Lo guardé en tus archivos como <code class="bg-zinc-800 px-1.5 py-0.5 rounded text-emerald-400 font-mono text-[11px]">icono-flor.png</code>.
+            </div>
+
+            <div class="flex items-center gap-2 pt-1 text-zinc-500 text-xs">
+              <button title="Me gusta" class="hover:text-emerald-400 transition-colors"><i data-lucide="thumbs-up" class="w-3.5 h-3.5"></i></button>
+              <button title="No me gusta" class="hover:text-red-400 transition-colors"><i data-lucide="thumbs-down" class="w-3.5 h-3.5"></i></button>
+              <button title="Copiar" class="hover:text-zinc-300 transition-colors" onclick="showToast('Copiaste la respuesta', 'info')"><i data-lucide="copy" class="w-3.5 h-3.5"></i></button>
+            </div>
+          </div>
+
+          <!-- BOTONES / PILLS DE SUGERENCIA Y ACCIONES RÁPIDAS -->
+          <div class="flex flex-wrap gap-1.5 pt-1">
+            <button onclick="sendPillPrompt('Descarga en SVG')" class="px-3 py-1 rounded-full bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-[11px] text-zinc-300 hover:text-white transition-all font-medium">
+              Descarga en SVG
+            </button>
+            <button onclick="sendPillPrompt('Crea versión monocromo')" class="px-3 py-1 rounded-full bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-[11px] text-zinc-300 hover:text-white transition-all font-medium">
+              Crea versión monocromo
+            </button>
+            <button onclick="sendPillPrompt('Genera variantes de color')" class="px-3 py-1 rounded-full bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-[11px] text-zinc-300 hover:text-white transition-all font-medium">
+              Genera variantes de color
+            </button>
+            <button onclick="sendPillPrompt('Exporta en tamaños')" class="px-3 py-1 rounded-full bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-[11px] text-zinc-300 hover:text-white transition-all font-medium">
+              Exporta en tamaños
+            </button>
+            <button onclick="sendPillPrompt('Agrega menú')" class="px-3 py-1 rounded-full bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-[11px] text-zinc-300 hover:text-white transition-all font-medium">
+              Agrega menú
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ENTRADA DE CHAT ESTILO LOVABLE FIJA ABAJO -->
+      <div class="p-3 border-t border-zinc-800/80 bg-zinc-950 relative">
+        <div class="relative bg-zinc-900/90 border border-zinc-700/80 rounded-2xl p-3 shadow-xl focus-within:border-emerald-500/80 transition-all">
+          
+          <!-- TEXTAREA DE PROMPT -->
+          <textarea id="promptInput" rows="2" placeholder="Pregúntale a Lovable..." class="w-full bg-transparent text-xs text-zinc-100 placeholder-zinc-400 focus:outline-none resize-none font-sans leading-relaxed" onkeydown="handleKeyDown(event)"></textarea>
+          
+          <!-- FILA INFERIOR DE ACCIONES LOVABLE -->
+          <div class="flex items-center justify-between pt-2 mt-1 border-t border-zinc-800/50">
+            
+            <!-- IZQUIERDA: BOTÓN MÁS (+) Y POPUP MENÚ LOVABLE -->
+            <div class="relative">
+              <button id="lovablePlusBtn" onclick="toggleLovableMenu(event)" class="w-7 h-7 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white flex items-center justify-center transition-all text-sm font-bold">
+                <span id="lovablePlusIcon">+</span>
+              </button>
+
+              <!-- POPUP MENÚ ADJUNTAR / DISEÑO / CONECTORES / BASES DE DATOS -->
+              <div id="lovableMenuPopup" class="absolute bottom-9 left-0 w-56 bg-zinc-900 border border-zinc-700/80 rounded-xl shadow-2xl p-2 hidden z-50 text-xs space-y-1 backdrop-blur-md">
+                <div class="relative mb-1">
+                  <i data-lucide="search" class="w-3.5 h-3.5 text-zinc-400 absolute left-2.5 top-2"></i>
+                  <input type="text" placeholder="Search..." class="w-full pl-8 pr-2 py-1.5 bg-zinc-950 border border-zinc-800 rounded-lg text-[11px] text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-emerald-500" />
+                </div>
+
+                <label class="p-2 rounded-lg hover:bg-zinc-800 text-zinc-200 cursor-pointer flex items-center gap-2 transition-all">
+                  <i data-lucide="paperclip" class="w-4 h-4 text-emerald-400"></i>
+                  <span class="font-medium">Adjuntar</span>
+                  <input type="file" accept="image/*" class="hidden" onchange="handleFileInputUpload(event); toggleLovableMenu();" />
+                </label>
+
+                <div onclick="showToast('🎨 Generador de Diseño Activo', 'info'); toggleLovableMenu();" class="p-2 rounded-lg hover:bg-zinc-800 text-zinc-200 cursor-pointer flex items-center justify-between transition-all">
+                  <div class="flex items-center gap-2">
+                    <i data-lucide="palette" class="w-4 h-4 text-purple-400"></i>
+                    <span class="font-medium">Diseño</span>
+                  </div>
+                  <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-zinc-500"></i>
+                </div>
+
+                <div onclick="showToast('🔗 Conectores Backend Axum Activos', 'info'); toggleLovableMenu();" class="p-2 rounded-lg hover:bg-zinc-800 text-zinc-200 cursor-pointer flex items-center justify-between transition-all">
+                  <div class="flex items-center gap-2">
+                    <i data-lucide="link-2" class="w-4 h-4 text-cyan-400"></i>
+                    <span class="font-medium">Conectores</span>
+                  </div>
+                  <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-zinc-500"></i>
+                </div>
+
+                <div onclick="showToast('🗄️ Modelo PostgreSQL Activo', 'info'); toggleLovableMenu();" class="p-2 rounded-lg hover:bg-zinc-800 text-zinc-200 cursor-pointer flex items-center justify-between transition-all">
+                  <div class="flex items-center gap-2">
+                    <i data-lucide="database" class="w-4 h-4 text-amber-400"></i>
+                    <span class="font-medium">Bases de datos</span>
+                  </div>
+                  <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-zinc-500"></i>
+                </div>
+              </div>
+            </div>
+
+            <!-- DERECHA: MODO CREAR/PLAN Y MICRÓFONO -->
+            <div class="flex items-center space-x-2">
+              
+              <!-- SELECTOR MODO CREAR / PLAN LOVABLE -->
+              <div class="relative">
+                <button onclick="toggleLovableModePopup(event)" class="px-2.5 py-1 rounded-lg bg-zinc-800/80 hover:bg-zinc-700/80 text-zinc-200 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition-all">
+                  <span id="currentLovableModeText">Crear</span>
+                  <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-zinc-400"></i>
+                </button>
+
+                <!-- POPUP CREAR / PLAN LOVABLE -->
+                <div id="lovableModePopup" class="absolute bottom-9 right-0 w-60 bg-zinc-900 border border-zinc-700/80 rounded-xl shadow-2xl p-2 hidden z-50 text-xs space-y-1 backdrop-blur-md">
+                  <div onclick="selectLovableMode('Crear')" class="p-2.5 rounded-lg hover:bg-zinc-800 cursor-pointer flex items-start justify-between transition-all group">
+                    <div>
+                      <div class="font-bold text-white flex items-center gap-1.5">Crear</div>
+                      <div class="text-[10px] text-zinc-400">Haz cambios directamente</div>
+                    </div>
+                    <i id="checkIconCrear" data-lucide="check" class="w-4 h-4 text-emerald-400"></i>
+                  </div>
+
+                  <div onclick="selectLovableMode('Plan')" class="p-2.5 rounded-lg hover:bg-zinc-800 cursor-pointer flex items-start justify-between transition-all group">
+                    <div>
+                      <div class="font-bold text-white flex items-center gap-1.5">Plan</div>
+                      <div class="text-[10px] text-zinc-400">Conversa antes de crear</div>
+                    </div>
+                    <i id="checkIconPlan" data-lucide="check" class="w-4 h-4 text-emerald-400 hidden"></i>
+                  </div>
+
+                  <div class="pt-2 border-t border-zinc-800/80 flex items-center justify-between text-[10px] text-zinc-500 px-1 font-mono">
+                    <span>Cambiar de modo con</span>
+                    <span class="bg-zinc-800 px-1.5 py-0.5 rounded text-zinc-300 font-bold">Alt P</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- BOTÓN MICRÓFONO SPEECH-TO-TEXT -->
+              <button onclick="toggleVoiceDictation()" id="voiceDictationBtn" title="Dictado por Voz" class="w-7 h-7 rounded-full bg-zinc-800/80 hover:bg-zinc-700 text-zinc-300 hover:text-white flex items-center justify-center transition-all">
+                <i data-lucide="mic" class="w-3.5 h-3.5 text-zinc-300"></i>
+              </button>
+
+              <!-- BOTÓN ENVIAR PROMPT -->
+              <button onclick="sendRefinementPrompt()" title="Enviar prompt" class="w-7 h-7 rounded-full bg-emerald-500 text-black hover:bg-emerald-400 flex items-center justify-center font-bold transition-all shadow-md shadow-emerald-500/20 active:scale-95">
+                <i data-lucide="arrow-up-right" class="w-4 h-4 text-black"></i>
+              </button>
+
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- COLUMNA DERECHA: CANVAS PRINCIPAL Y VISUALIZADOR DE ARCHIVOS/CÓDIGO -->
+    <main class="flex-grow flex flex-col items-center justify-start overflow-hidden relative bg-zinc-950 nexus-grid p-6">
+
+      <!-- MARCO RESPONSIVE CONTENEDOR -->
+      <div id="viewportFrame" class="viewport-container w-full max-w-6xl flex-grow overflow-y-auto rounded-2xl border border-zinc-800/80 bg-zinc-950/60 p-6 shadow-2xl">
+        
+        <!-- VISTA HOME HUB LOVABLE (REPLICA EXACTA FOTO 1) -->
+        <div id="viewHomeHub" class="hidden flex-col items-center justify-between min-h-full space-y-10 py-8 px-6 rounded-2xl bg-gradient-to-br from-indigo-950 via-purple-950 to-pink-950 border border-zinc-800 shadow-2xl relative overflow-hidden">
+          
+          <!-- LUZ GLOW DE FONDO -->
+          <div class="absolute -top-32 left-1/2 -translate-x-1/2 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl pointer-events-none"></div>
+          <div class="absolute -bottom-32 left-1/3 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl pointer-events-none"></div>
+
+          <!-- TOP BADGE CONECTOR HERRAMIENTAS -->
+          <div onclick="showToast('🔗 Conectando herramientas externas...', 'info')" class="z-10 inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-zinc-900/80 border border-zinc-700/80 text-xs font-semibold text-zinc-200 hover:border-zinc-500 cursor-pointer transition-all backdrop-blur-md shadow-lg">
+            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-cyan-400"></span><span class="w-2 h-2 rounded-full bg-pink-400"></span></span>
+            <span>Conecta todas tus herramientas</span>
+            <i data-lucide="arrow-right" class="w-3.5 h-3.5 text-zinc-400"></i>
+          </div>
+
+          <!-- HERO HEADER LOVABLE -->
+          <div class="z-10 text-center space-y-6 max-w-2xl w-full">
+            <h1 class="text-3xl md:text-4xl font-extrabold text-white tracking-tight">
+              ¿Cuál es tu visión, Cristhian?
+            </h1>
+
+            <!-- CÁPSULA PROMPT PRINCIPAL DE LOVABLE (FOTO 1) -->
+            <div class="bg-zinc-900/90 border border-zinc-700/80 rounded-2xl p-4 shadow-2xl backdrop-blur-xl focus-within:border-emerald-500/80 transition-all text-left">
+              <textarea id="homeHubPromptInput" rows="2" placeholder="Pídele a Lovable que ha..." class="w-full bg-transparent text-xs text-zinc-100 placeholder-zinc-400 focus:outline-none resize-none font-sans leading-relaxed" onkeydown="handleHomeHubKeyDown(event)"></textarea>
+              <div class="flex items-center justify-between pt-2 border-t border-zinc-800/60 mt-1">
+                <button onclick="toggleLovableMenu(event)" class="w-7 h-7 rounded-full bg-zinc-800 text-zinc-300 hover:text-white flex items-center justify-center text-sm font-bold">+</button>
+                <div class="flex items-center gap-2">
+                  <span class="px-2.5 py-1 rounded-lg bg-zinc-800 text-zinc-200 text-xs font-semibold flex items-center gap-1">Crear <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-zinc-400"></i></span>
+                  <button onclick="toggleVoiceDictation()" class="w-7 h-7 rounded-full bg-zinc-800 text-zinc-300 hover:text-white flex items-center justify-center"><i data-lucide="mic" class="w-3.5 h-3.5"></i></button>
+                  <button onclick="submitHomeHubPrompt()" class="w-7 h-7 rounded-full bg-emerald-500 text-black hover:bg-emerald-400 flex items-center justify-center font-bold shadow-md shadow-emerald-500/20"><i data-lucide="arrow-up-right" class="w-4 h-4"></i></button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SECCIÓN PROYECTOS INFERIOR -->
+          <div class="z-10 w-full max-w-4xl bg-zinc-950/80 border border-zinc-800/80 rounded-2xl p-5 shadow-2xl backdrop-blur-md space-y-4">
+            <div class="flex items-center justify-between pb-3 border-b border-zinc-800/80 text-xs">
+              <div class="flex items-center gap-2">
+                <button class="px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-300 font-medium flex items-center gap-1.5"><i data-lucide="search" class="w-3.5 h-3.5"></i> Buscar</button>
+                <button class="px-3 py-1.5 rounded-lg bg-zinc-800 text-white font-bold border border-zinc-700">Mis proyectos</button>
+                <button class="px-3 py-1.5 rounded-lg hover:bg-zinc-900 text-zinc-400">Vistos recientemente</button>
+                <button class="px-3 py-1.5 rounded-lg hover:bg-zinc-900 text-zinc-400">Plantillas de Lovable</button>
+              </div>
+              <button onclick="showToast('Explorando todos los proyectos...', 'info')" class="text-zinc-400 hover:text-white flex items-center gap-1 font-semibold">Explorar todo →</button>
+            </div>
+
+            <!-- TARJETAS DE PROYECTOS DE LOVABLE -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              
+              <!-- CARD 1: BLOOMING ICON STUDIO -->
+              <div onclick="switchHubView('workspace')" class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 flex flex-col justify-between h-40 hover:border-emerald-500/50 cursor-pointer transition-all group">
+                <div class="w-full h-20 bg-zinc-950 rounded-lg flex items-center justify-center border border-zinc-800 group-hover:border-zinc-700">
+                  <i data-lucide="heart" class="w-8 h-8 text-pink-400 animate-pulse"></i>
+                </div>
+                <div class="pt-2">
+                  <div class="font-bold text-white text-xs">Blooming Icon Studio</div>
+                  <div class="text-[10px] text-zinc-500 font-mono">Modificado hace 2 min</div>
+                </div>
+              </div>
+
+              <!-- CARD 2: NEXUS ENGINE -->
+              <div onclick="switchHubView('workspace')" class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 flex flex-col justify-between h-40 hover:border-cyan-500/50 cursor-pointer transition-all group">
+                <div class="w-full h-20 bg-zinc-950 rounded-lg flex items-center justify-center border border-zinc-800 group-hover:border-zinc-700">
+                  <i data-lucide="cpu" class="w-8 h-8 text-cyan-400"></i>
+                </div>
+                <div class="pt-2">
+                  <div class="font-bold text-white text-xs">Nexus Engine</div>
+                  <div class="text-[10px] text-zinc-500 font-mono">Modificado hace 1 hora</div>
+                </div>
+              </div>
+
+              <!-- CARD 3: CREAR NUEVO PROYECTO -->
+              <div onclick="switchHubView('workspace')" class="bg-zinc-900/50 border border-dashed border-zinc-800 rounded-xl p-4 flex flex-col items-center justify-center h-40 hover:border-emerald-500/50 cursor-pointer transition-all text-zinc-400 hover:text-white">
+                <i data-lucide="plus-circle" class="w-8 h-8 text-emerald-400 mb-2"></i>
+                <span class="font-bold text-xs">Crear nuevo proyecto</span>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+
+        <!-- VISTA CANVASES & LIVE WEB APP RUNTIME -->
+        <div id="viewPreview" class="space-y-6">
+          <div class="flex items-center justify-between pb-3 border-b border-zinc-800/80">
+            <h1 class="text-lg font-bold text-zinc-100 tracking-tight flex items-center gap-2" id="uiAppTitle">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span> NEXUS Control System
+            </h1>
+
+            <!-- TOGGLE MODE: LIVE WEB APP VS CANVAS COMPONENTS -->
+            <div class="flex items-center bg-zinc-900 border border-zinc-800 rounded-lg p-0.5 text-xs font-semibold">
+              <button id="btnToggleLiveApp" onclick="switchPreviewMode('live')" class="px-3 py-1 rounded-md bg-zinc-800 text-emerald-400 transition-all flex items-center gap-1.5">
+                <i data-lucide="layout" class="w-3.5 h-3.5"></i> Web App Real (Live)
+              </button>
+              <button id="btnToggleCanvas" onclick="switchPreviewMode('canvas')" class="px-3 py-1 rounded-md text-zinc-400 hover:text-white transition-all flex items-center gap-1.5">
+                <i data-lucide="grid" class="w-3.5 h-3.5"></i> Componentes Canvas
+              </button>
+            </div>
+          </div>
+
+          <!-- CONTENEDOR 1: IFRAME DE WEB APP COMPLETA GENERADA POR IA -->
+          <div id="liveAppContainer" class="w-full h-[620px] rounded-xl border border-zinc-800/80 overflow-hidden shadow-2xl relative bg-zinc-950">
+            <iframe id="liveAppIframe" src="/api/artifacts/live_app" class="w-full h-full border-0"></iframe>
+          </div>
+
+          <!-- CONTENEDOR 2: COMPONENTES RENDERIZADOS DEL CANVAS -->
+          <div id="uiMockupContainer" class="hidden space-y-6">
+            <!-- Componentes Renderizados -->
+          </div>
+        </div>
+
+        <!-- VISTA ERD / BACKEND CONNECTOR STUDIO -->
+        <div id="viewERD" class="hidden flex flex-col space-y-6">
+          <div class="flex items-center justify-between pb-3 border-b border-zinc-800/80">
+            <div>
+              <h2 class="text-sm font-bold text-cyan-400 flex items-center gap-2">
+                <i data-lucide="network" class="w-4 h-4 text-cyan-400"></i> Visual Backend Connector Studio
+              </h2>
+              <p class="text-xs text-zinc-400 mt-0.5">Nodos de base de datos interactivos y conectores de API Rust Axum</p>
+            </div>
+            <button onclick="promptAddBackendTable()" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/20 transition-all flex items-center gap-1.5">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i> + Añadir Tabla Backend
+            </button>
+          </div>
+
+          <!-- CONTENEDOR DE NODOS DE TABLAS INTERACTIVOS -->
+          <div id="backendNodesGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Renderizado Dinámico de Nodos Backend -->
+          </div>
+
+          <!-- DIAGRAMA MERMAID SVG INTEGRADO -->
+          <div class="mt-4 pt-4 border-t border-zinc-800">
+            <h3 class="text-xs font-semibold text-zinc-400 font-mono mb-2">Grafo de Relaciones ERD (Mermaid)</h3>
+            <div id="mermaidDiagram" class="w-full flex justify-center bg-zinc-900/60 p-6 rounded-2xl border border-zinc-800"></div>
+          </div>
+        </div>
+
+        <!-- VISTA ARCHIVOS / RECURSOS DE LOVABLE -->
+        <div id="viewFiles" class="hidden space-y-4">
+          <div class="flex items-center justify-between pb-3 border-b border-zinc-800/80">
+            <h2 class="text-sm font-bold text-zinc-100 flex items-center gap-2">
+              <i data-lucide="folder-open" class="w-4 h-4 text-emerald-400"></i> Archivos del Proyecto & Recursos Visuales
+            </h2>
+            <label class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/20 cursor-pointer flex items-center gap-1.5 transition-all">
+              <i data-lucide="upload-cloud" class="w-3.5 h-3.5"></i> Subir Archivo
+              <input type="file" accept="image/*" class="hidden" onchange="handleFileInputUpload(event)" />
+            </label>
+          </div>
+
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="projectFilesGrid">
+            <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 flex flex-col items-center justify-center space-y-2.5 group hover:border-emerald-500/50 cursor-pointer transition-all">
+              <div class="w-24 h-24 rounded-lg bg-zinc-950 p-2 border border-zinc-800 flex items-center justify-center overflow-hidden">
+                <svg viewBox="0 0 100 100" class="w-full h-full">
+                  <path d="M50 65 L50 20" stroke="#10b981" stroke-width="6" stroke-linecap="round"/>
+                  <path d="M50 45 Q70 30 65 50 Z" fill="#10b981"/>
+                  <circle cx="50" cy="20" r="14" fill="#f59e0b"/>
+                  <circle cx="30" cy="20" r="12" fill="#ec4899"/>
+                  <circle cx="70" cy="20" r="12" fill="#f97316"/>
+                  <circle cx="50" cy="38" r="12" fill="#ec4899"/>
+                  <circle cx="50" cy="2" r="12" fill="#f97316"/>
+                </svg>
+              </div>
+              <span class="text-xs font-mono font-bold text-zinc-200">icono-flor.png</span>
+              <span class="text-[10px] text-zinc-500 font-mono">PNG · 415.6 KB</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- VISTA CÓDIGO FULLSTACK (REPLICA EXACTA FOTO 1 DE LOVABLE) -->
+        <div id="viewCode" class="hidden h-[580px] rounded-xl overflow-hidden border border-zinc-800 bg-zinc-950 flex">
+          
+          <!-- ARBOLEDA DE ARCHIVOS IZQUIERDA (ANCHO 240px) -->
+          <div class="w-64 border-r border-zinc-800 bg-zinc-900/60 p-3 flex flex-col justify-between flex-shrink-0 text-xs">
+            
+            <div class="space-y-3">
+              <!-- SEARCH CODE INPUT -->
+              <div class="relative">
+                <i data-lucide="search" class="w-3.5 h-3.5 text-zinc-400 absolute left-2.5 top-2.5"></i>
+                <input type="text" id="codeSearchInput" placeholder="Search code" onkeyup="filterCodeFiles(this.value)" class="w-full pl-8 pr-2 py-1.5 bg-zinc-950 border border-zinc-800 rounded-lg text-zinc-200 placeholder-zinc-500 text-[11px] focus:outline-none focus:border-cyan-500" />
+              </div>
+
+              <!-- TREE EXPLORER DE ARCHIVOS -->
+              <div class="space-y-1 font-mono text-[11px] overflow-y-auto max-h-[420px]" id="codeFileTree">
+                
+                <!-- CARPETA .nexus -->
+                <div>
+                  <div class="flex items-center gap-1.5 py-1 px-1.5 text-zinc-400 hover:text-white cursor-pointer">
+                    <i data-lucide="chevron-down" class="w-3 h-3 text-zinc-500"></i>
+                    <i data-lucide="folder" class="w-3.5 h-3.5 text-cyan-400"></i>
+                    <span>.nexus</span>
+                  </div>
+                  <div class="pl-5 space-y-0.5">
+                    <div onclick="selectCodeFile('project.json')" class="code-tree-item flex items-center gap-1.5 py-1 px-1.5 rounded hover:bg-zinc-800/80 cursor-pointer text-zinc-300">
+                      <i data-lucide="file-json" class="w-3.5 h-3.5 text-amber-400"></i>
+                      <span>project.json</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- CARPETA public -->
+                <div>
+                  <div class="flex items-center gap-1.5 py-1 px-1.5 text-zinc-400 hover:text-white cursor-pointer">
+                    <i data-lucide="chevron-down" class="w-3 h-3 text-zinc-500"></i>
+                    <i data-lucide="folder" class="w-3.5 h-3.5 text-emerald-400"></i>
+                    <span>public</span>
+                  </div>
+                  <div class="pl-5 space-y-0.5">
+                    <div onclick="selectCodeFile('index.html')" class="code-tree-item flex items-center gap-1.5 py-1 px-1.5 rounded hover:bg-zinc-800/80 cursor-pointer text-zinc-300">
+                      <i data-lucide="file-code" class="w-3.5 h-3.5 text-orange-400"></i>
+                      <span>index.html</span>
+                    </div>
+                    <div onclick="selectCodeFile('nexus_live_editor.js')" class="code-tree-item flex items-center gap-1.5 py-1 px-1.5 rounded hover:bg-zinc-800/80 cursor-pointer text-zinc-300">
+                      <i data-lucide="file-code" class="w-3.5 h-3.5 text-yellow-400"></i>
+                      <span>nexus_live_editor.js</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- CARPETA src -->
+                <div>
+                  <div class="flex items-center gap-1.5 py-1 px-1.5 text-zinc-400 hover:text-white cursor-pointer">
+                    <i data-lucide="chevron-down" class="w-3 h-3 text-zinc-500"></i>
+                    <i data-lucide="folder" class="w-3.5 h-3.5 text-purple-400"></i>
+                    <span>src</span>
+                  </div>
+                  <div class="pl-5 space-y-0.5">
+                    <div onclick="selectCodeFile('main.rs')" class="code-tree-item flex items-center gap-1.5 py-1 px-1.5 rounded bg-zinc-800/80 cursor-pointer text-emerald-400 font-bold">
+                      <i data-lucide="cpu" class="w-3.5 h-3.5 text-emerald-400"></i>
+                      <span>main.rs</span>
+                    </div>
+                    <div onclick="selectCodeFile('contrato.rs')" class="code-tree-item flex items-center gap-1.5 py-1 px-1.5 rounded hover:bg-zinc-800/80 cursor-pointer text-zinc-300">
+                      <i data-lucide="file-code" class="w-3.5 h-3.5 text-purple-400"></i>
+                      <span>contrato.rs</span>
+                    </div>
+                    <div onclick="selectCodeFile('ejecutor.rs')" class="code-tree-item flex items-center gap-1.5 py-1 px-1.5 rounded hover:bg-zinc-800/80 cursor-pointer text-zinc-300">
+                      <i data-lucide="file-code" class="w-3.5 h-3.5 text-cyan-400"></i>
+                      <span>ejecutor.rs</span>
+                    </div>
+                    <div onclick="selectCodeFile('security_protocol.rs')" class="code-tree-item flex items-center gap-1.5 py-1 px-1.5 rounded hover:bg-zinc-800/80 cursor-pointer text-zinc-300">
+                      <i data-lucide="shield" class="w-3.5 h-3.5 text-amber-400"></i>
+                      <span>security_protocol.rs</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- ARCHIVOS ROOT -->
+                <div onclick="selectCodeFile('.gitignore')" class="code-tree-item flex items-center gap-1.5 py-1 px-1.5 rounded hover:bg-zinc-800/80 cursor-pointer text-zinc-400">
+                  <i data-lucide="git-branch" class="w-3.5 h-3.5 text-zinc-500"></i>
+                  <span>.gitignore</span>
+                </div>
+                <div onclick="selectCodeFile('Cargo.toml')" class="code-tree-item flex items-center gap-1.5 py-1 px-1.5 rounded hover:bg-zinc-800/80 cursor-pointer text-zinc-300">
+                  <i data-lucide="box" class="w-3.5 h-3.5 text-orange-400"></i>
+                  <span>Cargo.toml</span>
+                </div>
+                <div onclick="selectCodeFile('package.json')" class="code-tree-item flex items-center gap-1.5 py-1 px-1.5 rounded hover:bg-zinc-800/80 cursor-pointer text-zinc-300">
+                  <i data-lucide="file-json" class="w-3.5 h-3.5 text-yellow-400"></i>
+                  <span>package.json</span>
+                </div>
+                <div onclick="selectCodeFile('AGENTS.md')" class="code-tree-item flex items-center gap-1.5 py-1 px-1.5 rounded hover:bg-zinc-800/80 cursor-pointer text-zinc-300">
+                  <i data-lucide="file-text" class="w-3.5 h-3.5 text-pink-400"></i>
+                  <span>AGENTS.md</span>
+                </div>
+
+              </div>
+            </div>
+
+            <!-- BOTÓN DESCARGAR CODEBASE LOVABLE -->
+            <button onclick="downloadBundleJSON()" class="w-full py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-100 rounded-xl font-medium flex items-center justify-center gap-2 border border-zinc-700/80 transition-all text-xs">
+              <i data-lucide="download" class="w-4 h-4 text-emerald-400"></i> Download codebase
+            </button>
+
+          </div>
+
+          <!-- PANEL VISUALIZADOR DE CÓDIGO -->
+          <div class="flex-grow flex flex-col bg-zinc-950 overflow-hidden">
+            <div class="px-4 py-2 bg-zinc-900/80 border-b border-zinc-800 flex items-center justify-between text-xs font-mono">
+              <span id="activeCodeFilePath" class="text-emerald-400 font-bold flex items-center gap-1.5">
+                <i data-lucide="file-code" class="w-3.5 h-3.5"></i> src/main.rs
+              </span>
+              <button onclick="copyActiveCode()" title="Copiar Código" class="text-zinc-400 hover:text-white flex items-center gap-1 text-[11px] bg-zinc-800 px-2 py-1 rounded border border-zinc-700">
+                <i data-lucide="copy" class="w-3 h-3"></i> Copiar
+              </button>
+            </div>
+
+            <pre id="codeViewerContent" class="flex-grow p-4 font-mono text-xs text-zinc-200 bg-zinc-950 overflow-auto leading-relaxed"></pre>
+          </div>
+
+        </div>
+
+        <!-- VISTA ERD / BACKEND CONNECTOR STUDIO -->
+        <div id="viewERD" class="hidden flex flex-col space-y-6">
+          <div class="flex items-center justify-between pb-3 border-b border-zinc-800/80">
+            <div>
+              <h2 class="text-sm font-bold text-cyan-400 flex items-center gap-2">
+                <i data-lucide="network" class="w-4 h-4 text-cyan-400"></i> Visual Backend Connector Studio
+              </h2>
+              <p class="text-xs text-zinc-400 mt-0.5">Nodos de base de datos interactivos y conectores de API Rust Axum</p>
+            </div>
+            <button onclick="promptAddBackendTable()" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/20 transition-all flex items-center gap-1.5">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i> + Añadir Tabla Backend
+            </button>
+          </div>
+
+          <!-- CONTENEDOR DE NODOS DE TABLAS INTERACTIVOS -->
+          <div id="backendNodesGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Renderizado Dinámico de Nodos Backend -->
+          </div>
+
+          <!-- DIAGRAMA MERMAID SVG INTEGRADO -->
+          <div class="mt-4 pt-4 border-t border-zinc-800">
+            <h3 class="text-xs font-semibold text-zinc-400 font-mono mb-2">Grafo de Relaciones ERD (Mermaid)</h3>
+            <div id="mermaidDiagram" class="w-full flex justify-center bg-zinc-900/60 p-6 rounded-2xl border border-zinc-800"></div>
+          </div>
+        </div>
+
+        <!-- VISTA OPENAPI -->
+        <div id="viewAPI" class="hidden">
+          <h3 class="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2 font-mono">Especificación OpenAPI v3</h3>
+          <pre class="font-mono text-xs text-purple-300 bg-zinc-900/90 p-5 rounded-xl border border-zinc-800 leading-relaxed overflow-x-auto" id="apiViewer"></pre>
+        </div>
+
+        <!-- VISTA SQL DDL -->
+        <div id="viewSQL" class="hidden">
+          <h3 class="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2 font-mono">Esquema SQL DDL</h3>
+          <pre class="font-mono text-xs text-amber-300 bg-zinc-900/90 p-5 rounded-xl border border-zinc-800 leading-relaxed overflow-x-auto" id="sqlViewer"></pre>
+        </div>
+
+      </div>
+
+    </main>
+
+    <!-- PILAR 3: INSPECTOR VISUAL DE ESTILOS Y PROPIEDADES -->
+    <aside id="inspectorDrawer" class="w-80 border-l border-zinc-800/80 bg-zinc-950 p-4 hidden flex-col justify-between z-30 transition-all">
+      <div>
+        <div class="flex items-center justify-between pb-3 border-b border-zinc-800/80 mb-4">
+          <span class="text-xs font-bold text-emerald-400 flex items-center gap-2">
+            <i data-lucide="sliders" class="w-4 h-4"></i> NEXUS Inspector Visual
+          </span>
+          <button onclick="closeInspector()" class="text-zinc-500 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+        </div>
+
+        <input type="hidden" id="inspCompId" />
+
+        <div class="space-y-4 text-xs">
+          <div>
+            <label class="text-zinc-400 text-[11px] font-medium mb-1 block">Título del Componente</label>
+            <input type="text" id="inspTitle" class="w-full px-3 py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-white focus:outline-none focus:border-emerald-500" onchange="updateSelectedComponent()" />
+          </div>
+
+          <div>
+            <label class="text-zinc-400 text-[11px] font-medium mb-1 block">Valor / Datos</label>
+            <input type="text" id="inspValue" class="w-full px-3 py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-white focus:outline-none focus:border-emerald-500" onchange="updateSelectedComponent()" />
+          </div>
+
+          <div>
+            <label class="text-zinc-400 text-[11px] font-medium mb-1.5 block">Cambiar Icono Visual (1-Click)</label>
+            <div class="grid grid-cols-4 gap-2">
+              <button onclick="setIcon('rabbit')" class="p-2.5 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-pink-500 text-pink-400 flex justify-center"><i data-lucide="rabbit" class="w-5 h-5"></i></button>
+              <button onclick="setIcon('zap')" class="p-2.5 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-emerald-500 text-emerald-400 flex justify-center"><i data-lucide="zap" class="w-5 h-5"></i></button>
+              <button onclick="setIcon('users')" class="p-2.5 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-cyan-500 text-cyan-400 flex justify-center"><i data-lucide="users" class="w-5 h-5"></i></button>
+              <button onclick="setIcon('shield')" class="p-2.5 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-amber-500 text-amber-400 flex justify-center"><i data-lucide="shield" class="w-5 h-5"></i></button>
+              <button onclick="setIcon('bar-chart')" class="p-2.5 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-purple-500 text-purple-400 flex justify-center"><i data-lucide="bar-chart" class="w-5 h-5"></i></button>
+              <button onclick="setIcon('dollar-sign')" class="p-2.5 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-emerald-400 text-emerald-400 flex justify-center"><i data-lucide="dollar-sign" class="w-5 h-5"></i></button>
+              <button onclick="setIcon('rocket')" class="p-2.5 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-blue-500 text-blue-400 flex justify-center"><i data-lucide="rocket" class="w-5 h-5"></i></button>
+              <button onclick="setIcon('box')" class="p-2.5 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-zinc-500 text-zinc-300 flex justify-center"><i data-lucide="box" class="w-5 h-5"></i></button>
+            </div>
+          </div>
+
+          <div class="pt-4 border-t border-zinc-800 space-y-2">
+            <button onclick="duplicateSelectedComponent()" class="w-full py-2 bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/20 font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5">
+              <i data-lucide="copy" class="w-4 h-4 text-cyan-400"></i> Duplicar Componente
+            </button>
+            <button onclick="deleteSelectedComponent()" class="w-full py-2 bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5">
+              <i data-lucide="trash-2" class="w-4 h-4 text-red-400"></i> Eliminar Componente
+            </button>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+  </div>
+
+  <!-- MODAL EXPORTAR BUNDLE FULLSTACK -->
+  <div id="exportModal" class="fixed inset-0 bg-black/80 backdrop-blur-md hidden items-center justify-center z-50 p-4">
+    <div class="bg-zinc-950 border border-zinc-800 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between pb-3 border-b border-zinc-800">
+        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+          <i data-lucide="package-check" class="w-4 h-4 text-emerald-400"></i> Proyecto Fullstack NEXUS Listo
+        </h3>
+        <button onclick="closeExportModal()" class="text-zinc-500 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+
+      <div class="space-y-3 text-xs text-zinc-300">
+        <p>Tu proyecto ha sido paquetizado con arquitectura de alto rendimiento:</p>
+        <ul class="space-y-1.5 font-mono text-[11px] text-zinc-400 bg-zinc-900 p-3 rounded-xl border border-zinc-800">
+          <li class="flex items-center gap-2"><i data-lucide="check" class="w-3.5 h-3.5 text-emerald-400"></i> Backend: Rust (Axum + Tokio Server)</li>
+          <li class="flex items-center gap-2"><i data-lucide="check" class="w-3.5 h-3.5 text-cyan-400"></i> Base de datos: PostgreSQL DDL Script</li>
+          <li class="flex items-center gap-2"><i data-lucide="check" class="w-3.5 h-3.5 text-purple-400"></i> Contratos: OpenAPI 3.0 Spec</li>
+          <li class="flex items-center gap-2"><i data-lucide="check" class="w-3.5 h-3.5 text-pink-400"></i> Frontend: React + Tailwind CSS</li>
+        </ul>
+      </div>
+
+      <div class="pt-3 border-t border-zinc-800 flex justify-end gap-2">
+        <button onclick="downloadBundleJSON()" class="px-4 py-2 bg-emerald-500 text-black font-bold rounded-lg text-xs hover:bg-emerald-400 transition-all flex items-center gap-2">
+          <i data-lucide="download" class="w-4 h-4"></i> Descargar Bundle Fullstack (.json)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL PUBLICAR LOVABLE 1-CLICK -->
+  <div id="publishModal" class="fixed inset-0 bg-black/85 backdrop-blur-md hidden items-center justify-center z-50 p-4">
+    <div class="bg-zinc-950 border border-zinc-800 rounded-2xl max-w-lg w-full p-6 space-y-5 shadow-2xl relative">
+      <div class="flex items-center justify-between pb-3 border-b border-zinc-800">
+        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+          <i data-lucide="rocket" class="w-4.5 h-4.5 text-blue-400"></i> Publicar Proyecto Fullstack NEXUS
+        </h3>
+        <button onclick="closePublishModal()" class="text-zinc-500 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+
+      <div class="space-y-4 text-xs">
+        <div>
+          <label class="text-zinc-400 text-[11px] font-medium mb-1 block">Dominio Personalizado</label>
+          <div class="flex items-center bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-zinc-100">
+            <span class="text-zinc-500 font-mono text-[11px] mr-1">https://</span>
+            <input type="text" value="blooming-icon-studio.nexus.dev" class="bg-transparent font-mono text-xs w-full text-emerald-400 focus:outline-none" />
+          </div>
+        </div>
+
+        <div>
+          <label class="text-zinc-400 text-[11px] font-medium mb-2 block">Motor de Despliegue Producción</label>
+          <div class="grid grid-cols-3 gap-2">
+            <div class="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/40 text-emerald-300 font-bold flex flex-col items-center justify-center gap-1 cursor-pointer">
+              <i data-lucide="cpu" class="w-5 h-5 text-emerald-400"></i>
+              <span>NEXUS Rust Tokio</span>
+            </div>
+            <div class="p-3 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-300 hover:border-zinc-700 font-medium flex flex-col items-center justify-center gap-1 cursor-pointer">
+              <i data-lucide="globe" class="w-5 h-5 text-cyan-400"></i>
+              <span>NEXUS Edge Cloud</span>
+            </div>
+            <div class="p-3 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-300 hover:border-zinc-700 font-medium flex flex-col items-center justify-center gap-1 cursor-pointer">
+              <i data-lucide="container" class="w-5 h-5 text-blue-400"></i>
+              <span>Docker Container</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-[11px] font-mono flex items-center justify-between">
+          <span class="flex items-center gap-2"><i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i> Estado: Listo para Producción</span>
+          <span class="bg-emerald-500 text-black font-bold px-2 py-0.5 rounded text-[10px]">100% Uptime</span>
+        </div>
+      </div>
+
+      <div class="pt-3 border-t border-zinc-800 flex justify-end gap-2">
+        <button onclick="triggerDeployNow()" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs transition-all flex items-center gap-2 shadow-lg shadow-blue-600/30 active:scale-95">
+          <i data-lucide="globe" class="w-4 h-4"></i> Desplegar Ahora a Producción
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- WIDGET FLOATING INFERIOR LOVABLE (PAGOS Y COMPLEMENTOS) -->
+  <div id="lovablePaymentsWidget" class="fixed bottom-5 right-5 z-40 bg-zinc-900/90 border border-zinc-700/80 rounded-2xl p-3.5 shadow-2xl backdrop-blur-md max-w-sm flex items-center justify-between gap-3 text-xs">
+    <div class="space-y-0.5">
+      <div class="font-bold text-white flex items-center gap-1.5 text-[11px]">
+        <i data-lucide="credit-card" class="w-3.5 h-3.5 text-emerald-400"></i> Añade pagos a tu aplicación
+      </div>
+      <div class="text-[10px] text-zinc-400 leading-snug">
+        Puedes añadir pagos a tu app sin complicaciones: solo pídeselo a Lovable
+      </div>
+    </div>
+    <div class="flex items-center gap-1 text-zinc-500 text-[9px] font-mono flex-shrink-0">
+      <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+      <span class="w-1.5 h-1.5 rounded-full bg-zinc-700"></span>
+      <span class="w-1.5 h-1.5 rounded-full bg-zinc-700"></span>
+      <button onclick="document.getElementById('lovablePaymentsWidget').remove()" class="ml-1 text-zinc-500 hover:text-white"><i data-lucide="x" class="w-3 h-3"></i></button>
+    </div>
+  </div>
+
+  <!-- MODAL CAMARA / WEBCAM FOTO EN VIVO (<5ms) -->
+  <div id="cameraModal" class="fixed inset-0 bg-black/85 backdrop-blur-md hidden items-center justify-center z-50 p-4">
+    <div class="bg-zinc-950 border border-zinc-800 rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl relative">
+      <div class="flex items-center justify-between pb-3 border-b border-zinc-800">
+        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+          <i data-lucide="camera" class="w-4 h-4 text-emerald-400"></i> Sacar Foto en Vivo (<5ms)
+        </h3>
+        <button onclick="closeCameraModal()" class="text-zinc-500 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+
+      <div class="relative bg-zinc-900 rounded-xl overflow-hidden aspect-video border border-zinc-800 flex items-center justify-center">
+        <video id="webcamVideo" autoplay playsinline class="w-full h-full object-cover"></video>
+        <canvas id="webcamCanvas" class="hidden"></canvas>
+      </div>
+
+      <div class="flex justify-between items-center pt-2">
+        <span class="text-[11px] text-zinc-400 font-mono">Presiona para capturar e integrar</span>
+        <button onclick="takeWebcamSnapshot()" class="px-4 py-2 bg-emerald-500 text-black font-bold rounded-lg text-xs hover:bg-emerald-400 active:scale-95 transition-all flex items-center gap-2 shadow-lg shadow-emerald-500/20">
+          <i data-lucide="aperture" class="w-4 h-4"></i> Capturar Foto
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HUD FLOATING TOAST NOTIFICATIONS -->
+  <div id="toastHUD" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+  <script src="/nexus_live_editor.js"></script>
+
+  <script>
+    const API_BASE = window.location.protocol === 'file:' ? 'http://localhost:5180' : '';
+    mermaid.initialize({ startOnLoad: false, theme: 'dark' });
+
+    let currentSelectedComp = null;
+    let contextComp = null;
+
+    function showContextMenu(e, comp) {
+      e.preventDefault();
+      e.stopPropagation();
+      contextComp = comp;
+      selectComponentForInspector(comp);
+
+      const menu = document.getElementById('floatingContextMenu');
+      const x = Math.min(e.clientX || 200, window.innerWidth - 200);
+      const y = Math.min(e.clientY || 200, window.innerHeight - 200);
+
+      menu.style.left = `${x}px`;
+      menu.style.top = `${y}px`;
+      menu.classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closeContextMenu() {
+      document.getElementById('floatingContextMenu')?.classList.add('hidden');
+    }
+
+    async function contextAction(action) {
+      if (!contextComp) return;
+      closeContextMenu();
+
+      if (action === 'edit') {
+        selectComponentForInspector(contextComp);
+      } else if (action === 'duplicate') {
+        await addComponent(contextComp.type, `${contextComp.title} (Copia)`, contextComp.value, contextComp.icon);
+      } else if (action === 'delete') {
+        await deleteComponentDirect(contextComp.id);
+      }
+    }
+
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('#floatingContextMenu') && !e.target.closest('.nexus-card')) {
+        closeContextMenu();
+      }
+    });
+
+    function setViewport(mode) {
+      const frame = document.getElementById('viewportFrame');
+      ['vpDesktop', 'vpTablet', 'vpMobile'].forEach(id => {
+        document.getElementById(id).className = 'px-2.5 py-1 rounded-md hover:text-zinc-200 transition-all flex items-center gap-1';
+      });
+
+      if (mode === 'desktop') {
+        frame.style.maxWidth = '100%';
+        document.getElementById('vpDesktop').className = 'px-2.5 py-1 rounded-md bg-zinc-800 text-zinc-100 transition-all flex items-center gap-1';
+      } else if (mode === 'tablet') {
+        frame.style.maxWidth = '768px';
+        document.getElementById('vpTablet').className = 'px-2.5 py-1 rounded-md bg-zinc-800 text-zinc-100 transition-all flex items-center gap-1';
+      } else if (mode === 'mobile') {
+        frame.style.maxWidth = '375px';
+        document.getElementById('vpMobile').className = 'px-2.5 py-1 rounded-md bg-zinc-800 text-zinc-100 transition-all flex items-center gap-1';
+      }
+    }
+
+    function togglePaletteDrawer() {
+      document.getElementById('paletteDrawer').classList.toggle('hidden');
+      document.getElementById('paletteDrawer').classList.toggle('flex');
+    }
+
+    function selectComponentForInspector(comp) {
+      currentSelectedComp = comp;
+      document.querySelectorAll('.nexus-card').forEach(el => el.classList.remove('selected-card'));
+      document.getElementById(comp.id)?.classList.add('selected-card');
+
+      document.getElementById('inspCompId').value = comp.id;
+      document.getElementById('inspTitle').value = comp.title || '';
+      document.getElementById('inspValue').value = comp.value || '';
+
+      const drawer = document.getElementById('inspectorDrawer');
+      drawer.classList.remove('hidden');
+      drawer.classList.add('flex');
+    }
+
+    function closeInspector() {
+      const drawer = document.getElementById('inspectorDrawer');
+      drawer.classList.add('hidden');
+      drawer.classList.remove('flex');
+      document.querySelectorAll('.nexus-card').forEach(el => el.classList.remove('selected-card'));
+    }
+
+    async function addComponent(type, title, value, icon) {
+      try {
+        const res = await fetch(API_BASE + '/api/components/add', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type, title, value, icon })
+        });
+        await loadPipelineArtifacts();
+      } catch (err) {
+        console.error("Error al añadir componente:", err);
+      }
+    }
+
+    async function setIcon(iconName) {
+      if (!currentSelectedComp) return;
+      await updateComponentProperty({ icon: iconName });
+    }
+
+    async function updateSelectedComponent() {
+      if (!currentSelectedComp) return;
+      const title = document.getElementById('inspTitle').value;
+      const value = document.getElementById('inspValue').value;
+      await updateComponentProperty({ title, value });
+    }
+
+    async function updateComponentProperty(updates) {
+      if (!currentSelectedComp) return;
+      try {
+        await fetch(API_BASE + '/api/components/update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: currentSelectedComp.id, updates })
+        });
+        await loadPipelineArtifacts();
+      } catch (err) {
+        console.error("Error al actualizar componente:", err);
+      }
+    }
+
+    let currentCalcString = '10+10';
+
+    function calcPress(val) {
+      if (currentCalcString === '0' || currentCalcString === '20') currentCalcString = '';
+      currentCalcString += val;
+      const exprEl = document.getElementById('calcExpr');
+      if (exprEl) exprEl.textContent = currentCalcString;
+    }
+
+    function calcClear() {
+      currentCalcString = '';
+      const exprEl = document.getElementById('calcExpr');
+      const dispEl = document.getElementById('calcDisplay');
+      if (exprEl) exprEl.textContent = '0';
+      if (dispEl) dispEl.textContent = '0';
+    }
+
+    function calcMath(fn) {
+      try {
+        const val = parseFloat(eval(currentCalcString || '0'));
+        let res = 0;
+        if (fn === 'sin') res = Math.sin(val);
+        if (fn === 'cos') res = Math.cos(val);
+        if (fn === 'tan') res = Math.tan(val);
+        if (fn === 'sqrt') res = Math.sqrt(val);
+        if (fn === 'log') res = Math.log10(val);
+        if (fn === 'ln') res = Math.log(val);
+        
+        const dispEl = document.getElementById('calcDisplay');
+        const exprEl = document.getElementById('calcExpr');
+        if (dispEl) dispEl.textContent = res.toFixed(4);
+        if (exprEl) exprEl.textContent = `${fn}(${val})`;
+        currentCalcString = res.toString();
+      } catch (err) {
+        const dispEl = document.getElementById('calcDisplay');
+        if (dispEl) dispEl.textContent = 'Error';
+      }
+    }
+
+    function calcEval() {
+      try {
+        const res = eval(currentCalcString);
+        const dispEl = document.getElementById('calcDisplay');
+        const exprEl = document.getElementById('calcExpr');
+        if (dispEl) dispEl.textContent = res;
+        if (exprEl) exprEl.textContent = currentCalcString;
+        currentCalcString = res.toString();
+      } catch (err) {
+        const dispEl = document.getElementById('calcDisplay');
+        if (dispEl) dispEl.textContent = 'Error';
+      }
+    }
+
+    function showToast(msg, type = 'info') {
+      const hud = document.getElementById('toastHUD');
+      if (!hud) return;
+
+      const toast = document.createElement('div');
+      const bgClass = type === 'success' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300' :
+                      type === 'warning' ? 'bg-amber-500/10 border-amber-500/30 text-amber-300' :
+                      type === 'error' ? 'bg-red-500/10 border-red-500/30 text-red-300' :
+                      'bg-zinc-900 border-zinc-700 text-zinc-200';
+
+      toast.className = `p-3 rounded-xl border ${bgClass} backdrop-blur-md shadow-2xl text-xs font-semibold flex items-center gap-2 transition-all duration-300 transform translate-y-2 opacity-0 pointer-events-auto`;
+      toast.innerHTML = `<i data-lucide="${type === 'success' ? 'check-circle' : 'zap'}" class="w-4 h-4 text-emerald-400"></i> ${msg}`;
+      
+      hud.appendChild(toast);
+      if (window.lucide) lucide.createIcons();
+
+      requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      });
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    // 1. Pegado Instantáneo desde el Portapapeles (Ctrl+V)
+    window.addEventListener('paste', async (e) => {
+      const items = e.clipboardData?.items || [];
+      for (const item of items) {
+        if (item.type.startsWith('image/')) {
+          e.preventDefault();
+          const file = item.getAsFile();
+          if (!file) continue;
+
+          showToast('⚡ Captura detectada en portapapeles! Integrando en Canvas (<10ms)...', 'info');
+
+          const reader = new FileReader();
+          reader.onload = async (evt) => {
+            await uploadScreenshotImage(evt.target.result, 'Captura Pegada (Ctrl+V)');
+          };
+          reader.readAsDataURL(file);
+          break;
+        }
+      }
+    });
+
+    // 2. Drag & Drop de Archivos de Imagen al Canvas
+    window.addEventListener('dragover', (e) => e.preventDefault());
+    window.addEventListener('drop', async (e) => {
+      e.preventDefault();
+      const files = e.dataTransfer?.files || [];
+      if (files.length > 0 && files[0].type.startsWith('image/')) {
+        showToast('⚡ Procesando imagen arrastrada...', 'info');
+        const reader = new FileReader();
+        reader.onload = async (evt) => {
+          await uploadScreenshotImage(evt.target.result, files[0].name);
+        };
+        reader.readAsDataURL(files[0]);
+      }
+    });
+
+    // 3. Subida por Selección de Archivo
+    async function handleFileInputUpload(event) {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      showToast('⚡ Cargando captura...', 'info');
+      const reader = new FileReader();
+      reader.onload = async (evt) => {
+        await uploadScreenshotImage(evt.target.result, file.name);
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // 4. Helper de Carga Directa
+    async function uploadScreenshotImage(base64Data, title) {
+      try {
+        const res = await fetch('/api/screenshot/upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ image: base64Data, title })
+        });
+        const data = await res.json();
+        showToast('✅ Foto/Captura agregada al Canvas en <10ms', 'success');
+        await loadPipelineArtifacts();
+      } catch (err) {
+        showToast('❌ Error al procesar la foto', 'error');
+      }
+    }
+
+    // 5. Modal de Cámara / Webcam
+    let webcamStream = null;
+    async function openCameraModal() {
+      const modal = document.getElementById('cameraModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+
+      try {
+        webcamStream = await navigator.mediaDevices.getUserMedia({ video: true });
+        document.getElementById('webcamVideo').srcObject = webcamStream;
+        showToast('🎥 Cámara activa. Presiona Capturar para tomar la foto.', 'info');
+      } catch (err) {
+        showToast('⚠️ No se detectó cámara web. ¡Usa Ctrl+V para pegar capturas!', 'warning');
+      }
+    }
+
+    function closeCameraModal() {
+      if (webcamStream) {
+        webcamStream.getTracks().forEach(track => track.stop());
+        webcamStream = null;
+      }
+      const modal = document.getElementById('cameraModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    async function takeWebcamSnapshot() {
+      const video = document.getElementById('webcamVideo');
+      const canvas = document.getElementById('webcamCanvas');
+      if (!video || !canvas) return;
+
+      canvas.width = video.videoWidth || 640;
+      canvas.height = video.videoHeight || 480;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      const dataUrl = canvas.toDataURL('image/png');
+      closeCameraModal();
+      showToast('⚡ Foto tomada en <5ms!', 'success');
+      await uploadScreenshotImage(dataUrl, `Foto Webcam (${new Date().toLocaleTimeString()})`);
+    }
+
+    // 6. Captura Rápida CLI Nativa Sin Modales Bloqueantes
+    async function triggerFastSnap() {
+      try {
+        showToast('⚡ Capturando pantalla por CLI nativo (<50ms)...', 'info');
+        const res = await fetch(API_BASE + '/api/screenshot/fast', { method: 'POST' });
+        const data = await res.json();
+        showToast(data.message || '✅ Captura revertida nativamente', 'success');
+        await loadPipelineArtifacts();
+      } catch (err) {
+        showToast('❌ Error en captura rápida CLI', 'error');
+      }
+    }
+
+    async function duplicateSelectedComponent() {
+      if (!currentSelectedComp) return;
+      await addComponent(currentSelectedComp.type, `${currentSelectedComp.title} (Copia)`, currentSelectedComp.value, currentSelectedComp.icon);
+    }
+
+    async function deleteSelectedComponent() {
+      if (!currentSelectedComp) return;
+      if (confirm(`¿Eliminar componente "${currentSelectedComp.title}"?`)) {
+        try {
+          await fetch(API_BASE + '/api/components/delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: currentSelectedComp.id })
+          });
+          closeInspector();
+          await loadPipelineArtifacts();
+        } catch (err) {
+          console.error("Error al eliminar componente:", err);
+        }
+      }
+    }
+
+    function openExportModal() {
+      const modal = document.getElementById('exportModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeExportModal() {
+      const modal = document.getElementById('exportModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    async function downloadBundleJSON() {
+      const res = await fetch(API_BASE + '/api/export/bundle');
+      const bundle = await res.json();
+      const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `nexus_fullstack_${Date.now()}.json`;
+      a.click();
+    }
+
+    function enhanceUserPrompt() {
+      const input = document.getElementById('promptInput');
+      if (!input) return;
+      const current = input.value.trim();
+      if (!current) {
+        input.value = "Rediseñar tarjetas del dashboard con estilo glassmorphic oscuro, bordes esmeralda y animaciones de métricas.";
+      } else {
+        input.value = `Optimizar diseño UI/UX de: "${current}", aplicando estética oscura premium, fuentes modernas Inter, iconos tailored y datos reactivos.`;
+      }
+      showToast('✨ Prompt optimizado con IA', 'success');
+    }
+
+    function switchApiModel(model) {
+      showToast(`⚡ Conectado a Modelo en Cascada: ${model.toUpperCase()}`, 'success');
+    }
+
+    let currentLovableMode = 'Crear';
+
+    function toggleLovableMenu(e) {
+      if (e) e.stopPropagation();
+      const popup = document.getElementById('lovableMenuPopup');
+      const icon = document.getElementById('lovablePlusIcon');
+      if (!popup) return;
+      const isHidden = popup.classList.contains('hidden');
+      closeAllLovablePopups();
+      if (isHidden) {
+        popup.classList.remove('hidden');
+        if (icon) icon.textContent = '✕';
+      } else {
+        popup.classList.add('hidden');
+        if (icon) icon.textContent = '+';
+      }
+    }
+
+    function toggleLovableModePopup(e) {
+      if (e) e.stopPropagation();
+      const popup = document.getElementById('lovableModePopup');
+      if (!popup) return;
+      const isHidden = popup.classList.contains('hidden');
+      closeAllLovablePopups();
+      if (isHidden) {
+        popup.classList.remove('hidden');
+      } else {
+        popup.classList.add('hidden');
+      }
+    }
+
+    function closeAllLovablePopups() {
+      document.getElementById('lovableMenuPopup')?.classList.add('hidden');
+      document.getElementById('lovableModePopup')?.classList.add('hidden');
+      const icon = document.getElementById('lovablePlusIcon');
+      if (icon) icon.textContent = '+';
+    }
+
+    function selectLovableMode(mode) {
+      currentLovableMode = mode;
+      document.getElementById('currentLovableModeText').textContent = mode;
+      const checkCrear = document.getElementById('checkIconCrear');
+      const checkPlan = document.getElementById('checkIconPlan');
+      
+      if (mode === 'Crear') {
+        checkCrear?.classList.remove('hidden');
+        checkPlan?.classList.add('hidden');
+        showToast('⚡ Modo Crear Activo: Cambios aplicados directamente', 'success');
+      } else {
+        checkCrear?.classList.add('hidden');
+        checkPlan?.classList.remove('hidden');
+        showToast('📝 Modo Plan Activo: Conversa antes de crear', 'info');
+      }
+      closeAllLovablePopups();
+    }
+
+    // Alt + P Shortcut Listener
+    document.addEventListener('keydown', (e) => {
+      if (e.altKey && (e.key === 'p' || e.key === 'P')) {
+        e.preventDefault();
+        const newMode = currentLovableMode === 'Crear' ? 'Plan' : 'Crear';
+        selectLovableMode(newMode);
+      }
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('#lovableMenuPopup') && !e.target.closest('#lovablePlusBtn') &&
+          !e.target.closest('#lovableModePopup')) {
+        closeAllLovablePopups();
+      }
+    });
+
+    // Voice Dictation (Speech Recognition)
+    let isRecordingVoice = false;
+    let voiceRecognition = null;
+
+    function toggleVoiceDictation() {
+      const btn = document.getElementById('voiceDictationBtn');
+      const input = document.getElementById('promptInput');
+
+      if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+        showToast('⚠️ Tu navegador no soporta dictado por voz', 'warning');
+        return;
+      }
+
+      if (isRecordingVoice) {
+        if (voiceRecognition) voiceRecognition.stop();
+        isRecordingVoice = false;
+        btn?.classList.remove('bg-red-500/20', 'text-red-400', 'animate-pulse');
+        showToast('🎙️ Dictado finalizado', 'info');
+        return;
+      }
+
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      voiceRecognition = new SpeechRecognition();
+      voiceRecognition.lang = 'es-ES';
+      voiceRecognition.continuous = false;
+      voiceRecognition.interimResults = false;
+
+      voiceRecognition.onstart = () => {
+        isRecordingVoice = true;
+        btn?.classList.add('bg-red-500/20', 'text-red-400', 'animate-pulse');
+        showToast('🎙️ Escuchando... Habla ahora', 'info');
+      };
+
+      voiceRecognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        if (input) {
+          input.value += (input.value ? ' ' : '') + transcript;
+        }
+        showToast(`🎙️ Texto capturado: "${transcript}"`, 'success');
+      };
+
+      voiceRecognition.onerror = (err) => {
+        console.error("Speech Recognition Error:", err);
+        showToast('⚠️ Error en dictado por voz', 'error');
+        btn?.classList.remove('bg-red-500/20', 'text-red-400', 'animate-pulse');
+        isRecordingVoice = false;
+      };
+
+      voiceRecognition.onend = () => {
+        btn?.classList.remove('bg-red-500/20', 'text-red-400', 'animate-pulse');
+        isRecordingVoice = false;
+      };
+
+      voiceRecognition.start();
+    }
+
+    function sendPillPrompt(pillText) {
+      const input = document.getElementById('promptInput');
+      if (input) {
+        input.value = pillText;
+        sendRefinementPrompt();
+      }
+    }
+
+    function handleKeyDown(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendRefinementPrompt();
+      }
+    }
+
+    function handleHomeHubKeyDown(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        submitHomeHubPrompt();
+      }
+    }
+
+    function toggleLeftNav() {
+      const leftNav = document.getElementById('lovableLeftNav');
+      if (leftNav) {
+        leftNav.classList.toggle('hidden');
+      }
+    }
+
+    function switchHubView(mode) {
+      const homeHub = document.getElementById('viewHomeHub');
+      const chatSidebar = document.getElementById('nexusChatSidebar');
+      const leftNav = document.getElementById('lovableLeftNav');
+
+      if (mode === 'home') {
+        if (homeHub) {
+          homeHub.classList.remove('hidden');
+          homeHub.classList.add('flex');
+        }
+        if (leftNav) {
+          leftNav.classList.remove('hidden');
+        }
+        if (chatSidebar) chatSidebar.classList.add('hidden');
+        ['Preview', 'Files', 'Code', 'ERD', 'API', 'SQL'].forEach(tab => {
+          document.getElementById('view' + tab)?.classList.add('hidden');
+        });
+        showToast('🏠 Panel Principal de Lovable', 'info');
+      } else {
+        if (homeHub) {
+          homeHub.classList.add('hidden');
+          homeHub.classList.remove('flex');
+        }
+        if (leftNav) {
+          leftNav.classList.add('hidden');
+        }
+        if (chatSidebar) chatSidebar.classList.remove('hidden');
+        switchMainView('preview');
+      }
+      lucide.createIcons();
+    }
+
+    function submitHomeHubPrompt() {
+      const input = document.getElementById('homeHubPromptInput');
+      const text = input ? input.value.trim() : '';
+      if (!text) return;
+      
+      switchHubView('workspace');
+      
+      const workspaceInput = document.getElementById('promptInput');
+      if (workspaceInput) {
+        workspaceInput.value = text;
+      }
+      input.value = '';
+      sendRefinementPrompt();
+    }
+
+    function clearChatHistory() {
+      const history = document.getElementById('chatHistory');
+      history.innerHTML = `
+        <div class="flex items-start gap-2.5">
+          <div class="w-6 h-6 rounded-md bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center font-bold text-[10px] flex-shrink-0 mt-0.5">
+            N
+          </div>
+          <div class="space-y-1 max-w-[85%]">
+            <div class="p-3 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-200 leading-relaxed">
+              Historial limpiado. ¿Qué cambio deseas realizar en la pantalla?
+            </div>
+          </div>
+        </div>
+      `;
+      lucide.createIcons();
+    }
+
+    async function sendRefinementPrompt() {
+      const input = document.getElementById('promptInput');
+      const prompt = input.value.trim();
+      if (!prompt) return;
+
+      // Visual focus on screen viewport frame while processing
+      const viewport = document.getElementById('viewportFrame');
+      if (viewport) {
+        viewport.classList.add('ring-2', 'ring-emerald-500/80', 'shadow-emerald-500/20');
+      }
+
+      const chatHistory = document.getElementById('chatHistory');
+      
+      chatHistory.innerHTML += `
+        <div class="flex justify-end">
+          <div class="bg-zinc-800 border border-zinc-700/80 rounded-2xl px-4 py-2 text-zinc-100 text-xs shadow-md">
+            ${prompt}
+          </div>
+        </div>
+      `;
+
+      const loadingId = 'loadingMsg_' + Date.now();
+      chatHistory.innerHTML += `
+        <div class="flex items-start gap-2.5" id="${loadingId}">
+          <div class="w-6 h-6 rounded-md bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center font-bold text-[10px] flex-shrink-0 mt-0.5">
+            N
+          </div>
+          <div class="p-3 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-400 font-mono text-[11px] flex items-center gap-2">
+            <i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin text-emerald-400"></i> Procesando con NEXUS Engine...
+          </div>
+        </div>
+      `;
+
+      lucide.createIcons();
+      input.value = '';
+      chatHistory.scrollTop = chatHistory.scrollHeight;
+
+      try {
+        const res = await fetch(API_BASE + '/api/refine', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt })
+        });
+        const data = await res.json();
+        document.getElementById(loadingId)?.remove();
+
+        // REFRESCAR LA APLICACIÓN WEB EN VIVO Y LOS ARTEFACTOS AL INSTANTE
+        await loadPipelineArtifacts();
+        const iframe = document.getElementById('liveAppIframe');
+        if (iframe) {
+          iframe.src = (API_BASE || '') + '/api/artifacts/live_app?t=' + Date.now();
+        }
+        
+        const cardTitleHeader = data.is_image
+          ? `<span class="flex items-center gap-1.5 text-emerald-400 font-semibold"><i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Generated Image</span>`
+          : `<span class="flex items-center gap-1.5 text-emerald-400 font-semibold"><i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Actualización NEXUS CORE</span>`;
+
+        const imgSrc = (data.asset_url && (data.asset_url.startsWith('http') || data.asset_url.startsWith('data:'))) ? data.asset_url : (API_BASE + (data.asset_url || ''));
+
+        const imagePreviewHtml = data.is_image && data.asset_url
+          ? `<div class="w-full flex justify-center p-3 bg-zinc-950/80 rounded-xl border border-zinc-800 my-2">
+               <img src="${imgSrc}" alt="${data.file_name || 'Asset'}" class="w-24 h-24 object-contain drop-shadow-lg" />
+             </div>`
+          : '';
+
+        chatHistory.innerHTML += `
+          <div class="space-y-3">
+            <div class="p-4 rounded-2xl bg-zinc-900/90 border border-zinc-800/80 space-y-3 shadow-xl">
+              <div class="flex items-center justify-between text-xs font-semibold text-zinc-300 pb-2 border-b border-zinc-800/60">
+                ${cardTitleHeader}
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-zinc-500"></i>
+              </div>
+
+              ${imagePreviewHtml}
+
+              <div class="text-xs text-zinc-200 leading-relaxed">
+                ${data.message || 'Se ha actualizado la pantalla editable en tiempo real.'}
+              </div>
+
+              <div class="flex items-center gap-2 pt-1 text-zinc-500 text-xs">
+                <button title="Me gusta" class="hover:text-emerald-400 transition-colors"><i data-lucide="thumbs-up" class="w-3.5 h-3.5"></i></button>
+                <button title="No me gusta" class="hover:text-red-400 transition-colors"><i data-lucide="thumbs-down" class="w-3.5 h-3.5"></i></button>
+                <button title="Copiar" class="hover:text-zinc-300 transition-colors" onclick="showToast('Copiaste la respuesta', 'info')"><i data-lucide="copy" class="w-3.5 h-3.5"></i></button>
+              </div>
+            </div>
+
+            <!-- BOTONES / PILLS DE SUGERENCIA Y ACCIONES RÁPIDAS -->
+            <div class="flex flex-wrap gap-1.5 pt-1">
+              <button onclick="sendPillPrompt('Descarga en SVG')" class="px-3 py-1 rounded-full bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-[11px] text-zinc-300 hover:text-white transition-all font-medium">
+                Descarga en SVG
+              </button>
+              <button onclick="sendPillPrompt('Crea versión monocromo')" class="px-3 py-1 rounded-full bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-[11px] text-zinc-300 hover:text-white transition-all font-medium">
+                Crea versión monocromo
+              </button>
+              <button onclick="sendPillPrompt('Genera variantes de color')" class="px-3 py-1 rounded-full bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-[11px] text-zinc-300 hover:text-white transition-all font-medium">
+                Genera variantes de color
+              </button>
+              <button onclick="sendPillPrompt('Exporta en tamaños')" class="px-3 py-1 rounded-full bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-[11px] text-zinc-300 hover:text-white transition-all font-medium">
+                Exporta en tamaños
+              </button>
+              <button onclick="sendPillPrompt('Agrega menú')" class="px-3 py-1 rounded-full bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-[11px] text-zinc-300 hover:text-white transition-all font-medium">
+                Agrega menú
+              </button>
+            </div>
+          </div>
+        `;
+        
+        lucide.createIcons();
+        chatHistory.scrollTop = chatHistory.scrollHeight;
+
+        await loadPipelineArtifacts();
+        setTimeout(() => {
+          document.getElementById('viewportFrame')?.classList.remove('ring-2', 'ring-emerald-500/80', 'shadow-emerald-500/20');
+        }, 1500);
+      } catch (err) {
+        document.getElementById(loadingId)?.remove();
+        document.getElementById('viewportFrame')?.classList.remove('ring-2', 'ring-emerald-500/80', 'shadow-emerald-500/20');
+        chatHistory.innerHTML += `
+          <div class="flex items-start gap-2.5">
+            <div class="w-6 h-6 rounded-md bg-red-500/20 text-red-400 flex items-center justify-center font-bold text-[10px] flex-shrink-0 mt-0.5">
+              !
+            </div>
+            <div class="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300">
+              Error al conectar con NEXUS Engine.
+            </div>
+          </div>
+        `;
+        lucide.createIcons();
+      }
+    }
+
+    function switchPreviewMode(mode) {
+      const liveContainer = document.getElementById('liveAppContainer');
+      const mockupContainer = document.getElementById('uiMockupContainer');
+      const btnLive = document.getElementById('btnToggleLiveApp');
+      const btnCanvas = document.getElementById('btnToggleCanvas');
+
+      if (mode === 'live') {
+        liveContainer?.classList.remove('hidden');
+        mockupContainer?.classList.add('hidden');
+        if (btnLive) btnLive.className = 'px-3 py-1 rounded-md bg-zinc-800 text-emerald-400 transition-all flex items-center gap-1.5 font-semibold';
+        if (btnCanvas) btnCanvas.className = 'px-3 py-1 rounded-md text-zinc-400 hover:text-white transition-all flex items-center gap-1.5';
+      } else {
+        liveContainer?.classList.add('hidden');
+        mockupContainer?.classList.remove('hidden');
+        if (btnLive) btnLive.className = 'px-3 py-1 rounded-md text-zinc-400 hover:text-white transition-all flex items-center gap-1.5';
+        if (btnCanvas) btnCanvas.className = 'px-3 py-1 rounded-md bg-zinc-800 text-emerald-400 transition-all flex items-center gap-1.5 font-semibold';
+      }
+      lucide.createIcons();
+    }
+
+    async function loadPipelineArtifacts() {
+      try {
+        const iframe = document.getElementById('liveAppIframe');
+        if (iframe) iframe.src = API_BASE + '/api/artifacts/live_app?t=' + Date.now();
+
+        const resUI = await fetch(API_BASE + '/api/artifacts/ui_spec');
+        const uiSpec = await resUI.json();
+        renderUIMockup(uiSpec);
+
+        const resArch = await fetch(API_BASE + '/api/artifacts/architecture');
+        const archSpec = await resArch.json();
+        renderBackendNodes(archSpec);
+
+        const resERD = await fetch(API_BASE + '/api/artifacts/erd');
+        const erdMermaid = await resERD.text();
+        renderMermaidGraph(erdMermaid);
+
+        const resAPI = await fetch(API_BASE + '/api/artifacts/openapi');
+        const openApiSpec = await resAPI.json();
+        document.getElementById('apiViewer').textContent = JSON.stringify(openApiSpec, null, 2);
+
+        const resSQL = await fetch(API_BASE + '/api/artifacts/schema');
+        const sqlText = await resSQL.text();
+        document.getElementById('sqlViewer').textContent = sqlText;
+
+        setTimeout(() => {
+          lucide.createIcons();
+          if (window.NexusLiveEditor) {
+            window.NexusLiveEditor.enableInlineEditing();
+            window.NexusLiveEditor.enableTouchAndMouseDraggable();
+          }
+        }, 100);
+      } catch (err) {
+        console.error("Error al cargar artefactos:", err);
+      }
+    }
+
+    function renderBackendNodes(archSpec) {
+      const container = document.getElementById('backendNodesGrid');
+      if (!container) return;
+
+      const tables = archSpec?.database?.tables || [];
+
+      container.innerHTML = tables.map(table => `
+        <div class="bg-zinc-900/90 border border-zinc-800 rounded-xl p-4 space-y-3 relative group hover:border-cyan-500/40 transition-all">
+          <div class="flex items-center justify-between pb-2 border-b border-zinc-800">
+            <div class="flex items-center gap-2">
+              <div class="p-1.5 rounded-md bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                <i data-lucide="database" class="w-4 h-4"></i>
+              </div>
+              <span class="text-xs font-bold text-white font-mono">${table.name}</span>
+            </div>
+            <button onclick="deleteBackendTable('${table.name}')" title="Eliminar tabla" class="opacity-0 group-hover:opacity-100 p-1.5 text-red-400 hover:bg-red-500/10 rounded-lg transition-all">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+
+          <div class="space-y-1.5 font-mono text-[11px]">
+            ${(table.columns || []).map(col => `
+              <div class="flex items-center justify-between p-1.5 rounded bg-zinc-950/60 border border-zinc-800/60">
+                <div class="flex items-center gap-1.5">
+                  ${col.primary ? '<i data-lucide="key" class="w-3 h-3 text-amber-400"></i>' : '<i data-lucide="minus" class="w-3 h-3 text-zinc-600"></i>'}
+                  <span class="text-zinc-200">${col.name}</span>
+                </div>
+                <span class="px-1.5 py-0.5 rounded text-[9px] bg-zinc-800 text-cyan-400 font-bold">${col.type}</span>
+              </div>
+            `).join('')}
+          </div>
+
+          <div class="pt-2 border-t border-zinc-800/60 flex items-center justify-between text-[10px] text-zinc-400 font-mono">
+            <span class="flex items-center gap-1"><i data-lucide="link" class="w-3 h-3 text-emerald-400"></i> Conector API: GET /api/${table.name}</span>
+          </div>
+        </div>
+      `).join('');
+
+      lucide.createIcons();
+    }
+
+    async function promptAddBackendTable() {
+      const tableName = prompt("Ingresa el nombre de la nueva tabla backend (ej: transacciones):", "transacciones");
+      if (!tableName) return;
+
+      try {
+        const res = await fetch(API_BASE + '/api/backend/tables/add', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ table_name: tableName.toLowerCase().trim() })
+        });
+        const data = await res.json();
+        await loadPipelineArtifacts();
+      } catch (err) {
+        console.error("Error al crear tabla backend:", err);
+      }
+    }
+
+    async function deleteBackendTable(tableName) {
+      if (confirm(`¿Eliminar la tabla backend "${tableName}" y re-compilar el código Rust?`)) {
+        try {
+          const res = await fetch(API_BASE + '/api/backend/tables/delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: tableName })
+          });
+          await loadPipelineArtifacts();
+        } catch (err) {
+          console.error("Error al eliminar tabla backend:", err);
+        }
+      }
+    }
+
+    async function renderMermaidGraph(code) {
+      const container = document.getElementById('mermaidDiagram');
+      try {
+        const id = 'mermaidSvg_' + Date.now();
+        const { svg } = await mermaid.render(id, code);
+        container.innerHTML = svg;
+      } catch (err) {
+        console.error("Mermaid Render Error:", err);
+        container.innerHTML = `<pre class="font-mono text-xs text-zinc-300 text-left">${code}</pre>`;
+      }
+    }
+
+    async function deleteComponentDirect(id) {
+      try {
+        await fetch(API_BASE + '/api/components/delete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id })
+        });
+        closeInspector();
+        await loadPipelineArtifacts();
+      } catch (err) {
+        console.error("Error al eliminar componente:", err);
+      }
+    }
+
+    async function clearCanvasCards() {
+      if (confirm('¿Deseas vaciar todas las tarjetas del canvas?')) {
+        try {
+          const res = await fetch(API_BASE + '/api/artifacts/ui_spec');
+          const spec = await res.json();
+          for (const comp of (spec.components || [])) {
+            await fetch(API_BASE + '/api/components/delete', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ id: comp.id })
+            });
+          }
+          closeInspector();
+          await loadPipelineArtifacts();
+        } catch (err) {
+          console.error("Error al vaciar canvas:", err);
+        }
+      }
+    }
+
+    function renderUIMockup(spec) {
+      if (document.getElementById('uiAppTitle')) {
+        document.getElementById('uiAppTitle').textContent = spec.app_title || "NEXUS Control System";
+      }
+      const container = document.getElementById('uiMockupContainer');
+      if (!container) return;
+
+      const html = `
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-5" id="mockupCardGrid">
+          ${(spec.components || []).map(comp => {
+            let iconName = comp.icon || 'trending-up';
+            if (comp.title?.toLowerCase().includes('ingresos') || comp.icon === 'rabbit') {
+              iconName = 'rabbit';
+            }
+
+            const compData = JSON.stringify(comp).replace(/"/g, '&quot;');
+
+            if (comp.type === 'image_card') {
+              return `
+                <div class="nexus-card p-4 relative overflow-hidden group" id="${comp.id}" onclick="selectComponentForInspector(${compData})">
+                  <div class="flex justify-between items-center mb-2">
+                    <span class="text-xs font-semibold text-zinc-200 inline-editable" contenteditable="true" data-comp-id="${comp.id}" data-field="title">${comp.title}</span>
+                    <button onclick="event.stopPropagation(); deleteComponentDirect('${comp.id}')" title="Eliminar tarjeta" class="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20 transition-all">
+                      <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                    </button>
+                  </div>
+                  <img src="${comp.value}" class="w-full h-36 object-cover rounded-lg border border-zinc-800" />
+                </div>
+              `;
+            }
+            
+            return `
+              <div class="nexus-card p-5 relative overflow-hidden flex flex-col justify-between group" id="${comp.id}" onclick="selectComponentForInspector(${compData})">
+                <div class="flex justify-between items-start mb-4">
+                  <span class="text-xs font-semibold text-zinc-400 uppercase tracking-wider inline-editable" contenteditable="true" data-comp-id="${comp.id}" data-field="title">${comp.title}</span>
+                  <div class="flex items-center gap-2">
+                    <button onclick="event.stopPropagation(); deleteComponentDirect('${comp.id}')" title="Eliminar tarjeta" class="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 border border-red-500/20 transition-all">
+                      <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                    </button>
+                    <div class="p-2 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center">
+                      <i data-lucide="${iconName}" class="w-5 h-5 text-emerald-400"></i>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <div class="text-2xl font-bold text-white tracking-tight inline-editable my-1" contenteditable="true" data-comp-id="${comp.id}" data-field="value">${comp.value || '$0.00'}</div>
+                  <div class="flex items-center gap-1.5 text-[11px] text-emerald-400 font-medium">
+                    <i data-lucide="arrow-up-right" class="w-3.5 h-3.5"></i>
+                    <span class="inline-editable" contenteditable="true" data-comp-id="${comp.id}" data-field="change">${comp.change || 'Activo'}</span>
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+
+      container.innerHTML = html;
+      lucide.createIcons();
+    }
+
+    const codeFilesData = {
+      'robots.txt': `User-agent: Googlebot\nAllow: /\n\nUser-agent: Bingbot\nAllow: /\n\nUser-agent: Twitterbot\nAllow: /\n\nUser-agent: facebookexternalhit\nAllow: /\n\nUser-agent: *\nAllow: /`,
+      'favicon.ico': `[Binary Icon File · 16x16 / 32x32 Vector Asset]`,
+      'router.tsx': `import { createRouter } from '@tanstack/react-router';\nimport { routeTree } from './routeTree.gen';\n\nexport const router = createRouter({ routeTree });`,
+      'server.ts': `import { serve } from "bun";\n\nserve({\n  port: 3000,\n  fetch(req) {\n    return new Response("Blooming Icon Studio Server Engine");\n  },\n});`,
+      'styles.css': `@tailwind base;\n@tailwind components;\n@tailwind utilities;\n\nbody {\n  @apply bg-zinc-950 text-zinc-100 font-sans;\n}`,
+      'main.rs': `// NEXUS CORE Server Engine (Rust Tokio + Axum)\nuse axum::{routing::{get, post}, Router, Json};\nuse serde::{Deserialize, Serialize};\n\n#[tokio::main]\nasync fn main() {\n    println!("🚀 [NEXUS CORE] Starting High-Performance Engine on port 5180...");\n    let app = Router::new()\n        .route("/api/health", get(|| async { Json("OK") }))\n        .route("/api/refine", post(refine_handler));\n\n    let listener = tokio::net::TcpListener::bind("0.0.0.0:5180").await.unwrap();\n    axum::serve(listener, app).await.unwrap();\n}`,
+      'project.json': `{\n  "id": "46a49827-d70a-4020-a6a4-6e60e9b59b42",\n  "name": "Blooming Icon Studio",\n  "framework": "react-vite",\n  "backend": "rust-axum",\n  "database": "postgresql"\n}`,
+      '.gitignore': `target/\nnode_modules/\n.env\n*.log`,
+      'Cargo.toml': `[package]\nname = "nexus-core"\nversion = "2.5.0"\nedition = "2021"\n\n[dependencies]\ntokio = { version = "1.35", features = ["full"] }\naxum = "0.7"`,
+      'package.json': `{\n  "name": "blooming-icon-studio",\n  "version": "2.5.0",\n  "private": true\n}`,
+      'AGENTS.md': `# NEXUS CORE & Lovable Architecture Specification\nAutonomous AI Pairs for Fullstack Rust & React Development.`
+    };
+
+    let currentSelectedCodeFile = 'robots.txt';
+
+    function selectCodeFile(filename) {
+      currentSelectedCodeFile = filename;
+      const pathEl = document.getElementById('activeCodeFilePath');
+      if (pathEl) {
+        pathEl.innerHTML = `<i data-lucide="file-code" class="w-3.5 h-3.5"></i> public/${filename}`;
+      }
+      const codeContent = codeFilesData[filename] || `// Contenido de ${filename}\n// NEXUS CORE Code Stream`;
+      
+      const lines = codeContent.split('\n');
+      const formattedHtml = lines.map((line, idx) => `
+        <div class="flex items-start font-mono text-xs leading-relaxed group hover:bg-zinc-900/60 py-0.5">
+          <span class="w-10 pr-4 text-right text-zinc-600 select-none flex-shrink-0 text-[11px] font-mono">${idx + 1}</span>
+          <span class="text-zinc-200 whitespace-pre">${escapeHtml(line)}</span>
+        </div>
+      `).join('');
+
+      const viewEl = document.getElementById('codeViewerContent');
+      if (viewEl) viewEl.innerHTML = formattedHtml;
+      
+      document.querySelectorAll('.code-tree-item').forEach(el => {
+        el.classList.remove('bg-zinc-800/80', 'text-emerald-400', 'font-bold');
+        if (el.textContent.trim() === filename) {
+          el.classList.add('bg-zinc-800/80', 'text-emerald-400', 'font-bold');
+        }
+      });
+      lucide.createIcons();
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
+
+    function copyActiveCode() {
+      const code = document.getElementById('codeViewerContent').textContent;
+      navigator.clipboard.writeText(code);
+      showToast(`Código de ${currentSelectedCodeFile} copiado`, 'success');
+    }
+
+    function filterCodeFiles(query) {
+      const items = document.querySelectorAll('.code-tree-item');
+      query = query.toLowerCase();
+      items.forEach(item => {
+        if (item.textContent.toLowerCase().includes(query)) {
+          item.classList.remove('hidden');
+        } else {
+          item.classList.add('hidden');
+        }
+      });
+    }
+
+    function copyProjectShareLink() {
+      navigator.clipboard.writeText(window.location.href);
+      showToast('🔗 Enlace del proyecto copiado al portapapeles', 'success');
+    }
+
+    function openPublishModal() {
+      const modal = document.getElementById('publishModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closePublishModal() {
+      const modal = document.getElementById('publishModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function triggerDeployNow() {
+      closePublishModal();
+      showToast('🚀 Desplegando en producción: https://blooming-icon-studio.nexus.dev', 'success');
+    }
+
+    function switchMainView(view) {
+      document.getElementById('viewPreview')?.classList.add('hidden');
+      document.getElementById('viewFiles')?.classList.add('hidden');
+      document.getElementById('viewCode')?.classList.add('hidden');
+      document.getElementById('viewERD')?.classList.add('hidden');
+      document.getElementById('viewAPI')?.classList.add('hidden');
+      document.getElementById('viewSQL')?.classList.add('hidden');
+
+      ['Preview', 'Files', 'Code', 'ERD', 'API', 'SQL'].forEach(tab => {
+        const btn = document.getElementById('btnTab' + tab);
+        if (btn) {
+          btn.className = 'px-3 py-1.5 rounded-md hover:text-zinc-200 transition-all flex items-center gap-1.5';
+        }
+      });
+
+      const tabKey = view.charAt(0).toUpperCase() + view.slice(1);
+      const activeBtn = document.getElementById('btnTab' + tabKey);
+      if (activeBtn) {
+        activeBtn.className = 'px-3 py-1.5 rounded-md bg-zinc-800 text-zinc-100 transition-all flex items-center gap-1.5 font-semibold';
+      }
+
+      if (view === 'preview') document.getElementById('viewPreview')?.classList.remove('hidden');
+      if (view === 'files') document.getElementById('viewFiles')?.classList.remove('hidden');
+      if (view === 'code') {
+        document.getElementById('viewCode')?.classList.remove('hidden');
+        selectCodeFile(currentSelectedCodeFile);
+      }
+      if (view === 'erd') document.getElementById('viewERD')?.classList.remove('hidden');
+      if (view === 'api') document.getElementById('viewAPI')?.classList.remove('hidden');
+      if (view === 'sql') document.getElementById('viewSQL')?.classList.remove('hidden');
+
+      lucide.createIcons();
+    }
+
+    async function approveArchitecture() {
+      if (confirm('¿Confirmas la aprobación de la arquitectura para compilar el backend en Rust (Axum)?')) {
+        const res = await fetch(API_BASE + '/api/approve', { method: 'POST' });
+        const data = await res.json();
+        alert(data.message);
+      }
+    }
+
+    function dismissPromoBanner() {
+      const banner = document.getElementById('nexusPromoBanner');
+      if (banner) {
+        banner.classList.add('opacity-0', 'scale-95');
+        setTimeout(() => { banner.style.display = 'none'; }, 300);
+        localStorage.setItem('nexus_banner_dismissed', 'true');
+        if (typeof showToast === 'function') showToast('Banner cerrado permanentemente', 'info');
+      }
+    }
+
+    function checkBannerDismissed() {
+      if (localStorage.getItem('nexus_banner_dismissed') === 'true') {
+        const banner = document.getElementById('nexusPromoBanner');
+        if (banner) banner.style.display = 'none';
+      }
+    }
+
+    window.onload = () => {
+      loadPipelineArtifacts();
+      checkBannerDismissed();
+    };
+  </script>
+</body>
+</html>

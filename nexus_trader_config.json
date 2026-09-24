@@ -1,0 +1,99 @@
+{
+  "accounts": [
+    {
+      "label": "N",
+      "api_key": null,
+      "secret_key": null
+    },
+    {
+      "label": "V",
+      "api_key": null,
+      "secret_key": null
+    },
+    {
+      "label": "Original",
+      "api_key": "wL19c7xCjTaNxRW9HBusITH6vWpvqnGeda1o8U1LOTFA6MFCYzntDq02GIyl3oND",
+      "secret_key": "hsN1YqCjMDuj7KmWPHvJ9RA1nHFzbdqwiQKKLUWSPjrfaawFVrkhM4Y8JOLDbOV2"
+    },
+    {
+      "label": "S1_Velas",
+      "api_key": null,
+      "secret_key": null
+    },
+    {
+      "label": "S2_SMC",
+      "api_key": null,
+      "secret_key": null
+    },
+    {
+      "label": "S3_Scalping",
+      "api_key": null,
+      "secret_key": null
+    },
+    {
+      "label": "S4_MeanRev",
+      "api_key": null,
+      "secret_key": null
+    },
+    {
+      "label": "S5_Trend",
+      "api_key": null,
+      "secret_key": null
+    },
+    {
+      "label": "S6_Contra",
+      "api_key": null,
+      "secret_key": null
+    },
+    {
+      "label": "S7_MTF",
+      "api_key": null,
+      "secret_key": null
+    }
+  ],
+  "paper_trading": true,
+  "watchlist": [
+    "BTCUSDT",
+    "ETHUSDT",
+    "SOLUSDT",
+    "BNBUSDT",
+    "ADAUSDT",
+    "XRPUSDT",
+    "DOGEUSDT",
+    "LINKUSDT",
+    "DOTUSDT",
+    "AVAXUSDT",
+    "SUIUSDT",
+    "OPUSDT",
+    "ARBUSDT",
+    "APTUSDT",
+    "ATOMUSDT",
+    "NEARUSDT",
+    "FILUSDT",
+    "ICPUSDT",
+    "FETUSDT",
+    "RENDERUSDT",
+    "IMXUSDT",
+    "SEIUSDT",
+    "INJUSDT",
+    "TAOUSDT",
+    "PEPEUSDT",
+    "WIFUSDT",
+    "BONKUSDT",
+    "JUPUSDT",
+    "TIAUSDT"
+  ],
+  "risk": {
+    "max_position_size_pct": 0.04,
+    "max_leverage": 1.0,
+    "stop_loss_pct": 0.1,
+    "take_profit_pct": 0.08,
+    "max_daily_loss_pct": 0.08,
+    "max_open_positions": 2,
+    "max_slippage_pct": 0.002,
+    "trailing_stop_activation": 0.05,
+    "trailing_stop_distance": 0.03
+  },
+  "server_port": 8444,
+  "initial_balance": 100.0
+}

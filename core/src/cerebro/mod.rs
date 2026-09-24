@@ -19,7 +19,24 @@ pub mod pensamiento_humano;
 
 pub mod aprendizaje_recursivo;
 pub mod arbitraje_latencia;
+pub mod ejecucion_especulativa;
 pub mod razonamiento_r1;
+
+// ─── Estructuras Cognitivas y Límbicas ─────────────────────────────────────────
+pub mod affective_engine;
+pub mod ghost_voice;
+pub mod healer;
+pub mod hippocampus;
+pub mod hypothalamus;
+pub mod immune;
+pub mod intuition;
+pub mod nerve_system;
+pub mod neural_memory;
+pub mod prefrontal_cortex;
+pub mod reflex_arc;
+pub mod reptilian;
+pub mod thalamus;
+
 
 // ─── Generador Orgánico Interno (GOI) ─────────────────────────────────────────
 pub mod generador;

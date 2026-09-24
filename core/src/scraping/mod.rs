@@ -8,4 +8,6 @@
 //! - `pipeline::token_counter` — estimación de tokens.
 //! - `pipeline::router` — enrutador de umbral (≤4k directo a nube, >4k Map-Reduce).
 
+pub mod extraction_driver;
 pub mod pipeline;
+

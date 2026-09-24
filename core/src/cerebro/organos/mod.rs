@@ -30,6 +30,7 @@ pub mod voluntad_propia;
 // 🧠 ÓRGANOS RAG — Sistema de Recuperación Aumentada
 pub mod chunker;
 pub mod ingesta;
+pub mod patcher_guiado;
 pub mod reranker;
 pub mod retrieval;
 

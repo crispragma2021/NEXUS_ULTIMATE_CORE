@@ -456,6 +456,44 @@ impl MemoriaPiramidalStore {
         Ok((persona, escenarios))
     }
 
+    /// Compresión Progresiva Deslizante de Contexto:
+    /// Promueve automáticamente acumulaciones de L0 a L1, L1 a L2 y actualiza L3.
+    pub fn compresion_deslizante_jerarquica(&self, umbral_l0: usize) -> Result<usize> {
+        let mut stmt = self
+            .conn
+            .prepare("SELECT id, contenido FROM memoria_piramidal WHERE nivel='L0' ORDER BY id ASC")?;
+
+        let l0_filas: Vec<(i64, String)> = stmt
+            .query_map([], |row| Ok((row.get(0)?, row.get(1)?)))?
+            .filter_map(|r| r.ok())
+            .collect();
+
+        if l0_filas.len() <= umbral_l0 {
+            return Ok(0);
+        }
+
+        let a_comprimir = l0_filas.len() - umbral_l0;
+        let mut total_atoms_creados = 0;
+        let mut l1_ids_nuevos = Vec::new();
+
+        for (l0_id, contenido) in l0_filas.into_iter().take(a_comprimir) {
+            let atomos = self.extraer_atomos(&contenido, l0_id)?;
+            total_atoms_creados += atomos.len();
+            l1_ids_nuevos.extend(atomos);
+        }
+
+        if !l1_ids_nuevos.is_empty() {
+            let l2_id = self.crear_escenario("Contexto Consolidado por Deslizamiento", &l1_ids_nuevos)?;
+            let _ = self.consolidar_persona(&[l2_id])?;
+            info!(
+                "🗜️ [COMPRESIÓN] Compresión jerárquica procesó {} L0 -> {} atoms -> Escenario L2#{}",
+                a_comprimir, total_atoms_creados, l2_id
+            );
+        }
+
+        Ok(a_comprimir)
+    }
+
     // ========================================================================
     // Reforzar peso (Ebbinghaus: lo que se usa, se refuerza)
     // ========================================================================
@@ -697,5 +735,21 @@ mod tests {
         assert_eq!(nivel, NivelPiramide::L2Escenario);
         assert_eq!(id, 7);
         assert!(parse_node_id("X9").is_err());
+    }
+
+    #[test]
+    fn test_compresion_deslizante_jerarquica() {
+        let store = MemoriaPiramidalStore::from_path(PathBuf::from(":memory:")).expect("store");
+        let _l0_a = store.registrar_conversacion("user", "Pregunta 1", "El puerto es 8080 y la arquitectura es soberana en Rust.").unwrap();
+        let _l0_b = store.registrar_conversacion("user", "Pregunta 2", "El microservicio usa Axum para alta concurrencia.").unwrap();
+        let _l0_c = store.registrar_conversacion("user", "Pregunta 3", "El sistema mantiene persistencia relacional en SQLite.").unwrap();
+
+        // Si fijamos umbral de L0 en 1, debe comprimir 2 entradas L0
+        let procesados = store.compresion_deslizante_jerarquica(1).unwrap();
+        assert_eq!(procesados, 2);
+
+        let (persona, escenarios) = store.capa_superior_para_contexto(5).unwrap();
+        assert!(persona.is_some(), "Debe haberse consolidado persona L3");
+        assert!(!escenarios.is_empty(), "Debe existir al menos un escenario L2");
     }
 }

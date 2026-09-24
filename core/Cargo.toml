@@ -112,6 +112,7 @@ rusqlite = { version = "0.31", features = ["bundled"] }
 scraper = "0.25"
 ego-tree = "0.10"
 url = "2.5"
+tower-http = { workspace = true, features = ["cors"] }
 
 [dev-dependencies]
 wiremock = "0.5"

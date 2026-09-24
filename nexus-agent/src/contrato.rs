@@ -214,7 +214,7 @@ impl TransporteChatCompletions {
             "messages": historial
                 .iter()
                 .map(|m| serde_json::json!({
-                    "role": m.rol.etiqueta(),
+                    "role": if m.rol.etiqueta() == "tool" { "user" } else { m.rol.etiqueta() },
                     "content": m.contenido,
                 }))
                 .collect::<Vec<_>>(),
@@ -346,7 +346,7 @@ impl ContratoLlm for ModeloClienteGenerico {
 // ----------------------------------------------------------------------------
 
 pub const OLLAMA_URL: &str = "http://localhost:11434";
-pub const OLLAMA_MODELO: &str = "llama3";
+pub const OLLAMA_MODELO: &str = "hermes3:8b";
 
 /// Cliente Ollama: inferencia 100% local, sin clave API.
 #[derive(Debug, Clone)]
@@ -372,6 +372,22 @@ impl OllamaCliente {
             modelo: modelo.to_string(),
         })
     }
+
+    /// Clasifica el prompt según palabras clave de intención para seleccionar el modelo Ollama adecuado
+    pub fn clasificar_intencion(prompt: &str) -> (&'static str, &'static str) {
+        let lower = prompt.to_lowercase();
+        if lower.contains("pentest") || lower.contains("exploit") || lower.contains("nmap")
+            || lower.contains("payload") || lower.contains("xss") || lower.contains("vulnerabilidad") {
+            ("whiterabbitneo-off:latest", "SEGURIDAD")
+        } else if lower.contains("analiza") || lower.contains("matemática") || lower.contains("razona")
+            || lower.contains("complejidad") || lower.contains("algoritmo") {
+            ("dolphin-llama3:8b", "RAZONAMIENTO")
+        } else if lower.contains("poema") || lower.contains("historia") || lower.contains("cuento") {
+            ("dolphin-llama3:8b", "CREATIVO")
+        } else {
+            ("hermes3:8b", "GENERAL")
+        }
+    }
 }
 
 #[async_trait]
@@ -381,9 +397,24 @@ impl ContratoLlm for OllamaCliente {
     }
 
     async fn conversar(&self, historial: &[MensajeHistoria]) -> Result<RespuestaLlm> {
+        let modelo_final = if self.modelo == "auto" {
+            let ultimo_usuario = historial
+                .iter()
+                .rev()
+                .find(|m| m.rol == RolMensaje::Usuario)
+                .map(|m| m.contenido.as_str())
+                .unwrap_or_default();
+
+            let (mod_auto, etq) = Self::clasificar_intencion(ultimo_usuario);
+            tracing::info!("🧭 [OLLAMA_ROUTER] Intención '{}' → Seleccionado modelo Ollama '{}'", etq, mod_auto);
+            mod_auto.to_string()
+        } else {
+            self.modelo.clone()
+        };
+
         // Ollama usa su propio esquema: messages con roles "system"/"user"/"assistant"
         let cuerpo = serde_json::json!({
-            "model": self.modelo,
+            "model": modelo_final,
             "messages": historial
                 .iter()
                 .map(|m| {
@@ -410,6 +441,32 @@ impl ContratoLlm for OllamaCliente {
         let estado_http = respuesta.status();
         if !estado_http.is_success() {
             let texto = respuesta.text().await.unwrap_or_default();
+            // Fallback a hermes3:8b si el modelo específico falló
+            if modelo_final != "hermes3:8b" {
+                tracing::warn!("⚠️ Modelo '{}' falló ({}), reintentando con fallback 'hermes3:8b'", modelo_final, estado_http);
+                let cuerpo_fallback = serde_json::json!({
+                    "model": "hermes3:8b",
+                    "messages": cuerpo["messages"],
+                    "stream": false,
+                });
+                if let Ok(resp_fallback) = self.http.post(&self.url).json(&cuerpo_fallback).send().await {
+                    if resp_fallback.status().is_success() {
+                        #[derive(Deserialize)]
+                        struct RespFallback {
+                            message: MensajeRespuesta,
+                            #[serde(default)]
+                            model: String,
+                        }
+                        if let Ok(parseada) = resp_fallback.json::<RespFallback>().await {
+                            return Ok(RespuestaLlm {
+                                texto: parseada.message.content,
+                                finalizado_por: "stop".into(),
+                                modelo: "hermes3:8b".to_string(),
+                            });
+                        }
+                    }
+                }
+            }
             return Err(anyhow!("Ollama respondió HTTP {}: {}", estado_http, texto));
         }
 
@@ -434,6 +491,92 @@ impl ContratoLlm for OllamaCliente {
                 parseada.model
             },
         })
+    }
+}
+
+// ----------------------------------------------------------------------------
+// Proveedor 4: Groq Ultra-Fast Free Tier (https://api.groq.com/openai/v1)
+// ----------------------------------------------------------------------------
+
+pub const GROQ_URL: &str = "https://api.groq.com/openai/v1";
+pub const GROQ_MODELO: &str = "llama-3.3-70b-versatile";
+
+/// Cliente Groq: ultra-rápido, tier gratuito de hasta 14,400 peticiones/día.
+#[derive(Debug, Clone)]
+pub struct GroqCliente {
+    transporte: TransporteChatCompletions,
+}
+
+impl GroqCliente {
+    pub fn nuevo(clave_api: &str) -> Result<Self> {
+        let modelo = ModeloCliente {
+            proveedor: "groq".into(),
+            modelo: GROQ_MODELO.into(),
+            url_base: GROQ_URL.into(),
+            clave_api: Some(clave_api.to_string()),
+            extras: HashMap::new(),
+        };
+        Ok(Self { transporte: TransporteChatCompletions::nuevo(&modelo)? })
+    }
+
+    pub fn con_modelo(clave_api: &str, modelo: &str) -> Result<Self> {
+        let mut base = Self::nuevo(clave_api)?;
+        base.transporte.modelo = modelo.to_string();
+        Ok(base)
+    }
+}
+
+#[async_trait]
+impl ContratoLlm for GroqCliente {
+    fn nombre(&self) -> &'static str {
+        "groq"
+    }
+
+    async fn conversar(&self, historial: &[MensajeHistoria]) -> Result<RespuestaLlm> {
+        self.transporte.enviar(historial).await
+    }
+}
+
+// ----------------------------------------------------------------------------
+// Proveedor 5: Pollinations AI Text (100% Gratis - Zero Key Required)
+// ----------------------------------------------------------------------------
+
+pub const POLLINATIONS_TEXT_URL: &str = "https://text.pollinations.ai/openai";
+pub const POLLINATIONS_TEXT_MODELO: &str = "openai";
+
+/// Cliente Pollinations Text: 100% gratis, sin registro ni clave API requerida.
+#[derive(Debug, Clone)]
+pub struct PollinationsTextCliente {
+    transporte: TransporteChatCompletions,
+}
+
+impl PollinationsTextCliente {
+    pub fn nuevo() -> Result<Self> {
+        let modelo = ModeloCliente {
+            proveedor: "pollinations".into(),
+            modelo: POLLINATIONS_TEXT_MODELO.into(),
+            url_base: POLLINATIONS_TEXT_URL.into(),
+            clave_api: None,
+            extras: HashMap::new(),
+        };
+        Ok(Self { transporte: TransporteChatCompletions::nuevo(&modelo)? })
+    }
+
+    pub fn con_modelo(modelo: &str) -> Result<Self> {
+        let mut base = Self::nuevo()?;
+        base.transporte.modelo = modelo.to_string();
+        Ok(base)
+    }
+}
+
+#[async_trait]
+impl ContratoLlm for PollinationsTextCliente {
+    fn nombre(&self) -> &'static str {
+        "pollinations-text"
+    }
+
+    async fn conversar(&self, historial: &[MensajeHistoria]) -> Result<RespuestaLlm> {
+        self.transporte.enviar(historial).await
     }
 }
 

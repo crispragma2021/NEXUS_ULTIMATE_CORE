@@ -1,6 +1,7 @@
 #![recursion_limit = "2048"]
 pub mod autodiagnostico;
 pub mod autonomia;
+pub mod autopreservacion;
 pub mod brain;
 pub mod browser; // 🧬 Navegación, sesiones y perfiles (Fase 3)
 pub mod cache; // ⚡ Cache Semántico y Eficiencia de Tokens
@@ -19,8 +20,8 @@ pub mod infra;
 pub mod memoria;
 pub mod neuroquimica;
 pub mod nexus_embedder;
-pub mod nexus_telegram;
-pub mod organismo; // 🫀 Interocepción: sensaciones corporales funcionales
+pub mod organismo;
+ // 🫀 Interocepción: sensaciones corporales funcionales
 pub mod phantom; // 👻 Módulo fantasma de compatibilidad
 pub use memoria::evolution;
 pub mod brain_metabolism;
@@ -74,9 +75,9 @@ pub use procesos::telemetry;
 
 pub fn set_personality(p: Personality) -> anyhow::Result<()> {
     if let Some(cortex) = brain::ACTIVE_CORTEX.get() {
-        let _ = pollster::block_on(cortex.set_personality(p));
-        Ok(())
+        cortex.set_personality(p)
     } else {
         Err(anyhow::anyhow!("Córtex Cognitivo no inicializado"))
     }
 }
+

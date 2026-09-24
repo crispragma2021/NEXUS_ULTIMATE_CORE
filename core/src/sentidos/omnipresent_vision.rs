@@ -9,6 +9,12 @@ use tokio::sync::RwLock;
 use tracing::{error, info, warn};
 use xcap::Monitor;
 
+#[derive(Debug, Clone)]
+pub enum HypothalamusSignal {
+    BlueLightLevel(f32),
+    ThreatAlert(String),
+}
+
 /// 👁️ EL OJO QUE TODO LO VE: Omnipresent Vision
 /// Unifica la velocidad de xcap con la inteligencia de VisionOmega.
 pub struct OmnipresentVision {
@@ -28,8 +34,21 @@ static VISION_INSTANCE: Lazy<Arc<RwLock<OmnipresentVision>>> = Lazy::new(|| {
 });
 
 impl OmnipresentVision {
+    pub fn new(
+        _reflex_tx: Option<tokio::sync::mpsc::Sender<crate::cerebro::reflex_arc::ReflexSignal>>,
+        _neural: Option<Arc<crate::cerebro::neural_memory::NeuralManager>>,
+    ) -> Self {
+        Self {
+            activo: false,
+            ultimo_frame_b64: None,
+            ultimo_texto_ocr: None,
+            frames_capturados: 0,
+        }
+    }
+
     /// Obtener la instancia global del Ojo
     pub fn instance() -> Arc<RwLock<Self>> {
+
         VISION_INSTANCE.clone()
     }
 

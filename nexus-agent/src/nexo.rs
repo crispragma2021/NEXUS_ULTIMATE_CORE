@@ -815,8 +815,56 @@ impl NexoAgente {
                     ),
                 }
             }
+            "pantalla_ver" => {
+                let objetivo = instrumento.argumento("objetivo");
+                self.ejecutor.capturar_pantalla(objetivo.as_deref().unwrap_or("escritorio")).await?
+            }
+            "pantalla_clic" => {
+                let x = instrumento
+                    .argumentos
+                    .get("x")
+                    .and_then(extraer_u64)
+                    .ok_or_else(|| anyhow!("Instrumento 'pantalla_clic' requiere 'x' numérico"))? as u32;
+                let y = instrumento
+                    .argumentos
+                    .get("y")
+                    .and_then(extraer_u64)
+                    .ok_or_else(|| anyhow!("Instrumento 'pantalla_clic' requiere 'y' numérico"))? as u32;
+                self.ejecutor.clic_escritorio(x, y).await?
+            }
+            "pantalla_escribir" => {
+                let texto = instrumento
+                    .argumento("texto")
+                    .ok_or_else(|| anyhow!("Instrumento 'pantalla_escribir' requiere 'texto'"))?;
+                self.ejecutor.escribir_escritorio(&texto).await?
+            }
+            "pantalla_tecla" => {
+                let tecla = instrumento
+                    .argumento("tecla")
+                    .ok_or_else(|| anyhow!("Instrumento 'pantalla_tecla' requiere 'tecla'"))?;
+                self.ejecutor.tecla_escritorio(&tecla).await?
+            }
+            "movil_adb" => {
+                let accion = instrumento
+                    .argumento("accion")
+                    .ok_or_else(|| anyhow!("Instrumento 'movil_adb' requiere 'accion'"))?;
+                let params_raw = instrumento.argumento("params").unwrap_or_default();
+                let params: Vec<&str> = if params_raw.is_empty() {
+                    Vec::new()
+                } else {
+                    params_raw.split_whitespace().collect()
+                };
+                self.ejecutor.ejecutar_adb(&accion, &params).await?
+            }
+            "generar_imagen" => {
+                let prompt_img = instrumento
+                    .argumento("prompt")
+                    .ok_or_else(|| anyhow!("Instrumento 'generar_imagen' requiere 'prompt'"))?;
+                let cmd = format!("python3 /home/nexus/NEXUS_ULTIMATE_CORE/agents/nexo_imagenes.py \"{}\"", prompt_img.replace('"', "\\\""));
+                self.ejecutor.ejecutar_bash(&cmd).await?
+            }
             otro => {
-                return Ok(format!("Instrumento desconocido: '{otro}'. Disponibles: bash, leer_archivo, escribir_archivo, buscar_archivos, listar_archivos, mcp_llamar, skill_listar, skill_ver, recordar, todo_agregar, todo_listar, todo_completar, todo_quitar, web_buscar, web_extraer, programar, tareas_listar, tareas_cancelar, delegar"));
+                return Ok(format!("Instrumento desconocido: '{otro}'. Disponibles: bash, generar_imagen, leer_archivo, escribir_archivo, buscar_archivos, listar_archivos, mcp_llamar, skill_listar, skill_ver, recordar, todo_agregar, todo_listar, todo_completar, todo_quitar, web_buscar, web_extraer, programar, tareas_listar, tareas_cancelar, delegar, pantalla_ver, pantalla_clic, pantalla_escribir, pantalla_tecla, movil_adb"));
             }
         };
 

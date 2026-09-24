@@ -1,5 +1,6 @@
-use crate::brain::hippocampus::ArtificialHippocampus;
-use crate::brain::NeuralManager;
+use crate::cerebro::hippocampus::ArtificialHippocampus;
+use crate::cerebro::neural_memory::NeuralManager;
+
 use anyhow::Result;
 use std::sync::Arc;
 

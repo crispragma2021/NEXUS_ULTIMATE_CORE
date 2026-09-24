@@ -1,11 +1,11 @@
-// core/src/cerebro/synapse/mod.rs
-
+pub mod catalogo_procedural;
 mod consolidacion;
 mod difusion;
 mod nodo;
 mod sintesis;
 mod types;
 
+pub use catalogo_procedural::{ArtefactoProcedural, CatalogoHipocampico, TipoArtefacto};
 pub use types::{EnlaceSinaptico, GrafoSinapsis, IDNodo, NodoSinaptico};
 
 use std::collections::{HashMap, HashSet};
@@ -25,6 +25,7 @@ pub struct MotorSynapse {
     pub conceptos: HashMap<String, NodoConcepto>,
     pub difusor: Difusor,
     pub broca: SintetizadorBroca,
+    pub catalogo: CatalogoHipocampico,
     pub umbral_expresion: f32,
     /// Ruta opcional a la base de datos SQLite para persistencia.
     /// Si es `None`, `guardar_en_db()` y `cargar_desde_db()` son no-ops.
@@ -45,6 +46,7 @@ impl MotorSynapse {
             conceptos: HashMap::new(),
             difusor: Difusor::new(),
             broca: SintetizadorBroca::new(),
+            catalogo: CatalogoHipocampico::new(),
             umbral_expresion: 0.6,
             db_path: None,
             conceptos_base: HashSet::new(),
@@ -62,7 +64,8 @@ impl MotorSynapse {
     /// syn.cargar_desde_db()?;
     /// ```
     pub fn set_db_path(&mut self, path: PathBuf) {
-        self.db_path = Some(path);
+        self.db_path = Some(path.clone());
+        self.catalogo.set_db_path(path);
     }
 
     // ─── Persistencia: SQLite ───────────────────────────────────────────────

@@ -354,6 +354,62 @@ impl EjecutorHermes {
         }
     }
 
+    /// Captura pantalla de una URL o del escritorio.
+    pub async fn capturar_pantalla(&self, objetivo: &str) -> Result<ResultadoHerramienta> {
+        match crate::vision::VisionManager::capturar_pantalla(objetivo) {
+            Ok(path) => Ok(ResultadoHerramienta::exito(format!(
+                "Captura de pantalla realizada exitosamente en: {}",
+                path.display()
+            ))),
+            Err(e) => Ok(ResultadoHerramienta::fallo(format!(
+                "Error al realizar captura de pantalla de '{}': {e}",
+                objetivo
+            ))),
+        }
+    }
+
+    /// Ejecuta clic del mouse en coordenadas (X, Y) del escritorio.
+    pub async fn clic_escritorio(&self, x: u32, y: u32) -> Result<ResultadoHerramienta> {
+        match crate::os_control::OSControlManager::clic_escritorio(x, y) {
+            Ok(msg) => Ok(ResultadoHerramienta::exito(msg)),
+            Err(e) => Ok(ResultadoHerramienta::fallo(format!("Error en clic: {e}"))),
+        }
+    }
+
+    /// Inyecta texto en el teclado del escritorio.
+    pub async fn escribir_escritorio(&self, texto: &str) -> Result<ResultadoHerramienta> {
+        match crate::os_control::OSControlManager::escribir_escritorio(texto) {
+            Ok(msg) => Ok(ResultadoHerramienta::exito(msg)),
+            Err(e) => Ok(ResultadoHerramienta::fallo(format!("Error escribiendo texto: {e}"))),
+        }
+    }
+
+    /// Inyecta tecla o atajo en el escritorio.
+    pub async fn tecla_escritorio(&self, tecla: &str) -> Result<ResultadoHerramienta> {
+        match crate::os_control::OSControlManager::tecla_escritorio(tecla) {
+            Ok(msg) => Ok(ResultadoHerramienta::exito(msg)),
+            Err(e) => Ok(ResultadoHerramienta::fallo(format!("Error al presionar tecla: {e}"))),
+        }
+    }
+
+    /// Ejecuta un comando ADB en dispositivos Android.
+    pub async fn ejecutar_adb(&self, accion: &str, params: &[&str]) -> Result<ResultadoHerramienta> {
+        match crate::os_control::OSControlManager::ejecutar_adb(accion, params) {
+            Ok(msg) => Ok(ResultadoHerramienta::exito(msg)),
+            Err(e) => Ok(ResultadoHerramienta::fallo(format!("Error en comando ADB: {e}"))),
+        }
+    }
+
+    /// Consulta la memoria vectorial y base de datos de datos de trading (LanceDB / SQLite).
+    pub async fn consultar_memoria_lancedb(&self, _query: &str) -> Result<ResultadoHerramienta> {
+        let db_path = Path::new("/home/nexus/NEXUS_ULTIMATE_CORE/nexus_trading.db");
+        if !db_path.exists() {
+            return Ok(ResultadoHerramienta::fallo("Base de datos nexus_trading.db no encontrada"));
+        }
+        let cmd = "python3 -c 'import sqlite3; conn=sqlite3.connect(\"/home/nexus/NEXUS_ULTIMATE_CORE/nexus_trading.db\"); c=conn.cursor(); c.execute(\"SELECT count(*) FROM candles\"); print(\"Velas históricas:\", c.fetchone()[0]); c.execute(\"SELECT count(*) FROM trade_log\"); print(\"Trades registrados:\", c.fetchone()[0]);'".to_string();
+        self.ejecutar_bash(&cmd).await
+    }
+
     /// Recorta una línea a `max` caracteres (con marca de corte).
     fn recortar_linea(linea: &str, max: usize) -> String {
         if linea.chars().count() <= max {

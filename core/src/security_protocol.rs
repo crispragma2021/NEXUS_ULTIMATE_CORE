@@ -570,7 +570,8 @@ impl NetworkSovereignty for NetworkManager {
 
 // Implementación del trait QuantumResistantAuth para el NeuralManager
 #[async_trait]
-impl QuantumResistantAuth for crate::brain::NeuralManager {
+impl QuantumResistantAuth for crate::cerebro::neural_memory::NeuralManager {
+
     async fn sign_hybrid(&self, _data: &[u8]) -> Result<HybridSignature> {
         println!("🔐 [PQC] Generando firma híbrida (Ed25519 + ML-DSA-65)...");
 

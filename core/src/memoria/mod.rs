@@ -5,6 +5,7 @@
 // porte de los conceptos de TencentDB Agent Memory a Rust nativo soberano.
 
 pub mod aprendizaje_profundo;
+pub mod artefactos;
 pub mod evolution;
 pub mod hybrid_recall;
 pub mod intention_encoder;

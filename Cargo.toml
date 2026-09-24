@@ -7,9 +7,9 @@ members = [
     "src-tauri",
     "workshop/nexus-terminal",
     "mcp_arsenal/nexus_web_search"
-]
+, "nexus-daemon", "nexus-content-engine"]
 exclude = [
-    "nexus-puro-engine",
+    "engine-puro",
     "nexus_ebpf",
     "nexus_ebpf-ebpf",
     "nexus_ebpf-common",

@@ -22,10 +22,12 @@ pub mod sesion;
 pub mod skills;
 pub mod tareas;
 pub mod web;
+pub mod vision;
+pub mod os_control;
 
 pub use contrato::{
-    ContratoLlm, DeepSeekCliente, ModeloCliente, ModeloClienteGenerico, OllamaCliente,
-    RespuestaLlm, RolMensaje, SaltoAgente, MensajeHistoria, VariableEntorno,
+    ContratoLlm, DeepSeekCliente, GroqCliente, ModeloCliente, ModeloClienteGenerico, OllamaCliente,
+    PollinationsTextCliente, RespuestaLlm, RolMensaje, SaltoAgente, MensajeHistoria, VariableEntorno,
 };
 pub use delegacion::{Delegador, TareaDelegada};
 pub use ejecutor::{EjecutorHermes, ResultadoHerramienta, SandboxConfig};
@@ -39,3 +41,5 @@ pub use sesion::{EntradaSesion, Transcripcion};
 pub use skills::{BibliotecaSkills, Skill};
 pub use tareas::{ListaTareas, Tarea};
 pub use web::{ClienteWeb, ResultadoBusqueda};
+pub use vision::VisionManager;
+pub use os_control::OSControlManager;

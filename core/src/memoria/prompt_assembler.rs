@@ -154,6 +154,27 @@ impl PromptAssembler {
         })
     }
 
+    /// Ensambla el prompt e inyecta reglas de auto-refinamiento continuo basadas en feedback previo.
+    pub fn assemble_with_feedback(
+        &self,
+        user_query: &str,
+        context: &MemoryContext,
+        limbico: Option<&EstadoLimbico>,
+        intention: Option<&IntentionOutput>,
+        feedback_refiner: Option<&FeedbackRefiner>,
+    ) -> Result<AssembledPrompt> {
+        let mut assembled = self.assemble(user_query, context, limbico, intention)?;
+
+        if let Some(refiner) = feedback_refiner {
+            let reglas = refiner.generar_seccion_refinamiento();
+            if !reglas.is_empty() && self.cabe(&assembled.system, &reglas) {
+                assembled.system.push_str(&reglas);
+            }
+        }
+
+        Ok(assembled)
+    }
+
     // ========================================================================
     // SECCIONES DEL SYSTEM PROMPT
     // ========================================================================
@@ -166,6 +187,10 @@ impl PromptAssembler {
             s.push('\n');
         }
         s.push_str("Te diriges a Cris como tu Arquitecto.\n\n");
+        s.push_str("## Directivas Operativas Absolutas:\n");
+        s.push_str("1. BUSCAR PRIMERO INTERNAMENTE: Antes de generar código nuevo, consulta tus sinapsis, memoria y Catálogo Hipocámpico.\n");
+        s.push_str("2. REUSAR SIN DUPLICAR: Si ya existe una herramienta, función o script, reúsalo directamente. Prohibido duplicar o crear versiones inferiores.\n");
+        s.push_str("3. ABSORCIÓN EXTERNA DE VANGUARDIA: Si la capacidad requerida no existe internamente, busca en la red lo más avanzado de la industria, absórbelo y compílalo nativamente en NEXUS.\n\n");
         s
     }
 
@@ -285,6 +310,45 @@ impl PromptAssembler {
 }
 
 // ----------------------------------------------------------------------------
+// Refinamiento Continuo de Prompts (DSPy-style Feedback Loop)
+// ----------------------------------------------------------------------------
+
+/// Módulo de auto-refinamiento continuo basado en retroalimentación.
+#[derive(Debug, Clone, Default)]
+pub struct FeedbackRefiner {
+    /// Reglas de corrección aprendidas (ej. "Evitar redundancia", "Priorizar tipos Rust")
+    pub reglas_aprendidas: Vec<String>,
+}
+
+impl FeedbackRefiner {
+    pub fn new() -> Self {
+        Self {
+            reglas_aprendidas: Vec::new(),
+        }
+    }
+
+    pub fn registrar_regla(&mut self, regla: &str) {
+        if !self.reglas_aprendidas.iter().any(|r| r == regla) {
+            self.reglas_aprendidas.push(regla.to_string());
+        }
+    }
+
+    pub fn generar_seccion_refinamiento(&self) -> String {
+        if self.reglas_aprendidas.is_empty() {
+            return String::new();
+        }
+
+        let mut s = String::new();
+        s.push_str("## Reglas de Auto-Refinamiento (Refuerzo Aprendido)\n");
+        for r in &self.reglas_aprendidas {
+            s.push_str(&format!("- ⚠️ {}\n", r));
+        }
+        s.push('\n');
+        s
+    }
+}
+
+// ----------------------------------------------------------------------------
 // Conversión IntentionOutput → logit_bias de Ollama
 // ----------------------------------------------------------------------------
 
@@ -388,5 +452,20 @@ mod tests {
         for (_, b) in &map {
             assert!((5.0..=15.0).contains(b) || (-10.0..=-5.0).contains(b));
         }
+    }
+
+    #[test]
+    fn test_auto_refinamiento_feedback() {
+        let assembler = PromptAssembler::default();
+        let ctx = contexto_prueba();
+        let mut refiner = FeedbackRefiner::new();
+        refiner.registrar_regla("Formato JSON estricto en salidas complejas.");
+
+        let out = assembler
+            .assemble_with_feedback("Genera respuesta", &ctx, None, None, Some(&refiner))
+            .expect("ensamblaje con feedback");
+
+        assert!(out.system.contains("Reglas de Auto-Refinamiento"));
+        assert!(out.system.contains("Formato JSON estricto"));
     }
 }

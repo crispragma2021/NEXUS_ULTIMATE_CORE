@@ -153,6 +153,56 @@ impl VisionFantasma {
                     get: () => { return 8; }  // 8GB de RAM es lo más común
                 });
             }
+
+            // 9. 🔒 WEBRTC IP LEAK SHIELD: Bloquear filtración de IP local vía STUN/TURN
+            if (window.RTCPeerConnection) {
+                const originalRTC = window.RTCPeerConnection;
+                window.RTCPeerConnection = function(...args) {
+                    const pc = new originalRTC(...args);
+                    const origCreateOffer = pc.createOffer;
+                    pc.createOffer = function(...oArgs) {
+                        return origCreateOffer.apply(this, oArgs).then(offer => {
+                            // Filtrar ips locales rtp candidates
+                            offer.sdp = offer.sdp.replace(/a=candidate:.*?\r\n/g, '');
+                            return offer;
+                        });
+                    };
+                    return pc;
+                };
+                window.RTCPeerConnection.prototype = originalRTC.prototype;
+            }
+
+            // 10. 🛡️ CLIENT HINTS SPOOFING (navigator.userAgentData)
+            //     Cloudflare Turnstile y DataDome 2026 verifican Client Hints
+            if (!navigator.userAgentData) {
+                Object.defineProperty(navigator, 'userAgentData', {
+                    get: () => ({
+                        brands: [
+                            { brand: "Chromium", version: "130" },
+                            { brand: "Google Chrome", version: "130" },
+                            { brand: "Not?A_Brand", version: "99" }
+                        ],
+                        mobile: false,
+                        platform: "Linux",
+                        getHighEntropyValues: async (hints) => ({
+                            architecture: "x86",
+                            bitness: "64",
+                            brands: [
+                                { brand: "Chromium", version: "130.0.6723.91" },
+                                { brand: "Google Chrome", version: "130.0.6723.91" }
+                            ],
+                            fullVersionList: [
+                                { brand: "Chromium", version: "130.0.6723.91" },
+                                { brand: "Google Chrome", version: "130.0.6723.91" }
+                            ],
+                            mobile: false,
+                            model: "",
+                            platform: "Linux",
+                            platformVersion: "6.8.0"
+                        })
+                    })
+                });
+            }
         "#;
 
         // Inyectar el script en el contexto de carga inicial (Page lifecycle)

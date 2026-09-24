@@ -6,7 +6,10 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
-  background: radial-gradient(circle at 12% 18%, rgba(0, 229, 255, 0.05) 0%, transparent 45%), radial-gradient(circle at 88% 82%, rgba(0, 255, 136, 0.05) 0%, transparent 45%), #03060a;
+  background: radial-gradient(circle at 12% 18%, rgba(0, 229, 255, 0.08) 0%, transparent 45%),
+              radial-gradient(circle at 88% 82%, rgba(16, 185, 129, 0.08) 0%, transparent 45%),
+              radial-gradient(circle at 50% 120%, rgba(14, 165, 233, 0.1) 0%, transparent 50%),
+              #03060a;
   color: var(--text-primary);
   font-family: var(--font-sans);
   font-size: 13px;
@@ -26,9 +29,10 @@ body {
   background: rgba(10, 18, 30, 0.65);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
-  border-bottom: 1px solid var(--glass-border);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   flex-shrink: 0;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.6);
+  z-index: 100;
 }
 
 .header-left { display: flex; align-items: center; gap: 12px; }
@@ -188,11 +192,16 @@ body {
   background: var(--glass-bg);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-border);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: var(--radius-lg);
-  box-shadow: var(--glass-shadow);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.4);
   overflow: hidden;
   min-height: 0;
+  transition: border-color var(--transition-base), box-shadow var(--transition-base);
+}
+.chart-container:hover {
+  border-color: rgba(0, 229, 255, 0.3);
+  box-shadow: 0 10px 40px rgba(0, 229, 255, 0.1);
 }
 .chart-container canvas {
   display: block;
@@ -258,15 +267,16 @@ body {
   background: var(--glass-bg);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-border);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: var(--radius-lg);
-  box-shadow: var(--glass-shadow);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
   overflow: hidden;
-  transition: border-color var(--transition-base), box-shadow var(--transition-base);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .panel:hover {
-  border-color: rgba(0, 229, 255, 0.2);
-  box-shadow: 0 8px 32px 0 rgba(0, 229, 255, 0.04);
+  border-color: rgba(0, 229, 255, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 229, 255, 0.08);
+  transform: translateY(-2px);
 }
 
 .panel-header {

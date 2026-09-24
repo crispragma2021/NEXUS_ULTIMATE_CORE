@@ -72,6 +72,12 @@ const DESCRIPCION_HERRAMIENTAS: &str = r#"INSTRUMENTOS DISPONIBLES:
                Ejemplos: consultar_memoria, buscar_conocimiento, listar_agentes,
                ejecutar_workflow, nexus_pensar, sentinel_diagnostic, nexus_tribunal.
                Usa argumentos={} cuando la herramienta no requiera parámetros.
+- pantalla_ver: capturar pantalla del escritorio o URL. {objetivo?: string}
+- pantalla_clic: hace clic en coordenadas X e Y del escritorio. {x: number, y: number}
+- pantalla_escribir: inyecta texto en el teclado del escritorio. {texto: string}
+- pantalla_tecla: envía pulsación de tecla o combinación al escritorio. {tecla: string}
+- movil_adb: ejecuta acciones ADB en dispositivos Android (dispositivos|tap|swipe|escribir|capturar|shell).
+             {accion: string, params?: string}
 "#;
 
 #[tokio::main]
@@ -128,22 +134,32 @@ async fn main() -> Result<()> {
                 .unwrap_or_else(|_| "project-26e94ab7-4257-4475-ade".into());
             // Vertex usa Bearer token (gcloud), no API key
             let clave = std::env::var("GEMINI_API_KEY").or_else(|_| {
-                let out = std::process::Command::new(r"C:\Users\crisp\gcloud-sdk\bin\gcloud.cmd")
+                let status = std::process::Command::new("gcloud")
                     .args(["auth", "print-access-token"])
                     .output()
+                    .or_else(|_| {
+                        std::process::Command::new("/usr/bin/gcloud")
+                            .args(["auth", "print-access-token"])
+                            .output()
+                    })
                     .map_err(|e| anyhow::anyhow!("gcloud no disponible: {}", e))?;
                 Ok::<String, anyhow::Error>(
-                    String::from_utf8_lossy(&out.stdout).trim().to_string(),
+                    String::from_utf8_lossy(&status.stdout).trim().to_string(),
                 )
             })?;
             if clave.is_empty() {
                 anyhow::bail!("Falta GEMINI_API_KEY o gcloud auth");
             }
+            let modelo_gemini = match modelo.as_deref() {
+                Some("3.8") | Some("3.8-flash") => "gemini-3.8-flash",
+                Some("3.6") | Some("3.6-flash") => "gemini-3.6-flash",
+                Some("3.1") | Some("3.1-pro") => "gemini-3.1-pro",
+                Some(otro) => otro,
+                None => "gemini-3.8-flash",
+            };
             let config = ModeloCliente {
                 proveedor: "gemini".into(),
-                modelo: modelo
-                    .clone()
-                    .unwrap_or_else(|| "google/gemini-2.5-flash-lite".into()),
+                modelo: modelo_gemini.to_string(),
                 url_base: std::env::var("GEMINI_URL").unwrap_or_else(|_| {
                     format!(
                         "https://aiplatform.googleapis.com/v1beta1/projects/{}/locations/global/endpoints/openapi/",

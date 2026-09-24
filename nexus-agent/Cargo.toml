@@ -25,6 +25,7 @@ regex = { workspace = true }
 walkdir = { workspace = true }
 cron = "0.12"
 chrono = { workspace = true }
+base64 = "0.21"
 
 [dev-dependencies]
 async-trait = { workspace = true }

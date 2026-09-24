@@ -1,4 +1,5 @@
-use crate::brain::{neural_memory::NexusMemory, NeuralManager};
+use crate::cerebro::neural_memory::{NexusMemory, NeuralManager};
+
 use anyhow::{anyhow, Result};
 use std::path::Path;
 use std::sync::Arc;
@@ -16,7 +17,7 @@ impl NeuralIngest {
         _chat_id: Option<i64>,
     ) -> Result<Self> {
         Ok(Self {
-            neural_manager: Arc::new(NeuralManager::new()),
+            neural_manager: Arc::new(NeuralManager::with_default_path()),
             memory: Arc::new(NexusMemory::new(
                 &crate::infra::paths::resolve_path("brain/nexus_memory.lance").to_string_lossy(),
             )),
@@ -27,7 +28,7 @@ impl NeuralIngest {
         let active_engine = self.neural_manager.get_active_engine();
         let engine_guard = active_engine.read().await;
 
-        if let Some(engine) = engine_guard.as_deref() {
+        if let Some(engine) = engine_guard.as_ref() {
             let embeddings = engine.generate_embeddings(text).await?;
             self.memory
                 .add_entry(embeddings, text, file_path, file_name)

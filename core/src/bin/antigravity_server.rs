@@ -24,10 +24,14 @@ use nexus_ultimate_core::orquestador::scope_mapper::{ProjectScope, ScopeMapper};
 use nexus_ultimate_core::scraping::pipeline::cerebro::Cerebro;
 use nexus_ultimate_core::scraping::pipeline::embedding::EmbeddingEngine;
 use nexus_ultimate_core::scraping::pipeline::vector_store::VectorStore;
+use nexus_ultimate_core::sentidos::omnipresent_vision::OmnipresentVision;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
+use std::process::Command;
+use tower_http::cors::{Any, CorsLayer};
+use axum::http::Method;
 
 /// Estado compartido del servidor.
 struct AppState {
@@ -67,6 +71,25 @@ struct ResolveMsgReq {
 struct ResolveMsgResp {
     project_id: Option<String>,
     context: Option<String>,
+}
+
+#[derive(Serialize)]
+struct VisionDto {
+    base64: Option<String>,
+    ocr: Option<String>,
+    active: bool,
+}
+
+#[derive(Deserialize)]
+struct PipelineExecuteReq {
+    pipeline_type: String,
+    prompt: String,
+}
+
+#[derive(Serialize)]
+struct PipelineExecuteResp {
+    success: bool,
+    output: String,
 }
 
 // ─── Handlers ────────────────────────────────────────────────────────────
@@ -211,6 +234,50 @@ async fn resolve_message(
     })
 }
 
+/// GET /api/vision/latest — devuelve la última captura y texto de OmnipresentVision.
+async fn get_latest_vision() -> Json<VisionDto> {
+    let eye = OmnipresentVision::instance();
+    let lock = eye.read().await;
+    Json(VisionDto {
+        base64: lock.ultimo_frame_b64.clone(),
+        ocr: lock.ultimo_texto_ocr.clone(),
+        active: lock.activo,
+    })
+}
+
+/// POST /api/pipelines/execute — ejecuta un script Node de pipeline.
+async fn execute_pipeline(
+    Json(req): Json<PipelineExecuteReq>,
+) -> Json<PipelineExecuteResp> {
+    let script_name = match req.pipeline_type.as_str() {
+        "extract_ui" => "pipeline/agent_ui/extract_ui.js",
+        "generate_code" => "pipeline/agent_backend/generate_code.js",
+        "infer_architecture" => "pipeline/agent_architect/infer_architecture.js",
+        _ => return Json(PipelineExecuteResp { success: false, output: "Invalid pipeline".into() }),
+    };
+
+    let core_dir = PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").unwrap_or_else(|_| ".".into()));
+    let workspace_dir = core_dir.parent().unwrap_or(&core_dir);
+    let script_path = workspace_dir.join(script_name);
+
+    match Command::new("node")
+        .arg(&script_path)
+        .arg(&req.prompt)
+        .current_dir(workspace_dir)
+        .output() 
+    {
+        Ok(output) => {
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            let full_out = format!("{}\n{}", stdout, stderr);
+            Json(PipelineExecuteResp { success: output.status.success(), output: full_out })
+        }
+        Err(e) => {
+            Json(PipelineExecuteResp { success: false, output: e.to_string() })
+        }
+    }
+}
+
 // ─── main ────────────────────────────────────────────────────────────────
 
 #[tokio::main]
@@ -249,11 +316,19 @@ async fn main() -> Result<()> {
         cerebro,
     });
 
+    let cors = CorsLayer::new()
+        .allow_origin(Any)
+        .allow_methods(Any)
+        .allow_headers(Any);
+
     let app = Router::new()
         .route("/api/projects", get(list_projects).post(register_project))
         .route("/api/projects/:id/status", get(project_status))
         .route("/api/messages/resolve", post(resolve_message))
+        .route("/api/vision/latest", get(get_latest_vision))
+        .route("/api/pipelines/execute", post(execute_pipeline))
         .route("/health", get(|| async { "ok" }))
+        .layer(cors)
         .with_state(state);
 
     let listener = tokio::net::TcpListener::bind(format!("127.0.0.1:{port}")).await?;

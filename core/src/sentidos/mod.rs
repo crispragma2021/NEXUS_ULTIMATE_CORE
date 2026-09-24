@@ -30,7 +30,11 @@ pub mod nexus_palate;
 // --- PROPIOCEPCIÓN (Sentido corporal / kinestésico) ---
 pub mod propiocepcion;
 
+// --- LÓGICA DE BÚSQUEDA ---
+pub mod search_logic;
+
 // Aliases de compatibilidad para el core legacy
+
 pub mod anclaje_sensorial;
 pub mod nexus_acoustic;
 pub use neuro_ear as hearing;

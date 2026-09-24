@@ -1711,6 +1711,11 @@ async fn main() {
         .route("/api/stt/stop", post(api_stt_stop))
         .route("/api/upload", post(api_upload))
         .route("/api/terminal/ws", get(terminal_ws_handler))
+        // 🛠️ IDE Daemon
+        .route("/api/ide/tree", get(api_ide_tree))
+        .route("/api/ide/ws", get(api_ide_ws))
+        .route("/api/ide/symbols", get(api_ide_symbols))
+        .route("/api/ide/read", get(api_ide_read))
         .route("/v1/chat/completions", post(api_v1_chat_completions))
         // 🕵️ OSINT — Dorks, Username, ShadowCrawl
         .route("/api/osint/search", post(api_osint_search))
@@ -2029,4 +2034,201 @@ fn clean_ansi_escapes_tauri(input: &str) -> String {
     let re = regex::Regex::new(r"\x1B\[[0-9;]*[a-zA-Z]").unwrap();
     let cleaned = re.replace_all(input, "");
     cleaned.replace("\r\n", "\n").replace('\r', "\n")
+}
+
+// ==========================================
+// 🛠️ NEXUS IDE DAEMON
+// ==========================================
+
+#[derive(serde::Serialize)]
+struct IdeFileNode {
+    name: String,
+    path: String,
+    is_dir: bool,
+    children: Option<Vec<IdeFileNode>>,
+}
+
+async fn api_ide_tree(axum::extract::Query(params): axum::extract::Query<std::collections::HashMap<String, String>>) -> Json<serde_json::Value> {
+    let root_path = params.get("path").map(|s| s.as_str()).unwrap_or(".");
+    
+    fn build_tree(dir: &std::path::Path) -> Option<IdeFileNode> {
+        if !dir.exists() {
+            return None;
+        }
+        
+        let name = dir.file_name()?.to_string_lossy().to_string();
+        // Omitir node_modules, target y .git para no saturar el payload
+        if name == "node_modules" || name == "target" || name == ".git" {
+            return None;
+        }
+        
+        let is_dir = dir.is_dir();
+        let path = dir.to_string_lossy().to_string();
+        
+        let mut children = None;
+        if is_dir {
+            let mut kids = Vec::new();
+            if let Ok(entries) = std::fs::read_dir(dir) {
+                for entry in entries.flatten() {
+                    if let Some(child_node) = build_tree(&entry.path()) {
+                        kids.push(child_node);
+                    }
+                }
+            }
+            // Sort: directories first, then files alphabetically
+            kids.sort_by(|a, b| {
+                if a.is_dir && !b.is_dir { std::cmp::Ordering::Less }
+                else if !a.is_dir && b.is_dir { std::cmp::Ordering::Greater }
+                else { a.name.cmp(&b.name) }
+            });
+            children = Some(kids);
+        }
+        
+        Some(IdeFileNode { name, path, is_dir, children })
+    }
+
+    let absolute_path = std::fs::canonicalize(root_path).unwrap_or_else(|_| std::path::PathBuf::from(root_path));
+    if let Some(tree) = build_tree(&absolute_path) {
+        Json(serde_json::json!({ "status": "ok", "tree": tree }))
+    } else {
+        Json(serde_json::json!({ "status": "error", "message": "Directorio no encontrado" }))
+    }
+}
+
+async fn api_ide_ws(ws: WebSocketUpgrade) -> impl IntoResponse {
+    ws.on_upgrade(handle_ide_socket)
+}
+
+async fn handle_ide_socket(mut socket: WebSocket) {
+    use notify::{Watcher, RecursiveMode, RecommendedWatcher, Event};
+    
+    let (tx, mut rx) = tokio::sync::mpsc::channel(100);
+    
+    // Crear el watcher
+    let mut watcher = notify::recommended_watcher(move |res: notify::Result<Event>| {
+        if let Ok(event) = res {
+            let paths: Vec<String> = event.paths.iter().map(|p| p.to_string_lossy().to_string()).collect();
+            let _ = tx.blocking_send(serde_json::json!({
+                "type": "fs_event",
+                "kind": format!("{:?}", event.kind),
+                "paths": paths
+            }));
+        }
+    }).unwrap();
+
+    // Vigilar el directorio actual (NEXUS_ULTIMATE_CORE)
+    let _ = watcher.watch(std::path::Path::new("."), RecursiveMode::Recursive);
+
+    // Enviar eventos por WebSocket
+    tokio::spawn(async move {
+        while let Some(event_json) = rx.recv().await {
+            // Ignorar eventos de target o node_modules o .git para no saturar
+            let s = event_json.to_string();
+            if s.contains("node_modules") || s.contains("target") || s.contains(".git") {
+                continue;
+            }
+            if socket.send(Message::Text(s)).await.is_err() {
+                break;
+            }
+        }
+    });
+}
+
+// ---------------------------------------------------------
+// EXTRACTOR DE SÍMBOLOS (Cerebro Lector para AST simplificado)
+// ---------------------------------------------------------
+#[derive(serde::Serialize)]
+struct IdeSymbol {
+    #[serde(rename = "type")]
+    symbol_type: String,
+    name: String,
+    line: usize,
+}
+
+async fn api_ide_symbols(axum::extract::Query(params): axum::extract::Query<std::collections::HashMap<String, String>>) -> Json<serde_json::Value> {
+    let file_path = match params.get("path") {
+        Some(p) => p,
+        None => return Json(serde_json::json!({ "status": "error", "message": "Falta el parámetro path" })),
+    };
+
+    let content = match std::fs::read_to_string(file_path) {
+        Ok(c) => c,
+        Err(_) => return Json(serde_json::json!({ "status": "error", "message": "No se pudo leer el archivo" })),
+    };
+
+    let mut symbols = Vec::new();
+    let extension = std::path::Path::new(file_path).extension().and_then(|e| e.to_str()).unwrap_or("");
+
+    // Usamos el crate regex. Compilamos las regex según el lenguaje
+    use regex::Regex;
+
+    if extension == "rs" {
+        // Parsear Rust
+        let re_fn = Regex::new(r"^\s*(?:pub\s+)?(?:async\s+)?fn\s+([a-zA-Z0-9_]+)").unwrap();
+        let re_struct = Regex::new(r"^\s*(?:pub\s+)?struct\s+([a-zA-Z0-9_]+)").unwrap();
+        let re_enum = Regex::new(r"^\s*(?:pub\s+)?enum\s+([a-zA-Z0-9_]+)").unwrap();
+        let re_impl = Regex::new(r"^\s*impl\s+(?:.*for\s+)?([a-zA-Z0-9_]+)").unwrap();
+
+        for (i, line) in content.lines().enumerate() {
+            if let Some(caps) = re_fn.captures(line) {
+                symbols.push(IdeSymbol { symbol_type: "function".to_string(), name: caps[1].to_string(), line: i + 1 });
+            } else if let Some(caps) = re_struct.captures(line) {
+                symbols.push(IdeSymbol { symbol_type: "struct".to_string(), name: caps[1].to_string(), line: i + 1 });
+            } else if let Some(caps) = re_enum.captures(line) {
+                symbols.push(IdeSymbol { symbol_type: "enum".to_string(), name: caps[1].to_string(), line: i + 1 });
+            } else if let Some(caps) = re_impl.captures(line) {
+                symbols.push(IdeSymbol { symbol_type: "impl".to_string(), name: caps[1].to_string(), line: i + 1 });
+            }
+        }
+    } else if extension == "py" {
+        // Parsear Python
+        let re_def = Regex::new(r"^\s*(?:async\s+)?def\s+([a-zA-Z0-9_]+)").unwrap();
+        let re_class = Regex::new(r"^\s*class\s+([a-zA-Z0-9_]+)").unwrap();
+
+        for (i, line) in content.lines().enumerate() {
+            if let Some(caps) = re_def.captures(line) {
+                symbols.push(IdeSymbol { symbol_type: "function".to_string(), name: caps[1].to_string(), line: i + 1 });
+            } else if let Some(caps) = re_class.captures(line) {
+                symbols.push(IdeSymbol { symbol_type: "class".to_string(), name: caps[1].to_string(), line: i + 1 });
+            }
+        }
+    } else if extension == "js" || extension == "jsx" || extension == "ts" || extension == "tsx" {
+        // Parsear JS/TS/React
+        let re_func = Regex::new(r"^\s*(?:export\s+)?(?:default\s+)?(?:async\s+)?function\s+([a-zA-Z0-9_]+)").unwrap();
+        let re_const_func = Regex::new(r"^\s*(?:export\s+)?const\s+([a-zA-Z0-9_]+)\s*=\s*(?:async\s*)?(?:\([^)]*\)|[a-zA-Z0-9_]+)\s*=>").unwrap();
+        let re_class = Regex::new(r"^\s*(?:export\s+)?(?:default\s+)?class\s+([a-zA-Z0-9_]+)").unwrap();
+
+        for (i, line) in content.lines().enumerate() {
+            if let Some(caps) = re_func.captures(line) {
+                symbols.push(IdeSymbol { symbol_type: "function".to_string(), name: caps[1].to_string(), line: i + 1 });
+            } else if let Some(caps) = re_const_func.captures(line) {
+                symbols.push(IdeSymbol { symbol_type: "arrow_function".to_string(), name: caps[1].to_string(), line: i + 1 });
+            } else if let Some(caps) = re_class.captures(line) {
+                symbols.push(IdeSymbol { symbol_type: "class".to_string(), name: caps[1].to_string(), line: i + 1 });
+            }
+        }
+    } else {
+        return Json(serde_json::json!({ "status": "error", "message": "Extensión no soportada para parseo AST ligero" }));
+    }
+
+    Json(serde_json::json!({
+        "status": "ok",
+        "file": file_path,
+        "symbols": symbols
+    }))
+}
+
+// ---------------------------------------------------------
+// LECTOR DE ARCHIVOS (File Reader)
+// ---------------------------------------------------------
+async fn api_ide_read(axum::extract::Query(params): axum::extract::Query<std::collections::HashMap<String, String>>) -> Json<serde_json::Value> {
+    let file_path = match params.get("path") {
+        Some(p) => p,
+        None => return Json(serde_json::json!({ "status": "error", "message": "Falta el parámetro path" })),
+    };
+
+    match std::fs::read_to_string(file_path) {
+        Ok(content) => Json(serde_json::json!({ "status": "ok", "content": content })),
+        Err(e) => Json(serde_json::json!({ "status": "error", "message": format!("No se pudo leer el archivo: {}", e) })),
+    }
 }

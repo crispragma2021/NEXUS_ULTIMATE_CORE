@@ -38,4 +38,4 @@ pub mod holehe_rs;
 // 🔱 Arsenal de Trading Soberano — ccxt_rs
 pub mod trading;
 
-pub use crate::nexus_telegram;
+pub use crate::comms::nexus_telegram;

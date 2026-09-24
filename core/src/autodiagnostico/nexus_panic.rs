@@ -25,5 +25,5 @@ pub fn engage_panic_defense(target: &str) {
     }
 
     let msg = format!("🚨 NEXUS PÁNICO: Defensa activa contra {}.", target);
-    pollster::block_on(crate::nexus_telegram::send_alert(&msg));
+    pollster::block_on(crate::comms::nexus_telegram::send_alert(&msg));
 }

@@ -31,12 +31,21 @@ const outputPath = process.argv[3] || '/tmp/nexus_vite_screenshot.png';
     // garantizando cookies/sesión propias y cero contacto con Chrome personal.
     const userDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'nexus-browser-'));
 
-    const context = await chromium.launchPersistentContext(userDataDir, {
+    const chromePath = fs.existsSync('/usr/bin/google-chrome')
+      ? '/usr/bin/google-chrome'
+      : undefined;
+
+    const launchOpts = {
       headless: true,
       viewport: { width: 1440, height: 900 },
       deviceScaleFactor: 1,
       args: ['--no-sandbox', '--disable-dev-shm-usage'],
-    });
+    };
+    if (chromePath) {
+      launchOpts.executablePath = chromePath;
+    }
+
+    const context = await chromium.launchPersistentContext(userDataDir, launchOpts);
     browser = context;
     const page = context.pages()[0] || await context.newPage();
 

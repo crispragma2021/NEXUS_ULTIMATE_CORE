@@ -18,13 +18,15 @@ use crate::autodiagnostico::sentinel_core::{HealthStatus, SentinelCore};
 use crate::infra::puente_ipc::PuenteIpc;
 
 use crate::arsenal::ArsenalSoberano;
-use crate::brain::healer::Healer;
-use crate::brain::hippocampus::ArtificialHippocampus;
-use crate::brain::hypothalamus::Hypothalamus;
-use crate::brain::nerve_system::NerveSystem;
-use crate::brain::thalamus::Thalamus;
-use crate::brain::vision::OmnipresentVision;
-use crate::brain::{BrainStack, NeuralManager};
+use crate::cerebro::healer::Healer;
+use crate::cerebro::hippocampus::ArtificialHippocampus;
+use crate::cerebro::hypothalamus::Hypothalamus;
+use crate::cerebro::nerve_system::NerveSystem;
+use crate::cerebro::neural_memory::NeuralManager;
+use crate::cerebro::thalamus::Thalamus;
+use crate::sentidos::omnipresent_vision::OmnipresentVision;
+use crate::brain::BrainStack;
+
 use crate::cerebro::corteza_asociativa::CortezaAsociativa;
 use crate::cerebro::motor_sueno::MotorSueno;
 use crate::cerebro::nexo::nexo_persona::NexoPersonaModule;
@@ -542,7 +544,7 @@ impl BootSequencer {
         let neural = ctx
             .neural
             .clone()
-            .unwrap_or_else(|| Arc::new(NeuralManager::new()));
+            .unwrap_or_else(|| Arc::new(NeuralManager::with_default_path()));
         let arsenal = Arc::new(ArsenalSoberano::new());
         let healer = Arc::new(Healer::new(db_manager));
         let hypothalamus = Arc::new(Hypothalamus::new(reflex_tx.clone(), thalamus.clone()));

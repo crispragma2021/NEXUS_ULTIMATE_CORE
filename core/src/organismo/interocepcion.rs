@@ -309,7 +309,7 @@ impl Organismo {
                     // el pipeline ni el bucle de MCP. Silencioso si no hay
                     // TELEGRAM_TOKEN/TELEGRAM_CHAT_ID configurados.
                     std::thread::spawn(move || {
-                        let _ = pollster::block_on(crate::nexus_telegram::send_alert(&texto));
+                        let _ = pollster::block_on(crate::comms::nexus_telegram::send_alert(&texto));
                     });
                     return Some(mensaje);
                 }

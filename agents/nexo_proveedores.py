@@ -1,18 +1,55 @@
 # Proveedores de modelos para NEXUS
 # ORDEN_DEFAULT define el orden de selección de proveedores por defecto
 # NEXUS_CASCADE_ORDER permite restringir la lista exacta de proveedores activos
+#
+# Estado verificado: 2026-09-17
+#   ✅ gemini      — ACTIVO  (gemini-flash-lite-latest — API nativa)
+#   ✅ deepseek    — ACTIVO  (deepseek-chat)
+#   ✅ groq        — ACTIVO  (openai/gpt-oss-120b, qwen/qwen3.8-27b, etc.)
+#   ✅ openrouter  — ACTIVO  (llama-3.3-70b-instruct)
+#   ✅ exa         — ACTIVO  (búsqueda web, no es LLM)
 
-ORDEN_DEFAULT = ["gemini", "deepseek", "openrouter", "groq", "github", "cerebras", "ollama"]
+# Cascada: Gemini primero (más rápido/barato), luego DeepSeek, Groq, OpenRouter
+ORDEN_DEFAULT = ["gemini", "deepseek", "groq", "openrouter", "ollama"]
+
+def _detectar_modelos_ollama():
+    """Detecta dinámicamente los modelos de Ollama activos en localhost:11434."""
+    import urllib.request
+    import json
+    try:
+        req = urllib.request.Request("http://localhost:11434/api/tags", headers={'User-Agent': 'NEXUS-Core/1.0'})
+        with urllib.request.urlopen(req, timeout=1.5) as resp:
+            if resp.status == 200:
+                data = json.loads(resp.read().decode())
+                models = [m.get("name") for m in data.get("models", []) if m.get("name")]
+                if models:
+                    return models
+    except Exception:
+        pass
+    return ["dolphin-llama3:8b", "hermes3:8b"]
 
 # Modelos disponibles por proveedor
 MODELOS_PROVEEDOR = {
-    "gemini": ["gemini-3.8-flash", "gemini-3.7-flash"],
-    "deepseek": ["deepseek-chat"],
-    "openrouter": ["meta-llama/llama-3.3-70b-instruct"],
-    "groq": ["openai/gpt-oss-20b"],
-    "github": ["gpt-4.1-mini"],
-    "cerebras": [],
-    "ollama": [],
+    "gemini": [
+        "gemini-flash-lite-latest",   # ✅ verificado activo (API nativa)
+        "gemini-flash-latest",        # ✅ alternativa (alta demanda a veces)
+        "gemini-pro-latest",          # avanzado
+    ],
+    "deepseek": [
+        "deepseek-chat",              # ✅ verificado activo
+        "deepseek-reasoner",          # razonamiento
+    ],
+    "groq": [
+        "openai/gpt-oss-120b",        # ✅ verificado activo
+        "qwen/qwen3.8-27b",           # ✅ disponible
+        "groq/compound-mini",         # ✅ disponible
+    ],
+    "openrouter": [
+        "meta-llama/llama-3.3-70b-instruct",  # ✅ verificado activo
+        "anthropic/claude-3.5-sonnet",         # premium
+        "deepseek/deepseek-r1",                # razonamiento
+    ],
+    "ollama": _detectar_modelos_ollama(),   # local (detectado automáticamente)
 }
 
 # Mapeo inverso: proveedor -> lista de modelos

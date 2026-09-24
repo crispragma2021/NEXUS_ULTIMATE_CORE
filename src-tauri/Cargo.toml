@@ -47,6 +47,8 @@ aes-gcm = "0.10"
 anyhow = { workspace = true }
 uuid = { workspace = true }
 rand = { workspace = true }
+notify = "8.2.0"
+walkdir.workspace = true
 
 [target.'cfg(target_os = "linux")'.dependencies]
 webkit2gtk = { version = "2.0", features = ["v2_40"] }

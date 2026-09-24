@@ -4,7 +4,9 @@
 // ──────────────────────────────────────────────
 
 pub mod agente_ejecutor;
+pub mod control;
 pub mod cookie_claw;
+
 pub mod mano_soberana;
 pub mod medula_soberana;
 pub mod model_router;
