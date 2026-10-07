@@ -2,2556 +2,1754 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>NEXUS Core Sovereign - Trading Dashboard</title>
-    <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.39.0/min/vs/loader.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blooming Icon Studio · NEXUS Assistant - Farming Simulator 20</title>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Fira+Code:wght@400;500;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
     <style>
         :root {
             --neon-green: #00ff88;
             --neon-cyan: #00f0ff;
+            --neon-yellow: #ffc700;
             --neon-red: #ff3366;
-            --neon-yellow: #ffb700;
-            --dark-bg: #030708;
-            --sidebar-bg: rgba(6, 11, 15, 0.7);
-            --card-bg: rgba(10, 22, 20, 0.45);
-            --card-hover-bg: rgba(15, 30, 28, 0.6);
+            --fs-gold: #e5a93b;
+            --fs-green: #4caf50;
+            --fs-jd-green: #367c2b;
+            --fs-jd-yellow: #ffe100;
+            --dark-bg: #050a0e;
+            --sidebar-bg: rgba(9, 14, 20, 0.85);
+            --card-bg: rgba(14, 22, 32, 0.65);
+            --card-hover: rgba(22, 34, 48, 0.85);
             --border-color: rgba(0, 255, 136, 0.15);
             --border-glow: rgba(0, 255, 136, 0.35);
             --font-main: 'Inter', sans-serif;
             --font-display: 'Outfit', sans-serif;
             --font-mono: 'Fira Code', monospace;
         }
-        
+
         * {
             box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
         }
 
         body {
             background-color: var(--dark-bg);
             background-image: 
-                radial-gradient(at 10% 20%, rgba(0, 255, 136, 0.04) 0px, transparent 50%),
-                radial-gradient(at 90% 80%, rgba(0, 240, 255, 0.03) 0px, transparent 50%);
-            color: #e2e8f0;
+                radial-gradient(at 15% 15%, rgba(0, 255, 136, 0.03) 0px, transparent 50%),
+                radial-gradient(at 85% 85%, rgba(0, 240, 255, 0.03) 0px, transparent 50%);
+            color: #f1f5f9;
             font-family: var(--font-main);
-            margin: 0;
-            display: grid;
-            grid-template-columns: 280px 1fr;
             height: 100vh;
+            width: 100vw;
             overflow: hidden;
-        }
-        
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: rgba(0, 0, 0, 0.3);
-        }
-        ::-webkit-scrollbar-thumb {
-            background: rgba(0, 255, 136, 0.2);
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: rgba(0, 255, 136, 0.4);
+            display: flex;
         }
 
-        #sidebar {
+        /* Custom Scrollbars */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.3); }
+        ::-webkit-scrollbar-thumb { background: rgba(0, 255, 136, 0.25); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(0, 255, 136, 0.5); }
+
+        /* ============================================================
+           2-COLUMN LOVABLE LAYOUT: LEFT SIDEBAR (w-[420px])
+           ============================================================ */
+        #lovable-sidebar {
+            width: 420px;
+            min-width: 420px;
+            max-width: 420px;
+            height: 100vh;
             background: var(--sidebar-bg);
             backdrop-filter: blur(20px);
-            border-right: 1px solid var(--border-color);
-            padding: 24px 20px;
+            border-right: 1px solid rgba(0, 255, 136, 0.15);
             display: flex;
             flex-direction: column;
-            gap: 20px;
-            overflow-y: auto;
-            box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5);
-            z-index: 10;
-        }
-        
-        .sidebar-title {
-            font-family: var(--font-display);
-            font-size: 1.15rem;
-            font-weight: 800;
-            letter-spacing: 1px;
-            color: #fff;
-            text-transform: uppercase;
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            text-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
-        }
-
-        .widget {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 16px;
-            font-size: 0.85rem;
-            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-            backdrop-filter: blur(8px);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-        }
-        .widget:hover {
-            border-color: rgba(0, 255, 136, 0.35);
-            box-shadow: 0 8px 25px rgba(0, 255, 136, 0.08);
-            transform: translateY(-2px);
-        }
-        
-        .widget-title {
-            font-family: var(--font-display);
-            font-size: 0.8rem;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-            color: #94a3b8;
-            margin-bottom: 8px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        #chart-container {
-            width: 100%;
-            height: 100%;
+            z-index: 20;
+            box-shadow: 10px 0 35px rgba(0, 0, 0, 0.6);
             position: relative;
-            background: #030708;
-            border-left: 1px solid var(--border-color);
         }
 
-        .stat-highlight {
-            font-family: var(--font-display);
-            font-size: 1.3rem;
-            font-weight: 700;
-            display: inline-block;
-            margin-top: 4px;
-        }
-        
-        .price-up {
-            color: var(--neon-green);
-            text-shadow: 0 0 10px rgba(0, 255, 136, 0.25);
-        }
-        .price-down {
-            color: var(--neon-red);
-            text-shadow: 0 0 10px rgba(255, 51, 102, 0.25);
-        }
-
-        .badge-risk {
-            background: rgba(255, 51, 102, 0.1);
-            border: 1px solid rgba(255, 51, 102, 0.3);
-            color: var(--neon-red);
-            padding: 2px 8px;
-            border-radius: 6px;
-            font-weight: 700;
-            font-size: 0.75rem;
-            letter-spacing: 0.5px;
-            animation: risk-pulse 2s infinite ease-in-out;
-        }
-        
-        @keyframes risk-pulse {
-            0% { box-shadow: 0 0 0 0 rgba(255, 51, 102, 0.4); }
-            70% { box-shadow: 0 0 0 6px rgba(255, 51, 102, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(255, 51, 102, 0); }
-        }
-
-        #consciousness-logs {
-            height: 160px;
-            overflow-y: auto;
-            font-family: var(--font-mono);
-            font-size: 0.7rem;
-            border-top: 1px solid var(--border-color);
-            padding: 12px 6px;
-            color: #88c0d0;
-            scrollbar-width: thin;
-        }
-
-        /* ACTIONS BUTTONS */
-        .btn-cyber {
-            background: rgba(0, 255, 136, 0.05);
-            border: 1px solid var(--neon-green);
-            color: var(--neon-green);
-            padding: 10px 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-family: var(--font-display);
-            font-weight: 600;
-            font-size: 0.8rem;
-            letter-spacing: 0.5px;
-            width: 100%;
-            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        .sidebar-header {
+            padding: 18px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
             display: flex;
             align-items: center;
-            justify-content: center;
-            gap: 8px;
-            margin-bottom: 5px;
-        }
-        .btn-cyber:hover {
-            background: var(--neon-green);
-            color: var(--dark-bg);
-            box-shadow: 0 0 15px rgba(0, 255, 136, 0.4);
-            transform: translateY(-1px);
-        }
-        .btn-cyber:active {
-            transform: translateY(1px);
-        }
-
-
-
-        /* MODALS & PANELS (TERMINAL, GALLERY) */
-        #gallery-modal, #terminal-modal {
-            position: absolute;
-            top: 24px;
-            left: 304px;
-            right: 24px;
-            bottom: 24px;
-            background: rgba(3, 7, 8, 0.85);
-            border: 1px solid var(--border-color);
-            border-radius: 16px;
-            display: none;
-            flex-direction: column;
-            padding: 24px;
-            z-index: 100;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 255, 136, 0.05);
-            backdrop-filter: blur(24px);
-            animation: modal-fade 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        @keyframes modal-fade {
-            from { opacity: 0; transform: scale(0.98); }
-            to { opacity: 1; transform: scale(1); }
-        }
-
-        #terminal-modal.raw-mode {
-            border-color: var(--neon-yellow);
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 40px rgba(255, 183, 0, 0.08);
-        }
-
-        .gallery-header {
-            display: flex;
             justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 16px;
-            margin-bottom: 20px;
-        }
-        .gallery-title {
-            font-family: var(--font-display);
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: #fff;
-            text-shadow: 0 0 15px rgba(0, 255, 136, 0.2);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .close-btn {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: #94a3b8;
-            padding: 6px 14px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-family: var(--font-display);
-            font-weight: 600;
-            font-size: 0.75rem;
-            transition: all 0.2s ease;
-        }
-        .close-btn:hover {
-            background: rgba(239, 68, 68, 0.1);
-            border-color: #ef4444;
-            color: #ef4444;
+            background: rgba(0, 0, 0, 0.2);
         }
 
-        #gallery-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-            gap: 24px;
-            overflow-y: auto;
-            flex-grow: 1;
-            padding-right: 8px;
-        }
-        
-        .gallery-item {
-            border: 1px solid var(--border-color);
-            background: rgba(255, 255, 255, 0.02);
-            border-radius: 12px;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            transition: all 0.3s ease;
-        }
-        .gallery-item:hover {
-            border-color: var(--neon-green);
-            box-shadow: 0 8px 25px rgba(0, 255, 136, 0.1);
-            transform: translateY(-3px);
-        }
-        .gallery-img {
-            width: 100%;
-            height: 150px;
-            object-fit: cover;
-            cursor: zoom-in;
-            border-bottom: 1px solid var(--border-color);
-            transition: opacity 0.2s;
-        }
-        .gallery-img:hover { opacity: 0.85; }
-        .gallery-info { padding: 12px; font-size: 0.75rem; display: flex; flex-direction: column; gap: 6px; }
-        .gallery-name { font-weight: 600; color: #f1f5f9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .gallery-date { color: #64748b; }
-
-        #lightbox-modal {
-            position: fixed;
-            top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(3, 7, 8, 0.95);
-            z-index: 200;
-            display: none;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-            backdrop-filter: blur(10px);
-        }
-        #lightbox-img {
-            max-width: 85%; max-height: 75%;
-            border-radius: 12px;
-            border: 1px solid rgba(0, 255, 136, 0.3);
-            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8), 0 0 40px rgba(0, 255, 136, 0.15);
-        }
-        #lightbox-caption { 
-            margin-top: 20px; 
-            font-family: var(--font-display);
-            font-size: 1rem; 
-            font-weight: 600;
-            color: #fff;
-            text-shadow: 0 0 10px rgba(0, 255, 136, 0.3); 
-        }
-
-        /* TERMINAL TABS & LAYOUT */
-        .term-tabs {
-            display: flex;
-            border-bottom: 1px solid var(--border-color);
-            margin-bottom: 16px;
-            gap: 8px;
-        }
-        .term-tab-btn {
-            background: transparent;
-            border: none;
-            color: #64748b;
-            font-family: var(--font-display);
-            font-weight: 600;
-            font-size: 0.8rem;
-            padding: 8px 16px;
-            cursor: pointer;
-            transition: all 0.2s;
-            border-bottom: 2px solid transparent;
-        }
-        .term-tab-btn:hover {
-            color: #cbd5e1;
-        }
-        .term-tab-btn.active {
-            color: var(--neon-green);
-            border-bottom-color: var(--neon-green);
-        }
-        
-        .terminal-grid {
-            display: grid;
-            grid-template-columns: 2.8fr 1.2fr;
-            gap: 20px;
-            flex-grow: 1;
-            overflow: hidden;
-        }
-        
-        .terminal-main {
-            display: flex;
-            flex-direction: column;
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            background: rgba(0, 0, 0, 0.4);
-            padding: 16px;
-            overflow: hidden;
-        }
-        .terminal-output {
-            flex-grow: 1;
-            overflow-y: auto;
-            font-family: var(--font-mono);
-            font-size: 0.8rem;
-            line-height: 1.5;
-            white-space: pre-wrap;
-            word-break: break-all;
-            padding-right: 8px;
-            color: #e2e8f0;
-        }
-        
-        .terminal-prompt-container {
-            display: flex;
-            gap: 12px;
-            margin-top: 16px;
-            position: relative;
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 4px 12px;
-            align-items: center;
-        }
-        .terminal-prompt-container:focus-within {
-            border-color: var(--neon-green);
-            box-shadow: 0 0 10px rgba(0, 255, 136, 0.15);
-        }
-        .terminal-input {
-            flex-grow: 1;
-            background: transparent;
-            border: none;
-            color: #fff;
-            padding: 8px 0;
-            font-family: var(--font-mono);
-            font-size: 0.8rem;
-        }
-        .terminal-input:focus {
-            outline: none;
-        }
-        
-        .terminal-telemetry {
-            border: 1px solid var(--border-color);
-            background: rgba(255, 255, 255, 0.01);
-            border-radius: 12px;
-            padding: 20px;
-            font-size: 0.8rem;
-            display: flex;
-            flex-direction: column;
-            gap: 18px;
-        }
-        
-        /* AUTOCOMPLETE SUGGESTIONS POPUP */
-        .terminal-suggestions {
-            position: absolute;
-            left: 0;
-            bottom: 50px;
-            width: 100%;
-            background: rgba(3, 7, 8, 0.95);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            display: none;
-            flex-direction: column;
-            z-index: 102;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-            overflow: hidden;
-        }
-        .suggestion-item {
-            padding: 10px 16px;
-            cursor: pointer;
-            font-family: var(--font-mono);
-            font-size: 0.75rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            color: #cbd5e1;
-            transition: all 0.2s;
-        }
-        .suggestion-item:hover, .suggestion-item.selected {
-            background: rgba(0, 255, 136, 0.1);
-            color: var(--neon-green);
-        }
-
-        /* ANTIGRAVITY CHAT UI STYLE SYSTEM */
-        #main-content {
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            background: #030708;
-        }
-
-        .chat-header {
-            padding: 16px 24px;
-            background: rgba(10, 16, 26, 0.45);
-            border-bottom: 1px solid var(--border-color);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            backdrop-filter: blur(10px);
-            height: 55px;
-            flex-shrink: 0;
-        }
-
-        .chat-header-title {
+        .project-title {
             font-family: var(--font-display);
             font-size: 0.95rem;
-            font-weight: 700;
+            font-weight: 800;
             color: #fff;
+            letter-spacing: 0.5px;
             display: flex;
             align-items: center;
             gap: 10px;
-            letter-spacing: 0.5px;
-        }
-
-        .chat-messages {
-            flex-grow: 1;
-            padding: 24px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            background: #030708;
-            background-image: 
-                radial-gradient(at 50% 0%, rgba(0, 255, 136, 0.015) 0px, transparent 50%);
-        }
-
-        .message-bubble {
-            max-width: 85%;
-            padding: 14px 18px;
-            border-radius: 12px;
-            font-size: 0.9rem;
-            line-height: 1.5;
-            font-family: var(--font-main);
-            position: relative;
-            animation: message-slide 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        @keyframes message-slide {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .message-bubble.user {
-            align-self: flex-end;
-            background: rgba(0, 240, 255, 0.05);
-            border: 1px solid rgba(0, 240, 255, 0.2);
-            color: #e2e8f0;
-            border-bottom-right-radius: 4px;
-        }
-
-        .message-bubble.nexus {
-            align-self: flex-start;
-            background: rgba(0, 255, 136, 0.03);
-            border: 1px solid rgba(0, 255, 136, 0.15);
-            color: #f1f5f9;
-            border-bottom-left-radius: 4px;
-        }
-
-        .message-sender {
-            font-family: var(--font-display);
-            font-weight: 700;
-            font-size: 0.75rem;
-            letter-spacing: 0.5px;
-            margin-bottom: 6px;
             text-transform: uppercase;
         }
 
-        .message-bubble.user .message-sender {
-            color: var(--neon-cyan);
-            text-align: right;
+        .project-title-icon {
+            width: 28px;
+            height: 28px;
+            background: linear-gradient(135deg, var(--fs-jd-green), var(--neon-green));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            box-shadow: 0 0 12px rgba(0, 255, 136, 0.4);
         }
 
-        .message-bubble.nexus .message-sender {
+        /* CASCADE MODEL SELECTOR */
+        .cascade-model-wrapper {
+            padding: 14px 20px 8px 20px;
+            position: relative;
+        }
+
+        .cascade-model-btn {
+            width: 100%;
+            background: rgba(14, 24, 34, 0.7);
+            border: 1px solid rgba(0, 255, 136, 0.25);
+            border-radius: 10px;
+            padding: 10px 14px;
             color: var(--neon-green);
+            font-family: var(--font-display);
+            font-weight: 600;
+            font-size: 0.82rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: all 0.25s ease;
         }
 
-        .message-content {
+        .cascade-model-btn:hover {
+            background: rgba(14, 24, 34, 0.95);
+            border-color: var(--neon-green);
+            box-shadow: 0 0 16px rgba(0, 255, 136, 0.2);
+        }
+
+        .cascade-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 20px;
+            right: 20px;
+            background: #091017;
+            border: 1px solid var(--neon-green);
+            border-radius: 10px;
+            z-index: 100;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(16px);
+        }
+
+        .cascade-dropdown.show { display: flex; }
+
+        .cascade-dropdown-item {
+            padding: 11px 16px;
+            color: #cbd5e1;
+            font-size: 0.82rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.2s;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .cascade-dropdown-item:hover, .cascade-dropdown-item.active {
+            background: rgba(0, 255, 136, 0.12);
+            color: var(--neon-green);
+            font-weight: 700;
+        }
+
+        /* CHAT HISTORY & RESPONSE CARDS */
+        .chat-history-container {
+            flex: 1;
+            padding: 14px 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .chat-card {
+            background: rgba(13, 20, 28, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 14px;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .chat-card.user {
+            background: rgba(0, 240, 255, 0.05);
+            border-color: rgba(0, 240, 255, 0.2);
+            align-self: flex-end;
+            width: 100%;
+        }
+
+        .chat-card.assistant {
+            background: rgba(0, 255, 136, 0.04);
+            border-color: rgba(0, 255, 136, 0.15);
+            align-self: flex-start;
+            width: 100%;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+        }
+
+        .card-header.user { color: var(--neon-cyan); }
+        .card-header.assistant { color: var(--neon-green); }
+
+        .card-body {
+            color: #e2e8f0;
             white-space: pre-wrap;
             word-break: break-word;
         }
 
-        .message-content pre {
+        .code-badge {
             background: #0d1117;
             border: 1px solid #21262d;
             border-radius: 6px;
-            padding: 12px;
-            overflow-x: auto;
+            padding: 8px 12px;
             font-family: var(--font-mono);
-            font-size: 0.8rem;
-            margin: 8px 0;
-            color: #c9d1d9;
+            font-size: 0.76rem;
+            color: var(--neon-cyan);
+            margin-top: 8px;
+            display: inline-block;
         }
 
-        /* INPUT AREA */
-        .chat-input-wrapper {
-            padding: 20px 24px;
-            background: rgba(6, 11, 15, 0.6);
-            border-top: 1px solid var(--border-color);
-            backdrop-filter: blur(16px);
-            flex-shrink: 0;
+        .card-footer-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+            padding-top: 8px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
         }
 
-        .antigravity-clone {
-            background: #0d1117;
-            border: 1px solid #21262d;
-            border-radius: 12px;
-            padding: 12px 16px;
+        .card-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #94a3b8;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .card-btn:hover {
+            color: #fff;
+            border-color: var(--neon-green);
+            background: rgba(0, 255, 136, 0.1);
+        }
+
+        /* SUGGESTION ACTION PILLS */
+        .suggestion-pills-container {
+            padding: 8px 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .action-pill {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: #cbd5e1;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .action-pill:hover {
+            background: rgba(0, 255, 136, 0.12);
+            border-color: var(--neon-green);
+            color: var(--neon-green);
+            transform: translateY(-1px);
+        }
+
+        /* BOTTOM FLOATING PROMPT BAR */
+        .bottom-prompt-bar {
+            padding: 16px 20px;
+            background: rgba(6, 11, 16, 0.95);
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            position: relative;
+        }
+
+        .prompt-input-box {
+            background: rgba(14, 22, 32, 0.8);
+            border: 1px solid rgba(0, 255, 136, 0.2);
+            border-radius: 14px;
+            padding: 10px 14px;
             display: flex;
             flex-direction: column;
-            transition: all 0.2s ease;
+            gap: 8px;
+            transition: all 0.25s;
         }
 
-        .antigravity-clone:focus-within {
+        .prompt-input-box:focus-within {
             border-color: var(--neon-cyan);
-            box-shadow: 0 0 12px rgba(0, 240, 255, 0.15);
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
         }
 
-        .ag-textarea {
+        .prompt-textarea {
+            width: 100%;
             background: transparent;
             border: none;
-            color: #f0f6fc;
-            font-size: 0.9rem;
-            line-height: 1.5;
-            resize: none;
             outline: none;
-            min-height: 50px;
-            width: 100%;
-            margin-bottom: 8px;
-            font-family: var(--font-mono);
+            color: #fff;
+            font-family: var(--font-main);
+            font-size: 0.85rem;
+            resize: none;
+            min-height: 48px;
         }
 
-        .ag-textarea::placeholder {
-            color: #484f58;
-        }
-
-        .ag-footer {
+        .prompt-tools {
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            justify-content: space-between;
         }
 
-        .ag-left-tools, .ag-right-tools {
+        .tool-left, .tool-right {
             display: flex;
             align-items: center;
             gap: 8px;
         }
 
-        .ag-btn {
-            background: transparent;
-            border: none;
-            color: #8b949e;
-            font-family: var(--font-display);
-            font-weight: 500;
-            font-size: 0.75rem;
-            padding: 6px 10px;
-            border-radius: 6px;
-            cursor: pointer;
+        .plus-menu-btn {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            color: var(--neon-green);
             display: flex;
             align-items: center;
-            gap: 6px;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 700;
             transition: all 0.2s;
         }
 
-        .ag-btn:hover {
-            background: rgba(255, 255, 255, 0.05);
-            color: #c9d1d9;
+        .plus-menu-btn:hover {
+            background: var(--neon-green);
+            color: #000;
         }
 
-        .ag-send-btn {
-            background: rgba(0, 240, 255, 0.05);
-            border: 1px solid rgba(0, 240, 255, 0.3);
+        .mode-selector-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: #cbd5e1;
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .mode-selector-btn:hover {
+            border-color: var(--neon-cyan);
             color: var(--neon-cyan);
+        }
+
+        .mic-btn, .send-prompt-btn {
             width: 32px;
             height: 32px;
             border-radius: 50%;
+            border: none;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
             transition: all 0.2s;
-            padding: 0;
+            font-size: 14px;
         }
 
-        .ag-send-btn:hover {
-            background: rgba(0, 240, 255, 0.15);
-            box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
-            transform: scale(1.05);
+        .mic-btn {
+            background: rgba(255, 255, 255, 0.06);
+            color: #94a3b8;
         }
 
-        .typing-indicator {
-            display: flex;
-            gap: 4px;
-            padding: 4px 8px;
-            align-items: center;
-            align-self: flex-start;
+        .mic-btn:hover { background: rgba(255, 255, 255, 0.15); color: #fff; }
+
+        .send-prompt-btn {
+            background: linear-gradient(135deg, var(--neon-green), var(--neon-cyan));
+            color: #050a0e;
+            font-weight: 800;
         }
 
-        /* MODEL SELECTOR DROPDOWN */
-        #model-selector-container {
-            position: relative;
-            display: inline-block;
-            margin-left: auto; /* Empuja el selector a la derecha */
-            margin-right: 10px;
+        .send-prompt-btn:hover {
+            transform: scale(1.08);
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.5);
         }
 
-        .model-selector-btn {
-            background: rgba(0, 255, 136, 0.05);
+        /* POPUP + MENU */
+        .plus-popup-menu {
+            position: absolute;
+            bottom: 85px;
+            left: 20px;
+            background: #0b131c;
             border: 1px solid var(--neon-green);
-            color: var(--neon-green);
-            padding: 8px 12px;
-            border-radius: 8px;
+            border-radius: 10px;
+            width: 220px;
+            display: none;
+            flex-direction: column;
+            z-index: 150;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+            overflow: hidden;
+        }
+
+        .plus-popup-menu.show { display: flex; }
+
+        .plus-menu-item {
+            padding: 10px 14px;
+            font-size: 0.8rem;
+            color: #e2e8f0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
             cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .plus-menu-item:hover {
+            background: rgba(0, 255, 136, 0.12);
+            color: var(--neon-green);
+        }
+
+        /* ============================================================
+           RIGHT VIEWPORT (flex-grow) - LOVABLE HEADER & FS20 CANVASES
+           ============================================================ */
+        #lovable-viewport {
+            flex: 1;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: #03070a;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* NAVIGATION HEADER BAR */
+        .viewport-header {
+            height: 52px;
+            background: rgba(8, 14, 22, 0.9);
+            border-bottom: 1px solid rgba(0, 255, 136, 0.15);
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            backdrop-filter: blur(12px);
+            z-index: 10;
+        }
+
+        .nav-view-tabs {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 4px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .nav-tab-btn {
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            padding: 6px 14px;
+            border-radius: 8px;
             font-family: var(--font-display);
             font-weight: 600;
             font-size: 0.8rem;
-            letter-spacing: 0.5px;
+            cursor: pointer;
             transition: all 0.2s;
             display: flex;
             align-items: center;
             gap: 6px;
         }
 
-        .model-selector-btn:hover {
-            background: rgba(0, 255, 136, 0.15);
-            box-shadow: 0 0 15px rgba(0, 255, 136, 0.25);
+        .nav-tab-btn:hover { color: #f1f5f9; background: rgba(255, 255, 255, 0.05); }
+
+        .nav-tab-btn.active {
+            background: rgba(0, 255, 136, 0.12);
+            color: var(--neon-green);
+            border: 1px solid rgba(0, 255, 136, 0.3);
         }
 
-        .model-dropdown-content {
-            display: none;
-            position: absolute;
-            background-color: var(--dark-bg);
-            min-width: 180px;
-            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.5);
-            z-index: 100;
-            border: 1px solid var(--neon-green);
+        .device-utility-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .device-btn {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #94a3b8;
+            padding: 6px 10px;
             border-radius: 8px;
-            top: 100%; /* Coloca el dropdown justo debajo del botón */
-            right: 0;
+            cursor: pointer;
+            font-size: 0.82rem;
+            transition: all 0.2s;
+        }
+
+        .device-btn:hover, .device-btn.active {
+            background: rgba(0, 240, 255, 0.12);
+            border-color: var(--neon-cyan);
+            color: var(--neon-cyan);
+        }
+
+        .top-action-buttons {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-header-share {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #f1f5f9;
+            padding: 7px 14px;
+            border-radius: 8px;
+            font-family: var(--font-display);
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-header-share:hover { background: rgba(255, 255, 255, 0.12); }
+
+        .btn-header-publish {
+            background: linear-gradient(135deg, #00ff88, #00f0ff);
+            border: none;
+            color: #050a0e;
+            padding: 7px 18px;
+            border-radius: 8px;
+            font-family: var(--font-display);
+            font-size: 0.8rem;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.25s;
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.3);
+        }
+
+        .btn-header-publish:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 0 25px rgba(0, 255, 136, 0.6);
+        }
+
+        /* MAIN VIEWPORT CANVAS CONTENT CONTAINER */
+        .canvas-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .view-panel {
+            width: 100%;
+            height: 100%;
+            display: none;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .view-panel.active { display: flex; }
+
+        /* ============================================================
+           FARMING SIMULATOR 20 - FULL INTERACTIVE COCKPIT & GAME HUB
+           ============================================================ */
+        #fs20-game-canvas {
+            flex: 1;
+            position: relative;
+            background: #0b140e url('/assets/fs20_bg.png') no-repeat center center;
+            background-size: cover;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow: hidden;
+            box-shadow: inset 0 0 100px rgba(0,0,0,0.8);
+        }
+
+        /* TOP FS20 GAME BAR */
+        .fs20-top-bar {
+            padding: 14px 24px;
+            background: linear-gradient(180deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 5;
+        }
+
+        .fs-brand-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(0, 0, 0, 0.65);
+            padding: 8px 16px;
+            border-radius: 12px;
+            border: 1px solid var(--fs-gold);
+            backdrop-filter: blur(10px);
+        }
+
+        .fs-logo-title {
+            font-family: var(--font-display);
+            font-size: 1.1rem;
+            font-weight: 900;
+            color: #fff;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .fs-logo-badge {
+            background: var(--fs-gold);
+            color: #000;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-weight: 900;
+            font-size: 0.75rem;
+        }
+
+        /* SYSTEM SUB-MENU BUTTONS */
+        .fs20-menu-buttons {
+            display: flex;
+            gap: 8px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 6px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+        }
+
+        .fs-menu-btn {
+            background: transparent;
+            border: 1px solid transparent;
+            color: #cbd5e1;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: 0.78rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .fs-menu-btn:hover { background: rgba(255, 255, 255, 0.1); color: #fff; }
+
+        .fs-menu-btn.active {
+            background: linear-gradient(135deg, var(--fs-gold), #ff9800);
+            color: #000;
+            border-color: #ffe082;
+            box-shadow: 0 0 15px rgba(229, 169, 59, 0.4);
+        }
+
+        /* TIME & FINANCES WIDGET */
+        .fs20-status-widget {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 8px 18px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+        }
+
+        .fs-money {
+            font-family: var(--font-display);
+            font-size: 1.15rem;
+            font-weight: 900;
+            color: var(--neon-green);
+            text-shadow: 0 0 10px rgba(0, 255, 136, 0.4);
+        }
+
+        .fs-clock {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* FS20 HUD TELEMETRY OVERLAYS */
+        .fs20-hud-left {
+            position: absolute;
+            top: 90px;
+            left: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            z-index: 5;
+        }
+
+        /* MINIMAP RADAR */
+        .minimap-card {
+            width: 210px;
+            height: 210px;
+            background: rgba(6, 12, 10, 0.85);
+            border: 2px solid var(--fs-gold);
+            border-radius: 50%;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8), 0 0 20px rgba(229, 169, 59, 0.2);
+        }
+
+        .minimap-canvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        .minimap-overlay {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.7);
+            padding: 2px 10px;
+            border-radius: 10px;
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            color: #fff;
+        }
+
+        /* VEHICLE SWITCH & RADIO */
+        .hud-quick-bar {
+            background: rgba(0, 0, 0, 0.75);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            padding: 10px 14px;
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            width: 210px;
+        }
+
+        .quick-title {
+            font-size: 0.68rem;
+            font-weight: 800;
+            color: var(--fs-gold);
+            text-transform: uppercase;
+        }
+
+        .quick-actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        .hud-btn {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #fff;
+            padding: 6px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .hud-btn:hover { background: rgba(0, 255, 136, 0.2); border-color: var(--neon-green); }
+
+        /* FS20 HUD RIGHT SIDE: SPEEDOMETER & WORK CONTROLS */
+        .fs20-hud-right {
+            position: absolute;
+            bottom: 24px;
+            right: 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 16px;
+            z-index: 5;
+        }
+
+        .speedometer-card {
+            background: rgba(6, 12, 10, 0.88);
+            border: 2px solid var(--neon-green);
+            border-radius: 20px;
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            box-shadow: 0 10px 35px rgba(0,0,0,0.8), 0 0 25px rgba(0, 255, 136, 0.25);
+            backdrop-filter: blur(12px);
+        }
+
+        .speed-dial {
+            position: relative;
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            border: 4px solid rgba(0, 255, 136, 0.2);
+            border-top-color: var(--neon-green);
+            border-right-color: var(--neon-green);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .speed-num {
+            font-family: var(--font-display);
+            font-size: 1.8rem;
+            font-weight: 900;
+            color: #fff;
+            line-height: 1;
+        }
+
+        .speed-unit {
+            font-size: 0.65rem;
+            font-weight: 800;
+            color: var(--neon-green);
+        }
+
+        .gauges-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            width: 140px;
+        }
+
+        .gauge-item {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .gauge-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.68rem;
+            font-weight: 700;
+            color: #cbd5e1;
+        }
+
+        .gauge-bar-bg {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
             overflow: hidden;
         }
 
-        .model-dropdown-content a {
-            color: #e2e8f0;
-            padding: 12px 16px;
-            text-decoration: none;
-            display: block;
-            font-family: var(--font-main);
+        .gauge-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--neon-green), var(--neon-cyan));
+            width: 75%;
+            transition: width 0.3s;
+        }
+
+        /* CONTROLS PANELS AT BOTTOM */
+        .fs20-bottom-controls {
+            position: absolute;
+            bottom: 24px;
+            left: 250px;
+            right: 480px;
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            z-index: 5;
+        }
+
+        .control-action-btn {
+            background: rgba(9, 16, 24, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            padding: 12px 18px;
+            border-radius: 12px;
+            font-family: var(--font-display);
+            font-weight: 800;
+            font-size: 0.82rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+
+        .control-action-btn:hover {
+            transform: translateY(-2px);
+            border-color: var(--neon-green);
+            background: rgba(0, 255, 136, 0.15);
+            color: var(--neon-green);
+        }
+
+        .control-action-btn.ai-active {
+            background: linear-gradient(135deg, #ff9800, #f57c00);
+            color: #000;
+            border-color: #ffe082;
+            box-shadow: 0 0 20px rgba(255, 152, 0, 0.5);
+            animation: pulse-worker 2s infinite;
+        }
+
+        @keyframes pulse-worker {
+            0% { box-shadow: 0 0 0 0 rgba(255, 152, 0, 0.6); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 152, 0, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 152, 0, 0); }
+        }
+
+        /* ============================================================
+           OVERLAY MODAL SYSTEM FOR FS20 TABS (MAP, STORE, LIVESTOCK, ETC)
+           ============================================================ */
+        .fs20-modal-overlay {
+            position: absolute;
+            inset: 70px 24px 24px 24px;
+            background: rgba(5, 10, 15, 0.94);
+            border: 1px solid var(--fs-gold);
+            border-radius: 16px;
+            z-index: 20;
+            display: none;
+            flex-direction: column;
+            padding: 24px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.9);
+        }
+
+        .fs20-modal-overlay.show { display: flex; }
+
+        .modal-header-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(229, 169, 59, 0.3);
+            padding-bottom: 16px;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-family: var(--font-display);
+            font-size: 1.3rem;
+            font-weight: 900;
+            color: var(--fs-gold);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-transform: uppercase;
+        }
+
+        .modal-close-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #cbd5e1;
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .modal-close-btn:hover { background: rgba(255, 51, 102, 0.15); color: var(--neon-red); border-color: var(--neon-red); }
+
+        .modal-grid-content {
+            flex: 1;
+            overflow-y: auto;
+            display: grid;
+            gap: 20px;
+        }
+
+        /* MARKET & STORE TABLES */
+        .fs-table {
+            width: 100%;
+            border-collapse: collapse;
             font-size: 0.85rem;
         }
 
-        .model-dropdown-content a:hover {
-            background-color: rgba(0, 255, 136, 0.1);
-            color: var(--neon-green);
+        .fs-table th {
+            background: rgba(229, 169, 59, 0.15);
+            color: var(--fs-gold);
+            padding: 12px;
+            text-align: left;
+            font-family: var(--font-display);
+            font-weight: 800;
+            border-bottom: 1px solid rgba(229, 169, 59, 0.3);
         }
 
-        .model-dropdown-content a.active-model {
-            background-color: var(--neon-green);
-            color: var(--dark-bg);
-            font-weight: 700;
-        }
-
-        .show-dropdown {
-            display: block;
-        }
-
-        /* ===== PANEL DE PROVEEDORES ESTILO ROO CODE ===== */
-        #btn-settings-chat {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 30px;
-            height: 30px;
-            margin-left: 6px;
-            background: transparent;
-            border: 1px solid rgba(255,255,255,0.15);
-            border-radius: 6px;
+        .fs-table td {
+            padding: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
             color: #e2e8f0;
-            cursor: pointer;
-            transition: all 0.2s ease;
         }
 
-        #btn-settings-chat:hover {
-            border-color: var(--neon-green);
+        .fs-table tr:hover td {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .badge-best-price {
+            background: rgba(0, 255, 136, 0.15);
             color: var(--neon-green);
-            box-shadow: 0 0 12px rgba(0, 255, 136, 0.2);
-            transform: rotate(45deg);
+            border: 1px solid var(--neon-green);
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-weight: 800;
+            font-size: 0.72rem;
         }
 
-        #providers-modal {
-            display: none;
+        /* CARDS GRID FOR STORE & FLEET */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 20px;
+        }
+
+        .machinery-card {
+            background: rgba(14, 22, 32, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 12px;
+            transition: all 0.25s;
+        }
+
+        .machinery-card:hover {
+            border-color: var(--fs-gold);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(229, 169, 59, 0.15);
+        }
+
+        .machine-brand { font-size: 0.7rem; font-weight: 800; color: var(--fs-gold); text-transform: uppercase; }
+        .machine-name { font-family: var(--font-display); font-size: 1.05rem; font-weight: 800; color: #fff; }
+        .machine-price { font-family: var(--font-display); font-size: 1.2rem; font-weight: 900; color: var(--neon-green); }
+
+        .btn-buy {
+            background: linear-gradient(135deg, var(--fs-gold), #ff9800);
+            border: none;
+            color: #000;
+            padding: 10px;
+            border-radius: 8px;
+            font-weight: 900;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .btn-buy:hover { transform: scale(1.02); box-shadow: 0 0 15px rgba(229, 169, 59, 0.5); }
+
+        /* PUBLISH DEPLOYMENT MODAL */
+        #publish-modal {
             position: fixed;
             inset: 0;
-            background: rgba(0,0,0,0.75);
-            backdrop-filter: blur(4px);
-            z-index: 1000;
-            align-items: flex-start;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(16px);
+            z-index: 300;
+            display: none;
+            align-items: center;
             justify-content: center;
-            overflow-y: auto;
-            padding: 40px 16px;
         }
 
-        #providers-modal.show-modal {
+        #publish-modal.show { display: flex; }
+
+        .publish-card {
+            background: #091018;
+            border: 1px solid var(--neon-green);
+            border-radius: 18px;
+            width: 540px;
+            padding: 30px;
             display: flex;
-        }
-
-        .providers-panel {
-            background: #0b1220;
-            border: 1px solid rgba(0, 255, 136, 0.25);
-            border-radius: 12px;
-            width: 100%;
-            max-width: 680px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.6);
-            overflow: hidden;
-            animation: modal-pop 0.2s ease;
+            flex-direction: column;
+            gap: 20px;
+            box-shadow: 0 20px 60px rgba(0, 255, 136, 0.2);
+            animation: modal-pop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         @keyframes modal-pop {
-            from { transform: translateY(12px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-
-        .providers-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 14px 18px;
-            background: linear-gradient(135deg, rgba(0,255,136,0.12), rgba(0,0,0,0.2));
-            border-bottom: 1px solid rgba(255,255,255,0.06);
-        }
-
-        .providers-header h2 {
-            margin: 0;
-            font-size: 0.95rem;
-            color: var(--neon-green);
-            letter-spacing: 0.5px;
-        }
-
-        .providers-close {
-            background: transparent;
-            border: 1px solid rgba(255,255,255,0.2);
-            color: #e2e8f0;
-            border-radius: 6px;
-            padding: 4px 12px;
-            cursor: pointer;
-            font-size: 0.75rem;
-            transition: all 0.2s;
-        }
-
-        .providers-close:hover {
-            background: rgba(255,80,80,0.15);
-            border-color: #ff5050;
-            color: #ff5050;
-        }
-
-        .providers-search {
-            padding: 12px 18px;
-            border-bottom: 1px solid rgba(255,255,255,0.06);
-        }
-
-        .providers-search input {
-            width: 100%;
-            background: rgba(0,0,0,0.4);
-            border: 1px solid rgba(255,255,255,0.12);
-            border-radius: 8px;
-            padding: 10px 14px;
-            color: #e2e8f0;
-            font-size: 0.85rem;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-
-        .providers-search input:focus {
-            border-color: var(--neon-green);
-        }
-
-        .providers-list {
-            padding: 10px 18px;
-            max-height: 260px;
-            overflow-y: auto;
-        }
-
-        .provider-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 10px 12px;
-            border-radius: 8px;
-            cursor: pointer;
-            border: 1px solid transparent;
-            transition: all 0.15s;
-            margin-bottom: 4px;
-        }
-
-        .provider-item:hover {
-            background: rgba(0, 255, 136, 0.06);
-            border-color: rgba(0, 255, 136, 0.2);
-        }
-
-        .provider-item.selected {
-            background: rgba(0, 255, 136, 0.1);
-            border-color: var(--neon-green);
-        }
-
-        .provider-item .provider-name {
-            font-size: 0.85rem;
-            color: #e2e8f0;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .provider-item .provider-check {
-            color: var(--neon-green);
-            font-size: 0.85rem;
-            opacity: 0;
-        }
-
-        .provider-item.selected .provider-check {
-            opacity: 1;
-        }
-
-        .provider-config {
-            display: none;
-            padding: 16px 18px;
-            border-top: 1px solid rgba(255,255,255,0.08);
-            background: rgba(0,0,0,0.25);
-        }
-
-        .provider-config.active {
-            display: block;
-        }
-
-        .provider-config label {
-            display: block;
-            font-size: 0.7rem;
-            color: #8899aa;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-            margin: 12px 0 4px;
-        }
-
-        .provider-config input {
-            width: 100%;
-            background: rgba(0,0,0,0.4);
-            border: 1px solid rgba(255,255,255,0.12);
-            border-radius: 8px;
-            padding: 9px 12px;
-            color: #e2e8f0;
-            font-size: 0.82rem;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-
-        .provider-config input:focus {
-            border-color: var(--neon-green);
-        }
-
-        .cfg-field {
-            margin-bottom: 4px;
-        }
-
-        .provider-config .config-hint {
-            font-size: 0.7rem;
-            color: #5a6b7a;
-            margin-top: 4px;
-        }
-
-        .provider-config .config-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 16px;
-        }
-
-        .config-btn {
-            flex: 1;
-            padding: 10px;
-            border-radius: 8px;
-            border: 1px solid rgba(255,255,255,0.15);
-            background: rgba(255,255,255,0.05);
-            color: #e2e8f0;
-            font-size: 0.8rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .config-btn:hover {
-            border-color: var(--neon-green);
-            color: var(--neon-green);
-        }
-
-        .config-btn.primary {
-            background: var(--neon-green);
-            border-color: var(--neon-green);
-            color: var(--dark-bg);
-        }
-
-        .config-btn.primary:hover {
-            box-shadow: 0 0 16px rgba(0, 255, 136, 0.4);
-        }
-
-        .providers-status {
-            padding: 10px 18px;
-            font-size: 0.75rem;
-            color: #5a6b7a;
-            border-top: 1px solid rgba(255,255,255,0.06);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .providers-status .dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: var(--neon-green);
-            box-shadow: 0 0 8px var(--neon-green);
-        }
-
-        .provider-model-tag {
-            font-size: 0.68rem;
-            color: #5a6b7a;
-            background: rgba(255,255,255,0.05);
-            padding: 2px 8px;
-            border-radius: 10px;
-            margin-left: 6px;
-        }
-
-        .typing-dot {
-            width: 6px;
-            height: 6px;
-            background: var(--neon-green);
-            border-radius: 50%;
-            opacity: 0.4;
-            animation: typing-blink 1.4s infinite both;
-        }
-
-        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
-        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
-
-        @keyframes typing-blink {
-            0% { opacity: 0.4; transform: scale(1); }
-            50% { opacity: 1; transform: scale(1.15); }
-            100% { opacity: 0.4; transform: scale(1); }
-        }
-
-        /* Estilos para el Historial de Acciones */
-        .action-history-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 0;
-            border-bottom: 1px solid rgba(0, 255, 136, 0.05);
-            font-size: 0.75rem;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .action-history-item:last-child {
-            border-bottom: none;
-        }
-
-        .action-history-item:hover {
-            background: rgba(0, 255, 136, 0.05);
-        }
-
-        .action-title {
-            flex-grow: 1;
-            color: #f1f5f9;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            margin-right: 8px;
-        }
-
-        .action-time {
-            color: #64748b;
-            flex-shrink: 0;
-            margin-right: 8px;
-        }
-
-        .action-delete-btn {
-            background: none;
-            border: none;
-            color: #ef4444; /* Rojo para eliminar */
-            cursor: pointer;
-            padding: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 4px;
-            transition: background 0.2s, color 0.2s;
-            flex-shrink: 0;
-        }
-
-        .action-delete-btn:hover {
-            background: rgba(239, 68, 68, 0.1);
-            color: #f87171;
-        }
-    
-        .ag-plus-btn {
-            background: rgba(0, 255, 136, 0.05);
-            border: 1px solid rgba(0, 255, 136, 0.3);
-            color: var(--neon-green);
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.2s;
-            padding: 0;
-        }
-
-        .ag-plus-btn:hover {
-            background: rgba(0, 255, 136, 0.15);
-            box-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
-            transform: scale(1.05);
+            from { transform: scale(0.92); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
         }
     </style>
 </head>
 <body>
-    <div id="sidebar">
-        <div class="sidebar-title">🧬 NEXUS OMEGA</div>
-        
-        <!-- 📈 ACCESO RÁPIDO — TRADING -->
-        <button
-            id="btn-trading-dashboard"
-            onclick="window.open('http://localhost:42210/', '_blank')"
-            style="
-                display: flex; align-items: center; gap: 10px;
-                width: 100%; padding: 12px 16px;
-                background: linear-gradient(135deg, rgba(16,185,129,0.1), rgba(6,182,212,0.05));
-                border: 1px solid rgba(16,185,129,0.3);
-                border-radius: 10px; cursor: pointer;
-                color: #10b981; font-family: var(--font-display);
-                font-size: 0.82rem; font-weight: 700; letter-spacing: 0.6px;
-                text-transform: uppercase; text-align: left;
-                transition: all 0.2s;
-                margin-bottom: 10px;
-            "
-            onmouseover="this.style.borderColor='rgba(16,185,129,0.6)'; this.style.boxShadow='0 0 16px rgba(16,185,129,0.15)';"
-            onmouseout="this.style.borderColor='rgba(16,185,129,0.3)'; this.style.boxShadow='none';"
-        >
-            <svg style="width:16px;height:16px;flex-shrink:0;fill:currentColor;" viewBox="0 0 24 24">
-                <path d="M3.5 18.49l6-6.01 4 4L22 6.92l-1.41-1.41-7.09 7.97-4-4L2 16.99z"/>
-            </svg>
-            Trading Dashboard
-        </button>
 
-        <!-- 📘 ACCESO RÁPIDO — FB AUTOPUBLICADOR -->
-        <button
-            id="btn-fb-autopublisher"
-            onclick="window.open('http://localhost:5180/', '_blank')"
-            style="
-                display: flex; align-items: center; gap: 10px;
-                width: 100%; padding: 12px 16px;
-                background: linear-gradient(135deg, rgba(6,182,212,0.1), rgba(0,240,255,0.05));
-                border: 1px solid rgba(6,182,212,0.3);
-                border-radius: 10px; cursor: pointer;
-                color: #06b6d4; font-family: var(--font-display);
-                font-size: 0.82rem; font-weight: 700; letter-spacing: 0.6px;
-                text-transform: uppercase; text-align: left;
-                transition: all 0.2s;
-            "
-            onmouseover="this.style.borderColor='rgba(6,182,212,0.6)'; this.style.boxShadow='0 0 16px rgba(6,182,212,0.15)';"
-            onmouseout="this.style.borderColor='rgba(6,182,212,0.3)'; this.style.boxShadow='none';"
-        >
-            <svg style="width:16px;height:16px;flex-shrink:0;fill:currentColor;" viewBox="0 0 24 24">
-                <path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6H16v3h-2c-.55 0-1 .45-1 1v2h3v3h-3v6.95c5.05-.5 9-4.76 9-9.95z"/>
-            </svg>
-            FB Autopublicador
-        </button>
+    <!-- ============================================================
+         1. LEFT SIDEBAR: LOVABLE ARCHITECTURE & ASSISTANT (w-[420px])
+         ============================================================ -->
+    <div id="lovable-sidebar">
+        <div class="sidebar-header">
+            <div class="project-title">
+                <div class="project-title-icon">🌾</div>
+                <span>Blooming Icon Studio · NEXUS</span>
+            </div>
+            <div style="font-size: 0.72rem; color: var(--neon-green); font-weight: 700;">v2.0</div>
+        </div>
 
-
-
-
-        <div id="consciousness-logs"></div>
-        
-        <div class="widget" style="margin-top: 20px;">
-            <div class="widget-title">⚙️ ACCIONES RECIENTES</div>
-            <div id="action-history-list">
-                <!-- Acciones se cargarán aquí dinámicamente -->
+        <!-- CASCADE AI MODEL SELECTOR -->
+        <div class="cascade-model-wrapper">
+            <button class="cascade-model-btn" onclick="toggleCascadeDropdown()">
+                <span id="active-model-name">✨ Claude 3.5 Sonnet (Recomendado)</span>
+                <span>▼</span>
+            </button>
+            <div class="cascade-dropdown" id="cascade-dropdown-menu">
+                <div class="cascade-dropdown-item active" onclick="selectModel('Claude 3.5 Sonnet (Recomendado)')">
+                    <span>Claude 3.5 Sonnet</span><span style="color:var(--neon-green)">Activo</span>
+                </div>
+                <div class="cascade-dropdown-item" onclick="selectModel('OpenRouter 70B (Desinhibido)')">
+                    <span>OpenRouter 70B</span><span>Hermes-3</span>
+                </div>
+                <div class="cascade-dropdown-item" onclick="selectModel('GPT-4o (Omni High)')">
+                    <span>GPT-4o</span><span>OpenAI</span>
+                </div>
+                <div class="cascade-dropdown-item" onclick="selectModel('DeepSeek R1 (Reasoning)')">
+                    <span>DeepSeek R1</span><span>R1-70B</span>
+                </div>
+                <div class="cascade-dropdown-item" onclick="selectModel('Llama 3.3 70B (Meta AI)')">
+                    <span>Llama 3.3 70B</span><span>Meta</span>
+                </div>
             </div>
         </div>
-        
-        <!-- Widget de Salud del Sistema -->
-        <div class="widget" style="margin-top: 20px;" id="health-widget">
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <span id="health-dot" style="width: 10px; height: 10px; border-radius: 50%; background: #666;"></span>
-                <span style="font-weight: 500; font-size: 13px;">🩺 Salud del Sistema</span>
+
+        <!-- SUGGESTION ACTION PILLS -->
+        <div class="suggestion-pills-container">
+            <button class="action-pill" onclick="sendQuickPrompt('🌾 Cosechar Campo #4 con John Deere 8RX')">🌾 Cosechar Campo #4</button>
+            <button class="action-pill" onclick="sendQuickPrompt('🚜 Activar Piloto Automático IA en Cosechadora')">🚜 Piloto Automático IA</button>
+            <button class="action-pill" onclick="sendQuickPrompt('🐄 Comprar 10 Vacas Lecheras para Granja')">🐄 Comprar 10 Vacas</button>
+            <button class="action-pill" onclick="sendQuickPrompt('📈 Vender Trigo en Molino Harinero al mejor precio')">📈 Vender Trigo</button>
+            <button class="action-pill" onclick="sendQuickPrompt('💰 Solicitar Préstamo Bancario de $50,000')">💰 Préstamo $50K</button>
+        </div>
+
+        <!-- CHAT HISTORY & RESPONSE CARDS -->
+        <div class="chat-history-container" id="chat-history">
+            <div class="chat-card assistant">
+                <div class="card-header assistant">AGENTE NEXUS CONTROL ENGINE</div>
+                <div class="card-body">¡Bienvenido al Simulador Completo de **Farming Simulator 20 (FS20 Sovereign Edition)**!
+
+Se ha inicializado la interfaz interactiva con telemetría en vivo, velocímetro, tacómetro, radar GPS, mercado de cultivos, control de vehículos y motor de piloto automático.</div>
+                <div class="code-badge">FarmingSimulator20 :: Operational Ready</div>
+                <div class="card-footer-actions">
+                    <button class="card-btn" onclick="alert('Exportado en SVG correctamente')">Descarga en SVG</button>
+                    <button class="card-btn" onclick="alert('Variante monocromo creada')">Monocromo</button>
+                    <button class="card-btn" onclick="alert('Feedback guardado')">👍</button>
+                </div>
             </div>
-            <div id="health-details" style="margin-top: 8px; font-size: 11px; color: #8892b0; display: none;">
-                <!-- Se llena dinámicamente vía JS -->
+        </div>
+
+        <!-- BOTTOM FLOATING PROMPT BAR -->
+        <div class="bottom-prompt-bar">
+            <!-- POPUP + MENU -->
+            <div class="plus-popup-menu" id="plus-menu">
+                <div class="plus-menu-item" onclick="alert('Buscando en la base de datos de maquinarias...')">🔍 Buscar Vehículo</div>
+                <div class="plus-menu-item" onclick="alert('Adjuntando plano de campo...')">📎 Adjuntar Terreno</div>
+                <div class="plus-menu-item" onclick="alert('Generando diseño de granja...')">🎨 Diseño de Granja</div>
+                <div class="plus-menu-item" onclick="alert('Conectores REST Axum activos.')">🔌 Conectores Engine</div>
+                <div class="plus-menu-item" onclick="alert('Base de Datos PostgreSQL sincronizada.')">🗄️ PostgreSQL ERD</div>
+            </div>
+
+            <div class="prompt-input-box">
+                <textarea class="prompt-textarea" id="prompt-input" placeholder="Solicita una acción al asistente de Farming Simulator 20..."></textarea>
+                <div class="prompt-tools">
+                    <div class="tool-left">
+                        <button class="plus-menu-btn" onclick="togglePlusMenu()">+</button>
+                        <button class="mode-selector-btn" id="mode-btn" onclick="toggleMode()">Crear ˅</button>
+                    </div>
+                    <div class="tool-right">
+                        <button class="mic-btn" id="mic-btn" onclick="toggleVoice()">🎤</button>
+                        <button class="send-prompt-btn" onclick="submitPrompt()">➔</button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-    
-    <div id="main-content">
-        <div class="chat-header">
-            <div class="chat-header-title">
-                <span>💬 CHAT AGENTE - NEXUS OMEGA</span>
+
+    <!-- ============================================================
+         2. RIGHT VIEWPORT: LOVABLE HEADER & FS20 SIMULATOR CANVAS
+         ============================================================ -->
+    <div id="lovable-viewport">
+        <!-- NAVIGATION HEADER BAR -->
+        <div class="viewport-header">
+            <div class="nav-view-tabs">
+                <button class="nav-tab-btn active" id="tab-preview" onclick="switchMainTab('preview')">🌐 Vista previa</button>
+                <button class="nav-tab-btn" id="tab-files" onclick="switchMainTab('files')">📄 Archivos</button>
+                <button class="nav-tab-btn" id="tab-code" onclick="switchMainTab('code')">&lt;/&gt; Código</button>
+                <button class="nav-tab-btn" id="tab-erd" onclick="switchMainTab('erd')">🥞 Capas / ERD</button>
             </div>
-            <div style="font-size: 0.8rem; color: #8b949e;">
-                Células Activas: <span style="color: var(--neon-green);">1</span> | Latencia: <span style="color: var(--neon-cyan);">~12ms</span>
+
+            <div class="device-utility-controls">
+                <button class="device-btn active" title="Desktop View">💻</button>
+                <button class="device-btn" title="Mobile View">📱</button>
+                <button class="device-btn" onclick="location.reload()" title="Reload">🔄</button>
+                <span style="font-size:0.75rem; color:#64748b; margin:0 4px;">Página: <strong>Principal</strong></span>
             </div>
-        </div>
-        
-        <div class="chat-messages" id="chat-messages">
-            <div class="message-bubble nexus">
-                <div class="message-sender">AGENTE NEXUS</div>
-                <div class="message-content">Sistema listo. Conectado al reactor del Córtex OMEGA. ¿En qué puedo ayudarte hoy?</div>
+
+            <div class="top-action-buttons">
+                <button class="btn-header-share" onclick="alert('Enlace de sesión copiado al portapapeles!')">Compartir</button>
+                <button class="btn-header-publish" onclick="openPublishModal()">Publicar</button>
             </div>
         </div>
 
-        <div class="chat-input-wrapper">
-            <div class="antigravity-clone">
-                <textarea id="agent-chat-input" class="ag-textarea" placeholder="Pregunta lo que sea al Oráculo o ingresa un comando..." rows="3"></textarea>
-                <div class="ag-footer">
-                    <div class="ag-left-tools">
-                        <button class="ag-plus-btn" id="btn-plus" type="button" title="Cargar Archivo">
-                            <svg style="width:16px; height:16px; fill:currentColor;" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
-                        </button>
-                        <input type="file" id="chat-file-input" style="display: none;">
+        <!-- CANVAS MAIN CONTENT CONTAINER -->
+        <div class="canvas-container">
+            
+            <!-- PANEL 1: VISTA PREVIA - FARMING SIMULATOR 20 FULL SCREEN -->
+            <div class="view-panel active" id="panel-preview">
+                <div id="fs20-game-canvas">
+                    <!-- TOP FS20 GAME BAR -->
+                    <div class="fs20-top-bar">
+                        <div class="fs-brand-logo">
+                            <div class="fs-logo-title">Farming Simulator</div>
+                            <div class="fs-logo-badge">20</div>
+                        </div>
 
-                        <div id="chat-model-container" style="position: relative; display: inline-block;">
-                            <button class="ag-btn" id="btn-model-chat" style="color: #00ff88;" type="button">^ NEXUS Local ▼</button>
-                            <button id="btn-settings-chat" type="button" title="Configurar proveedores" onclick="toggleProvidersModal()">
-                                <svg style="width:15px; height:15px; fill:currentColor;" viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
-                            </button>
-                            <div id="chat-model-dropdown" class="model-dropdown-content" style="bottom: 100%; top: auto; left: 0; right: auto; margin-bottom: 8px; max-height: 400px; overflow-y: auto;">
-                                <div class="dropdown-category" style="padding: 6px 12px; font-size: 0.65rem; color: #ff9900; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; border-bottom: 1px solid rgba(255,255,255,0.02); background: rgba(0,0,0,0.15);">MODEL</div>
-                                <a href="#" data-model-id="nexus-local" class="active-model">NEXUS Local</a>
-                                <a href="#" data-model-id="nexus-puro">NEXUS Puro</a>
-                                <a href="#" data-model-id="gemini-3.0-flash">Gemini 3.0 Flash</a>
-                                <a href="#" data-model-id="gemini-2.5-flash">Gemini 2.5 Flash</a>
-                                <a href="#" data-model-id="gemini-2.5-pro">Gemini 2.5 Pro</a>
-                                <a href="#" data-model-id="gemini-2.0-pro">Gemini 2.0 Pro</a>
-                                <a href="#" data-model-id="gemini-2.0-flash-vertex">Gemini 2.0 Flash (Vertex)</a>
-                                <a href="#" data-model-id="deepseek-instant">DeepSeek Instant (API)</a>
-                                <a href="#" data-model-id="deepseek-extended">DeepSeek Extended (API)</a>
+                        <!-- SYSTEM SUB-MENU BUTTONS -->
+                        <div class="fs20-menu-buttons">
+                            <button class="fs-menu-btn" onclick="openFS20Modal('map')">🗺️ Mapa y Campos</button>
+                            <button class="fs-menu-btn" onclick="openFS20Modal('fleet')">🚜 Flota</button>
+                            <button class="fs-menu-btn" onclick="openFS20Modal('market')">🌾 Mercado</button>
+                            <button class="fs-menu-btn" onclick="openFS20Modal('livestock')">🐄 Ganadería</button>
+                            <button class="fs-menu-btn" onclick="openFS20Modal('shop')">🏪 Tienda</button>
+                            <button class="fs-menu-btn" onclick="openFS20Modal('bank')">📊 Finanzas</button>
+                            <button class="fs-menu-btn" onclick="openFS20Modal('settings')">⚙️ Ajustes</button>
+                        </div>
+
+                        <!-- TIME & FINANCES WIDGET -->
+                        <div class="fs20-status-widget">
+                            <div class="fs-money" id="player-money">$1,245,800</div>
+                            <div class="fs-clock">
+                                <span>🕒</span>
+                                <span id="game-clock">14:48</span>
+                                <span style="color:var(--fs-gold); font-size:0.7rem;">(15x)</span>
                             </div>
                         </div>
                     </div>
-                    <div class="ag-right-tools">
-                        <button class="ag-btn" id="btn-mic" type="button">🎙️</button>
-                        <button class="ag-send-btn" onclick="sendChat()" id="btn-send-chat" title="Enviar">
-                            <svg style="width:16px; height:16px; fill:currentColor;" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <!-- PANEL DE GALERÍA DE NEXUS -->
-    <div id="gallery-modal">
-        <div class="gallery-header">
-            <span class="gallery-title">🏛️ GALERÍA DE CAPTURAS - NEXUS OMEGA</span>
-            <button class="close-btn" onclick="toggleGallery()">CERRAR</button>
-        </div>
-        <div id="gallery-grid"></div>
-    <!-- PANEL DE LA TERMINAL DE NEXUS -->
-    <div id="terminal-modal">
-        <div class="gallery-header">
-            <span class="gallery-title">🐚 NEXUS SOVEREIGN TERMINAL - OMEGA</span>
-            <button class="close-btn" onclick="toggleTerminal()">CERRAR</button>
-        </div>
-        <div class="terminal-grid">
-            <div class="terminal-main">
-                <div class="terminal-output" id="term-output">🔱 NEXUS Sovereign Terminal v1.0.0 inicializada.<br>Conectando con el Núcleo OMEGA...<br></div>
-                <div class="terminal-prompt-container">
-                    <div class="terminal-suggestions" id="term-suggestions"></div>
-                    <span style="align-self: center; font-size: 0.85rem;">🔱</span>
-                    <input type="text" class="terminal-input" id="term-input" placeholder="Escribe un comando o consulta al Oráculo..." autofocus>
-                </div>
-            </div>
-            <div class="terminal-telemetry">
-                <div class="term-tabs">
-                    <button class="term-tab-btn active" id="tab-btn-telemetry" onclick="switchTermTab('telemetry')">📊 TELEMETRÍA</button>
-                    <button class="term-tab-btn" id="tab-btn-ia" onclick="switchTermTab('ia')">🧠 ANÁLISIS IA</button>
-                    <button class="term-tab-btn" id="tab-btn-memoria" onclick="switchTermTab('memoria')">📚 MEMORIA</button>
-                </div>
-                
-                <div class="term-tab-content active" id="tab-content-telemetry">
-                    <div style="margin-bottom: 12px;">
-                        <strong style="color: var(--neon-green)">🧬 CORE:</strong><br>
-                        <span id="term-core-status">OMEGA-18 ÆGIS</span>
-                    </div>
-                    <div style="margin-bottom: 12px;">
-                        <strong style="color: var(--neon-green)">🔌 MODO:</strong><br>
-                        <span id="term-mode-status" style="color: var(--neon-green);">NORMAL</span>
-                    </div>
-                    <div style="margin-bottom: 12px;">
-                        <strong style="color: var(--neon-green)">🖥️ CPU:</strong><br>
-                        <span id="term-cpu">--%</span>
-                    </div>
-                    <div style="margin-bottom: 12px;">
-                        <strong style="color: var(--neon-green)">💾 RAM:</strong><br>
-                        <span id="term-ram">-- / -- GB</span>
-                    </div>
-                    <div style="margin-bottom: 12px;">
-                        <strong style="color: var(--neon-green)">📡 WEB INTERFACE:</strong><br>
-                        <span style="color: #888;">localhost:1420</span>
-                    </div>
-                </div>
-
-                <div class="term-tab-content" id="tab-content-ia">
-                    <div style="font-size: 0.7rem; color: #888; margin-bottom: 10px;">
-                        * Respuestas detalladas del oráculo y herramientas MCP.
-                    </div>
-                    <div id="term-mcp-details" style="font-family: 'Fira Code', monospace; font-size: 0.7rem; color: #fff; white-space: pre-wrap; word-break: break-all; max-height: 250px; overflow-y: auto;">
-                        Ningún análisis MCP activo.
-                    </div>
-                </div>
-
-                <div class="term-tab-content" id="tab-content-memoria">
-                    <div style="margin-bottom: 12px;">
-                        <input type="text" id="memoria-search-input" class="terminal-input" placeholder="Buscar en la memoria de NEXUS..." style="width: 100%; border: 1px solid var(--border-color); padding: 8px; border-radius: 8px; background: rgba(0,0,0,0.2); color: #fff;">
-                    </div>
-                    <button class="btn-cyber" id="btn-memoria-search" style="margin-bottom: 15px;">🔍 BUSCAR MEMORIA</button>
-                    <div id="memoria-search-results" style="font-family: 'Fira Code', monospace; font-size: 0.7rem; color: #fff; white-space: pre-wrap; word-break: break-all; max-height: 300px; overflow-y: auto; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px;">
-                        Aquí aparecerán los resultados de la búsqueda en memoria.
-                    </div>
-                </div>
-
-                <div style="margin-top: auto; font-size: 0.65rem; color: #666;">
-                    * Integración total con OCEAN y el reactor cerebral de NEXUS.
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ===== MODAL DE PROVEEDORES ESTILO ROO CODE ===== -->
-    <div id="providers-modal" onclick="if(event.target===this) closeProvidersModal()">
-        <div class="providers-panel">
-            <div class="providers-header">
-                <h2>⚙️ CONFIGURAR PROVEEDORES</h2>
-                <button class="providers-close" onclick="closeProvidersModal()">✕ CERRAR</button>
-            </div>
-
-            <div class="providers-search">
-                <input type="text" id="providers-search-input" placeholder="🔍 Buscar proveedor..." oninput="filterProviders(this.value)">
-            </div>
-
-            <div class="providers-list" id="providers-list">
-                <div class="provider-item" data-provider-id="nexus-local" onclick="selectProvider('nexus-local')">
-                    <span class="provider-name">🧠 NEXUS Local <span class="provider-model-tag">Ollama / mistral.rs</span></span>
-                    <span class="provider-check">✓</span>
-                </div>
-                <div class="provider-item" data-provider-id="nexus-puro" onclick="selectProvider('nexus-puro')">
-                    <span class="provider-name">🌀 NEXUS Puro <span class="provider-model-tag">Cerebro Digital</span></span>
-                    <span class="provider-check">✓</span>
-                </div>
-                <div class="provider-item" data-provider-id="anthropic" onclick="selectProvider('anthropic')">
-                    <span class="provider-name">🧬 Anthropic <span class="provider-model-tag">Claude</span></span>
-                    <span class="provider-check">✓</span>
-                </div>
-                <div class="provider-item" data-provider-id="bedrock" onclick="selectProvider('bedrock')">
-                    <span class="provider-name">⛰️ Amazon Bedrock <span class="provider-model-tag">AWS</span></span>
-                    <span class="provider-check">✓</span>
-                </div>
-                <div class="provider-item" data-provider-id="vertex" onclick="selectProvider('vertex')">
-                    <span class="provider-name">▲ Vertex AI <span class="provider-model-tag">Google Cloud</span></span>
-                    <span class="provider-check">✓</span>
-                </div>
-                <div class="provider-item" data-provider-id="gemini" onclick="selectProvider('gemini')">
-                    <span class="provider-name">✨ Google Gemini <span class="provider-model-tag">API</span></span>
-                    <span class="provider-check">✓</span>
-                </div>
-                <div class="provider-item" data-provider-id="deepseek" onclick="selectProvider('deepseek')">
-                    <span class="provider-name">🐋 DeepSeek <span class="provider-model-tag">API</span></span>
-                    <span class="provider-check">✓</span>
-                </div>
-                <div class="provider-item" data-provider-id="openai" onclick="selectProvider('openai')">
-                    <span class="provider-name">🟢 OpenAI <span class="provider-model-tag">GPT</span></span>
-                    <span class="provider-check">✓</span>
-                </div>
-                <div class="provider-item" data-provider-id="openrouter" onclick="selectProvider('openrouter')">
-                    <span class="provider-name">🛣️ OpenRouter <span class="provider-model-tag">Multi-proveedor</span></span>
-                    <span class="provider-check">✓</span>
-                </div>
-                <div class="provider-item" data-provider-id="ollama" onclick="selectProvider('ollama')">
-                    <span class="provider-name">🦙 Ollama <span class="provider-model-tag">Local</span></span>
-                    <span class="provider-check">✓</span>
-                </div>
-                <div class="provider-item" data-provider-id="groq" onclick="selectProvider('groq')">
-                    <span class="provider-name">⚡ Groq <span class="provider-model-tag">LPU</span></span>
-                    <span class="provider-check">✓</span>
-                </div>
-                <div class="provider-item" data-provider-id="mistral" onclick="selectProvider('mistral')">
-                    <span class="provider-name">🌬️ Mistral AI <span class="provider-model-tag">API</span></span>
-                    <span class="provider-check">✓</span>
-                </div>
-                <div class="provider-item" data-provider-id="lmstudio" onclick="selectProvider('lmstudio')">
-                    <span class="provider-name">🖥️ LM Studio <span class="provider-model-tag">Local</span></span>
-                    <span class="provider-check">✓</span>
-                </div>
-                <div class="provider-item" data-provider-id="openai-free" onclick="selectProvider('openai-free')">
-                    <span class="provider-name">🆓 OpenAI Free <span class="provider-model-tag">Comunidad</span></span>
-                    <span class="provider-check">✓</span>
-                </div>
-            </div>
-
-            <div class="provider-config" id="provider-config">
-                <div style="font-size:0.85rem; color:var(--neon-green); font-weight:700; margin-bottom:4px;" id="provider-config-title">Configuración</div>
-                <div style="font-size:0.7rem; color:#5a6b7a; margin-bottom:8px;">Los cambios se guardan en este dispositivo y se sincronizan con el selector del chat.</div>
-
-                <div class="cfg-field" id="field-model">
-                    <label>Modelo predeterminado</label>
-                    <input type="text" id="cfg-model" placeholder="ej: claude-sonnet-4-20250514">
-                </div>
-
-                <div class="cfg-field" id="field-api-key">
-                    <label>API Key</label>
-                    <input type="password" id="cfg-api-key" placeholder="sk-..." autocomplete="off">
-                </div>
-
-                <div class="cfg-field" id="field-base-url">
-                    <label>Base URL (opcional)</label>
-                    <input type="text" id="cfg-base-url" placeholder="https://api.proveedor.com/v1">
-                </div>
-
-                <div class="config-hint">💡 La API Key queda guardada únicamente en localStorage de tu navegador.</div>
-
-                <div class="config-actions">
-                    <button class="config-btn" onclick="clearProviderConfig()">Limpiar</button>
-                    <button class="config-btn primary" onclick="saveProviderConfig()">Guardar configuración</button>
-                </div>
-            </div>
-
-            <div class="providers-status">
-                <span class="dot"></span>
-                <span id="providers-status-text">Sistema de proveedores activo</span>
-            </div>
-        </div>
-    </div>
-
-    <!-- LIGHTBOX -->
-    <div id="lightbox-modal" onclick="closeLightbox()">
-        <img id="lightbox-img" src="" alt="Zoom">
-        <div id="lightbox-caption"></div>
-        <div style="margin-top: 10px; font-size: 0.7rem; color: #888;">Haz clic en cualquier parte para cerrar</div>
-    </div>
-
-    <script>
-        // Mock & Bridge de Tauri seguro para compatibilidad con navegadores estándar y Tauri v2
-        if (window.__TAURI__ && window.__TAURI__.core && !window.__TAURI__.invoke) {
-            window.__TAURI__.invoke = window.__TAURI__.core.invoke;
-        }
-        if (!window.__TAURI__ || !window.__TAURI__.invoke) {
-            if (!window.__TAURI__) {
-                window.__TAURI__ = {};
-            }
-            if (!window.__TAURI__.event) {
-                window.__TAURI__.event = {
-                    listen: () => ({})
-                };
-            }
-            window.__TAURI__.invoke = async (cmd, args) => {
-                console.log(`[Tauri Mock] Invocando comando: ${cmd}`, args);
-                if (cmd === 'get_historial_acciones') {
-                    return [];
-                }
-                return { status: "success", data: "Simulado en Navegador" };
-            };
-        }
-
-        const listen = window.__TAURI__.event?.listen || window.__TAURI__.core?.listen || (() => ({})); // Compatibilidad Tauri v1/v2
-
-        listen('nexus-log', (event) => {
-            const logDiv = document.getElementById('consciousness-logs');
-            const p = document.createElement('div');
-            p.textContent = `> ${event.payload}`;
-            logDiv.appendChild(p);
-            logDiv.scrollTop = logDiv.scrollHeight;
-        });
-
-        // ============================================================
-        // LÓGICA DE HISTORIAL DE ACCIONES (SIDEBAR)
-        // ============================================================
-        const actionHistoryList = document.getElementById('action-history-list');
-
-        function formatTimeAgo(timestamp_secs) {
-            const now = Date.now() / 1000; // segundos
-            const diff = now - timestamp_secs;
-
-            if (diff < 60) return `${Math.floor(diff)}s`;
-            if (diff < 3600) return `${Math.floor(diff / 60)}m`;
-            if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
-            return `${Math.floor(diff / 86400)}d`;
-        }
-
-        async function loadActionHistory() {
-            if (!window.__TAURI__ || !actionHistoryList) return;
-
-            try {
-                const history = await window.__TAURI__.invoke('get_historial_acciones');
-                actionHistoryList.innerHTML = ''; // Limpiar lista existente
-
-                if (history.length === 0) {
-                    actionHistoryList.innerHTML = '<div style="color:#666; font-size:0.7rem; padding: 8px;">Sin acciones recientes.</div>';
-                    return;
-                }
-
-                history.forEach(item => {
-                    const actionItem = document.createElement('div');
-                    actionItem.className = 'action-history-item';
-                    actionItem.dataset.contexto = item.contexto; // Guardar contexto para eliminación
-
-                    let displayTitle = item.prompt;
-                    if (item.acciones && item.acciones.length > 0) {
-                        displayTitle = item.acciones[0].split(":")[0] + ": " + item.acciones[0].split(":").slice(1).join(":").trim();
-                    } else if (item.respuesta) {
-                        displayTitle = item.respuesta.split('\n')[0].substring(0, 50) + "...";
-                    }
-                    
-                    // Limitar y sanear el título
-                    displayTitle = displayTitle.replace(/<\/?code>/g, '').replace(/<\/?pre>/g, '').trim();
-                    if (displayTitle.length > 60) {
-                        displayTitle = displayTitle.substring(0, 57) + "...";
-                    }
-                    if (!displayTitle) displayTitle = "Acción sin descripción";
-
-
-                    actionItem.innerHTML = `
-                        <span class="action-title">${displayTitle}</span>
-                        <span class="action-time">${formatTimeAgo(item.timestamp_secs)}</span>
-                        <button class="action-delete-btn" data-contexto="${item.contexto}" title="Eliminar">
-                            <svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:currentColor;">
-                                <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
-                            </svg>
-                        </button>
-                    `;
-                    actionHistoryList.appendChild(actionItem);
-                });
-
-                // Adjuntar event listeners a los botones de eliminar
-                actionHistoryList.querySelectorAll('.action-delete-btn').forEach(btn => {
-                    btn.addEventListener('click', async (e) => {
-                        e.stopPropagation(); // Evitar que el clic se propague al elemento padre
-                        const contexto = parseInt(btn.dataset.contexto);
-                        if (confirm(`¿Seguro que quieres eliminar la acción ${contexto}?`)) {
-                            try {
-                                await window.__TAURI__.invoke('eliminar_historial_accion', { contexto });
-                                loadActionHistory(); // Recargar lista después de eliminar
-                            } catch (error) {
-                                console.error('Error al eliminar acción:', error);
-                                alert('Error al eliminar acción: ' + error);
-                            }
-                        }
-                    });
-                });
-                
-                // Añadir event listener para cargar acción en el chat principal al hacer clic en el item
-                actionHistoryList.querySelectorAll('.action-history-item').forEach(item => {
-                    item.addEventListener('click', (e) => {
-                        // Si el clic no fue en el botón de eliminar
-                        if (!e.target.closest('.action-delete-btn')) {
-                            const contexto = parseInt(item.dataset.contexto);
-                            // Aquí deberías tener una forma de obtener el detalle completo del item
-                            // y cargarlo en el input del chat o en algún lugar relevante.
-                            // Por ahora, solo simularé cargar el prompt
-                            const foundItem = history.find(h => h.contexto === contexto);
-                            if (foundItem) {
-                                chatInput.value = foundItem.prompt;
-                                chatInput.focus();
-                            }
-                        }
-                    });
-                });
-
-
-            } catch (error) {
-                console.error('Error al cargar historial de acciones:', error);
-                actionHistoryList.innerHTML = `<div style="color:var(--neon-red); font-size:0.7rem; padding: 8px;">Error al cargar: ${error}</div>`;
-            }
-        }
-
-        // Cargar historial al inicio
-        document.addEventListener('DOMContentLoaded', loadActionHistory);
-
-        // ============================================================
-        // LÓGICA DE INTERACCIÓN DE CHAT (ANTIGRAVITY CHAT ENGINE)
-        // ============================================================
-        const chatInput = document.getElementById('agent-chat-input');
-        const chatMessages = document.getElementById('chat-messages');
-        let modeloActual = 'puro';
-
-        // Selección de modelo — resalta el activo
-        function seleccionarModelo(modelo) {
-            modeloActual = modelo;
-            document.querySelectorAll('.modelo-btn').forEach(btn => {
-                if (btn.dataset.modelo === modelo) {
-                    btn.style.color = 'var(--neon-green)';
-                    btn.style.borderColor = 'var(--neon-green)';
-                } else {
-                    btn.style.color = '';
-                    btn.style.borderColor = '';
-                }
-            });
-        }
-
-        let planningActive = false;
-
-        async function sendChat() {
-            let text = chatInput.value.trim();
-            if (!text) return;
-
-            // --- INTERCEPTOR DE COMANDOS SOBERANOS ---
-            if (text.startsWith('/publicar')) {
-                chatInput.value = '';
-                appendMessage("user", text);
-                const indicatorId = appendTypingIndicator();
-                
-                try {
-                    const args = text.replace('/publicar', '').trim();
-                    const [tema, estilo = 'informativo'] = args.split('|').map(s => s.trim());
-                    
-                    if (!tema) throw new Error("Debes especificar un tema: /publicar [tema] | [estilo]");
-
-                    const response = await fetch('http://localhost:5180/api/queue', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ topic: tema, style: estilo }),
-                    });
-                    
-                    const result = await response.json();
-                    removeTypingIndicator(indicatorId);
-                    
-                    if (result.success) {
-                        appendMessage('nexus', `🧬 Misión aceptada. Post encolado para investigación y publicación.\n\nTema: "${tema}"\nEstilo: ${estilo}\nID Tarea: ${result.id}\n\nPuedes monitorear el progreso en el Panel del Autopublicador.`);
-                    } else {
-                        throw new Error(result.error || "Fallo al encolar.");
-                    }
-                } catch (e) {
-                    removeTypingIndicator(indicatorId);
-                    appendMessage('nexus', `❌ Error en el Autopublicador: ${e.message}`);
-                }
-                return;
-            }
-            // ------------------------------------------
-
-            let displayPrompt = text;
-            let finalPrompt = text;
-            if (planningActive) {
-                displayPrompt = text + " ⚡ (Planning Active)";
-                finalPrompt = `[MODO PLANIFICACIÓN] ${text}`;
-            }
-
-            // Limpiar textarea
-            chatInput.value = '';
-
-            // 1. Agregar mensaje del usuario
-            appendMessage("user", displayPrompt);
-
-            // 2. Agregar typing indicator
-            const indicatorId = appendTypingIndicator();
-
-            try {
-                // 3. Post a /api/santuario/chat (proxy_hijack :4444)
-                const response = await fetch("http://localhost:8080/nexus/v1/pensar", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        prompt: finalPrompt,
-                        modo: "auto",
-                        modelo: typeof modeloActual !== 'undefined' ? modeloActual : 'nexus-local'
-                    })
-                });
-
-                const data = await response.json();
-                removeTypingIndicator(indicatorId);
-
-                // Función para extraer la respuesta puramente cruda de NEXUS
-                function sanitizarRespuestaCruda(text) {
-                    if (!text) return "";
-                    let lines = text.split("\n");
-                    let cleanLines = [];
-                    let ignoreHeader = false;
-                    for (let line of lines) {
-                        let clean = line.trim();
-                        
-                        // Detectar y saltar bloques de PHA, reglas de kernel y conceptos crudos
-                        if (clean.includes("PHA]") || clean.includes("SYSTEM DIRECTIVE") || clean.includes("concepto:")) {
-                            continue;
-                        }
-                        // Saltar metadatos de telemetría y lóbulo estético
-                        if (clean.startsWith("⏱") || clean.startsWith("🕐") || clean.includes("ÍNSULA:") || clean.includes("LÓBULO OCCIPITAL")) {
-                            continue;
-                        }
-                        // Saltar reglas y encabezados
-                        if (clean.startsWith("RULE") || clean.startsWith("# 🔱") || clean.startsWith("---")) {
-                            continue;
-                        }
-                        
-                        cleanLines.push(clean);
-                    }
-                    return cleanLines.join("\n").trim().replace(/^\[.*?\]\s*/, ""); // Quitar prefijos como [Córtex OMEGA]
-                }
-
-                // 4. Agregar respuesta del oráculo/agente
-                const proveedor = data.proveedor || "Córtex OMEGA";
-                const rawReply = data.respuesta || "No recibí respuesta del Córtex OMEGA.";
-                const reply = sanitizarRespuestaCruda(rawReply);
-                appendMessage("nexus", `[${proveedor}] ${reply}`);
-            } catch (err) {
-                removeTypingIndicator(indicatorId);
-                appendMessage("nexus", `❌ Error al conectar con el Córtex OMEGA: ${err.message}`);
-            }
-        }
-
-        function appendMessage(sender, content) {
-            const bubble = document.createElement('div');
-            bubble.className = `message-bubble ${sender}`;
-
-            const senderLabel = document.createElement('div');
-            senderLabel.className = 'message-sender';
-            senderLabel.textContent = sender === 'user' ? 'TÚ (Arquitecto)' : 'AGENTE NEXUS';
-
-            const msgContent = document.createElement('div');
-            msgContent.className = 'message-content';
-            
-            // Render basic markdown code blocks
-            if (content.includes("```")) {
-                const parts = content.split("```");
-                for (let i = 0; i < parts.length; i++) {
-                    if (i % 2 === 1) {
-                        const pre = document.createElement('pre');
-                        const code = document.createElement('code');
-                        code.textContent = parts[i].trim();
-                        pre.appendChild(code);
-                        msgContent.appendChild(pre);
-                    } else {
-                        const span = document.createElement('span');
-                        span.textContent = parts[i];
-                        msgContent.appendChild(span);
-                    }
-                }
-            } else {
-                msgContent.textContent = content;
-            }
-
-            bubble.appendChild(senderLabel);
-            bubble.appendChild(msgContent);
-            chatMessages.appendChild(bubble);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }
-
-        function appendTypingIndicator() {
-            const id = 'typing-' + Date.now();
-            const bubble = document.createElement('div');
-            bubble.className = 'message-bubble nexus';
-            bubble.id = id;
-
-            const senderLabel = document.createElement('div');
-            senderLabel.className = 'message-sender';
-            senderLabel.textContent = 'AGENTE NEXUS';
-
-            const indicator = document.createElement('div');
-            indicator.className = 'typing-indicator';
-            indicator.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
-
-            bubble.appendChild(senderLabel);
-            bubble.appendChild(indicator);
-            chatMessages.appendChild(bubble);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-            return id;
-        }
-
-        function removeTypingIndicator(id) {
-            const element = document.getElementById(id);
-            if (element) {
-                element.remove();
-            }
-        }
-
-        // Keydown listener para enviar en Enter sin Shift
-        if (chatInput) {
-            chatInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    sendChat();
-                }
-            });
-        }
-        // ============================================================
-        // NEXUS AGENT PANEL — UI
-        // ============================================================
-        function toggleAgentPanel() {
-            const body = document.getElementById('ap-body');
-            const toggle = document.getElementById('ap-toggle');
-            const isHidden = body.style.display === 'none';
-            body.style.display = isHidden ? 'block' : 'none';
-            toggle.textContent = isHidden ? '[-]' : '[+]';
-        }
-
-        async function agentAction(actionType) {
-            const input = document.getElementById('agent-input').value;
-            const output = document.getElementById('agent-output');
-            output.textContent = `Procesando ${actionType}...
-`;
-            // Aquí se enviaría la solicitud al backend de Rust
-            // Por ahora, solo una simulación
-            try {
-                const response = await window.__TAURI__.invoke('invoke_agent_action', { actionType, input });
-                output.textContent += `Respuesta del agente: ${JSON.stringify(response, null, 2)}\n`;
-            } catch (error) {
-                output.textContent += `Error del agente: ${error}\n`;
-            }
-        }
-
-        // Función placeholder para ejecutar comando del agente
-        function executeAgentCommand() {
-            const input = document.getElementById('agent-input').value;
-            const output = document.getElementById('agent-output');
-            output.textContent = `Ejecutando comando: ${input}\n`;
-            // Lógica para determinar la acción basada en el input
-            if (input.toLowerCase().includes('generar')) {
-                agentAction('generate_code');
-            } else if (input.toLowerCase().includes('refactorizar')) {
-                agentAction('refactor_code');
-            } else if (input.toLowerCase().includes('explicar')) {
-                agentAction('explain_code');
-            } else {
-                output.textContent += 'Comando no reconocido. Intenta con "generar", "refactorizar" o "explicar".';
-            }
-        }
-
-        // ============================================================
-        // TERMINAL SOBERANA OMEGA (CON CONEXIÓN ROBUSTA, RAW Y MCP)
-        // ============================================================
-        let wsTerminal = null;
-        let selectedSuggestionIndex = -1;
-        let currentSuggestions = [];
-        let currentMode = "normal"; // normal o raw
-        let reconnectAttempts = 0;
-        const maxReconnectAttempts = 10;
-
-        function toggleTerminal() {
-            const modal = document.getElementById('terminal-modal');
-            const isHidden = modal.style.display === 'none' || !modal.style.display;
-            
-            if (isHidden) {
-                modal.style.display = 'flex';
-                reconnectAttempts = 0;
-                initTerminalSocket();
-                document.getElementById('term-input').focus();
-            } else {
-                modal.style.display = 'none';
-                closeTerminalSocket();
-            }
-        }
-
-        function initTerminalSocket() {
-            if (wsTerminal) return;
-            
-            const termOutput = document.getElementById('term-output');
-            const modeStatus = document.getElementById('term-mode-status');
-            
-            modeStatus.textContent = "CONECTANDO...";
-            modeStatus.style.color = "yellow";
-
-            wsTerminal = new WebSocket("ws://localhost:8080/nexus/v1/terminal/ws");
-            
-            wsTerminal.onopen = () => {
-                termOutput.innerHTML += "✅ Conexión establecida con PTY Bash.<br>";
-                modeStatus.textContent = "CONECTADO";
-                modeStatus.style.color = "var(--neon-green)";
-                reconnectAttempts = 0;
-            };
-
-            wsTerminal.onmessage = (event) => {
-                try {
-                    const packet = JSON.parse(event.data);
-                    
-                    if (packet.type === "output") {
-                        const rawData = packet.data;
-                        
-                        // Si la salida contiene indicación de herramienta MCP o respuesta IA, la derivamos a la pestaña IA
-                        if (rawData.includes("ANÁLISIS MCP") || rawData.includes("🔍 ANÁLISIS")) {
-                            const detailsDiv = document.getElementById('term-mcp-details');
-                            detailsDiv.innerHTML = rawData.replace(/\n/g, "<br>");
-                            switchTermTab('ia');
-                        }
-                        
-                        const formatted = rawData.replace(/\n/g, "<br>");
-                        termOutput.innerHTML += formatted;
-                        termOutput.scrollTop = termOutput.scrollHeight;
-                        
-                    } else if (packet.type === "mode") {
-                        setTerminalMode(packet.mode);
-                    }
-                } catch (e) {
-                    // Fallback para texto plano
-                    const formatted = event.data.replace(/\n/g, "<br>");
-                    termOutput.innerHTML += formatted;
-                    termOutput.scrollTop = termOutput.scrollHeight;
-                }
-            };
-
-            wsTerminal.onerror = (error) => {
-                termOutput.innerHTML += `❌ Error en canal neural.<br>`;
-            };
-
-            wsTerminal.onclose = () => {
-                modeStatus.textContent = "DESCONECTADO";
-                modeStatus.style.color = "red";
-                wsTerminal = null;
-                handleReconnect();
-            };
-
-            startTerminalTelemetry();
-        }
-
-        function handleReconnect() {
-            const modal = document.getElementById('terminal-modal');
-            if (modal.style.display !== 'flex') return;
-
-            if (reconnectAttempts < maxReconnectAttempts) {
-                const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 15000);
-                const termOutput = document.getElementById('term-output');
-                termOutput.innerHTML += `⚠️ Desconectado. Reintentando en ${(delay/1000).toFixed(0)}s...<br>`;
-                
-                setTimeout(() => {
-                    reconnectAttempts++;
-                    initTerminalSocket();
-                }, delay);
-            } else {
-                document.getElementById('term-output').innerHTML += "❌ Imposible reconectar. Verifica el Core.<br>";
-            }
-        }
-
-        function setTerminalMode(mode) {
-            currentMode = mode;
-            const modal = document.getElementById('terminal-modal');
-            const modeStatus = document.getElementById('term-mode-status');
-            const termInput = document.getElementById('term-input');
-
-            if (mode === "raw") {
-                modal.classList.add('raw-mode');
-                modeStatus.textContent = "INTERACTIVO (RAW)";
-                modeStatus.style.color = "#ffb700";
-                termInput.placeholder = "[MODO RAW] Escribe o interactúa directamente...";
-                termInput.style.borderColor = "#ffb700";
-                hideSuggestions();
-            } else {
-                modal.classList.remove('raw-mode');
-                modeStatus.textContent = "NORMAL";
-                modeStatus.style.color = "var(--neon-green)";
-                termInput.placeholder = "Escribe un comando o consulta al Oráculo...";
-                termInput.style.borderColor = "var(--border-color)";
-            }
-        }
-
-        function closeTerminalSocket() {
-            if (wsTerminal) {
-                wsTerminal.close();
-                wsTerminal = null;
-            }
-        }
-
-        let telemetryInterval = null;
-        function startTerminalTelemetry() {
-            if (telemetryInterval) clearInterval(telemetryInterval);
-            
-            telemetryInterval = setInterval(async () => {
-                const modal = document.getElementById('terminal-modal');
-                if (modal.style.display !== 'flex') {
-                    clearInterval(telemetryInterval);
-                    return;
-                }
-                
-                try {
-                    document.getElementById('term-cpu').textContent = (Math.random() * 10 + 2).toFixed(1) + "%";
-                    document.getElementById('term-ram').textContent = (Math.random() * 1.5 + 6.2).toFixed(1) + " / 32.0 GB";
-                } catch (e) {}
-            }, 2000);
-        }
-
-        function switchTermTab(tabName) {
-            // Desactivar todas las pestañas y contenidos
-            document.getElementById('tab-btn-telemetry').classList.remove('active');
-            document.getElementById('tab-btn-ia').classList.remove('active');
-            document.getElementById('tab-content-telemetry').classList.remove('active');
-            document.getElementById('tab-content-ia').classList.remove('active');
-
-            // Activar la seleccionada
-            if (tabName === 'telemetry') {
-                document.getElementById('tab-btn-telemetry').classList.add('active');
-                document.getElementById('tab-content-telemetry').classList.add('active');
-            } else if (tabName === 'ia') {
-                document.getElementById('tab-btn-ia').classList.add('active');
-                document.getElementById('tab-content-ia').classList.add('active');
-            } else if (tabName === 'memoria') {
-                document.getElementById('tab-btn-memoria').classList.add('active');
-                document.getElementById('tab-content-memoria').classList.add('active');
-                document.getElementById('memoria-search-input').focus();
-            }
-        }
-
-        // Lógica del Explorador de Memoria
-        const memoriaSearchInput = document.getElementById('memoria-search-input');
-        const btnMemoriaSearch = document.getElementById('btn-memoria-search');
-        const memoriaSearchResults = document.getElementById('memoria-search-results');
-
-        if (btnMemoriaSearch) {
-            btnMemoriaSearch.addEventListener('click', searchMemoria);
-            memoriaSearchInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
-                    searchMemoria();
-                }
-            });
-        }
-
-        async function searchMemoria() {
-            const query = memoriaSearchInput.value.trim();
-            if (!query) {
-                memoriaSearchResults.innerHTML = '<span style="color: #ffb700;">Por favor, introduce un término de búsqueda.</span>';
-                return;
-            }
-
-            memoriaSearchResults.innerHTML = 'Buscando en la memoria de NEXUS...';
-
-            try {
-                const response = await fetch("http://localhost:8080/nexus/v1/memoria/buscar", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ query: query, limit: 10 }) // Envía la query y un límite
-                });
-                const data = await response.json();
-
-                if (data.results && data.results.length > 0) {
-                    let resultsHtml = `<h4>Resultados para "${data.query}" (${data.total_results} encontrados en ${data.elapsed_ms}ms):</h4>`;
-                    data.results.forEach(item => {
-                        resultsHtml += `
-                            <div style="margin-bottom: 10px; border-bottom: 1px dashed rgba(0,255,136,0.1); padding-bottom: 5px;">
-                                <strong>ID:</strong> ${item.id} | <strong>Score:</strong> ${item.score.toFixed(2)} | <strong>Categoría:</strong> ${item.categoria}<br>
-                                <strong>Contenido:</strong> ${item.contenido}<br>
-                                <span style="font-size: 0.65rem; color: #888;">${item.timestamp}</span>
+                    <!-- FS20 HUD LEFT SIDE: MINIMAP & QUICK SWITCH -->
+                    <div class="fs20-hud-left">
+                        <div class="minimap-card">
+                            <canvas id="minimap-canvas-el" class="minimap-canvas"></canvas>
+                            <div class="minimap-overlay">CAMPO #4 · JOHN DEERE 8RX</div>
+                        </div>
+
+                        <div class="hud-quick-bar">
+                            <div class="quick-title">🚜 Cambio de Vehículo</div>
+                            <div class="quick-actions">
+                                <button class="hud-btn" onclick="switchVehicle(-1)">◀ Anterior</button>
+                                <button class="hud-btn" onclick="switchVehicle(1)">Siguiente ▶</button>
                             </div>
-                        `;
-                    });
-                    memoriaSearchResults.innerHTML = resultsHtml;
-                } else {
-                    memoriaSearchResults.innerHTML = `<span style="color: #888;">No se encontraron resultados para "${data.query}".</span>`;
-                }
+                            <div style="font-size:0.7rem; color:#94a3b8; margin-top:2px;">Activo: <strong style="color:#fff" id="active-vehicle-name">John Deere 8RX 410</strong></div>
+                        </div>
+                    </div>
 
-            } catch (error) {
-                memoriaSearchResults.innerHTML = `<span style="color: #ff3366;">Error al buscar en memoria: ${error.message}</span>`;
-                console.error("Error buscando en memoria:", error);
-            }
-        }
+                    <!-- FS20 HUD RIGHT SIDE: SPEEDOMETER & WORK GAUGES -->
+                    <div class="fs20-hud-right">
+                        <div class="speedometer-card">
+                            <div class="speed-dial">
+                                <div class="speed-num" id="speed-display">24</div>
+                                <div class="speed-unit">KM/H</div>
+                            </div>
+                            
+                            <div class="gauges-list">
+                                <div class="gauge-item">
+                                    <div class="gauge-label"><span>⛽ DIESEL</span><span id="fuel-val">85%</span></div>
+                                    <div class="gauge-bar-bg"><div class="gauge-bar-fill" id="fuel-bar" style="width:85%;"></div></div>
+                                </div>
+                                <div class="gauge-item">
+                                    <div class="gauge-label"><span>🌾 TANQUE TRIGO</span><span id="grain-val">12,400 L</span></div>
+                                    <div class="gauge-bar-bg"><div class="gauge-bar-fill" id="grain-bar" style="width:72%; background:linear-gradient(90deg, #ffc700, #ff9800);"></div></div>
+                                </div>
+                                <div class="gauge-item">
+                                    <div class="gauge-label"><span>🛠️ DAÑO MOTOR</span><span id="damage-val">3%</span></div>
+                                    <div class="gauge-bar-bg"><div class="gauge-bar-fill" style="width:3%; background:var(--neon-red);"></div></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-        const termInput = document.getElementById('term-input');
-        termInput.addEventListener('keydown', async (e) => {
-            if (currentMode === "raw") {
-                // Interceptar entrada y enviarla tecla por tecla en modo raw
-                if (wsTerminal && wsTerminal.readyState === WebSocket.OPEN) {
-                    let key = e.key;
-                    if (key === 'Enter') key = '\n';
-                    else if (key === 'Backspace') key = '\x7f';
-                    else if (key === 'Escape') key = '\x1b';
-                    
-                    if (key.length === 1 || key === '\n' || key === '\x7f' || key === '\x1b') {
-                        wsTerminal.send(JSON.stringify({
-                            type: "keypress",
-                            key: key
-                        }));
-                    }
-                }
-                e.preventDefault();
-                termInput.value = '';
-                return;
-            }
+                    <!-- FS20 BOTTOM DRIVE & WORK CONTROLS -->
+                    <div class="fs20-bottom-controls">
+                        <button class="control-action-btn" onclick="toggleEngine()" id="btn-engine">🔑 Motor: ENCENDIDO</button>
+                        <button class="control-action-btn" onclick="toggleTool()" id="btn-tool">⚡ Herramienta: ACTIVADA</button>
+                        <button class="control-action-btn" onclick="togglePipe()" id="btn-pipe">🌾 Descargar Tubo</button>
+                        <button class="control-action-btn" onclick="toggleAIWorker()" id="btn-ai-worker">🤖 Contratar Trabajador IA</button>
+                        <button class="control-action-btn" onclick="accelerateTractor()">🟢 Acelerar</button>
+                        <button class="control-action-btn" onclick="brakeTractor()">🔴 Frenar</button>
+                    </div>
 
-            if (e.key === 'Enter') {
-                if (selectedSuggestionIndex >= 0 && currentSuggestions.length > 0) {
-                    termInput.value = currentSuggestions[selectedSuggestionIndex];
-                    hideSuggestions();
-                } else {
-                    const cmd = termInput.value.trim();
-                    if (cmd && wsTerminal && wsTerminal.readyState === WebSocket.OPEN) {
-                        wsTerminal.send(JSON.stringify({
-                            type: "command",
-                            command: cmd
-                        }));
-                        termInput.value = '';
-                        hideSuggestions();
-                    }
-                }
-            } else if (e.key === 'ArrowUp') {
-                e.preventDefault();
-                if (currentSuggestions.length > 0) {
-                    selectedSuggestionIndex = (selectedSuggestionIndex <= 0) ? currentSuggestions.length - 1 : selectedSuggestionIndex - 1;
-                    renderSuggestionsList();
-                }
-            } else if (e.key === 'ArrowDown') {
-                e.preventDefault();
-                if (currentSuggestions.length > 0) {
-                    selectedSuggestionIndex = (selectedSuggestionIndex >= currentSuggestions.length - 1) ? 0 : selectedSuggestionIndex + 1;
-                    renderSuggestionsList();
-                }
-            } else if (e.key === 'Escape') {
-                hideSuggestions();
-            }
-        });
+                    <!-- OVERLAY MODAL FOR FS20 SYSTEM TABS -->
+                    <div class="fs20-modal-overlay" id="fs20-modal">
+                        <div class="modal-header-bar">
+                            <div class="modal-title" id="fs20-modal-title">🗺️ Mapa e Inmuebles de Granja</div>
+                            <button class="modal-close-btn" onclick="closeFS20Modal()">✕ Cerrar</button>
+                        </div>
+                        <div class="modal-grid-content" id="fs20-modal-body">
+                            <!-- Se llena dinámicamente según la pestaña seleccionada -->
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-        // Debounce simple para el autocompletado del input
-        let autocompleteTimeout = null;
-        termInput.addEventListener('input', () => {
-            if (currentMode === "raw") return;
+            <!-- PANEL 2: ARCHIVOS -->
+            <div class="view-panel" id="panel-files" style="padding: 24px; font-family: var(--font-mono); color: #cbd5e1;">
+                <h3 style="color: var(--neon-green); margin-bottom: 16px;">📄 Estructura de Archivos del Proyecto FS20</h3>
+                <div style="background: rgba(0,0,0,0.4); border: 1px solid var(--border-color); padding: 16px; border-radius: 12px; line-height: 1.8;">
+                    📁 src/<br>
+                    ├── 📄 App.jsx (Componente Principal FS20 Engine)<br>
+                    ├── 📄 index.css (Sistema de Estilos Globales)<br>
+                    ├── 📁 components/<br>
+                    │   ├── 📄 CockpitHUD.jsx (Telemetría de Velocidad y Motor)<br>
+                    │   ├── 📄 MinimapRadar.jsx (Radar GPS Topográfico)<br>
+                    │   ├── 📄 MarketEconomy.jsx (Precios de Cosecha en Tiempo Real)<br>
+                    │   └── 📄 MachineryStore.jsx (Catálogo de Vehículos John Deere / Case IH)<br>
+                    └── 📁 rust_backend/<br>
+                        └── 📄 main.rs (Motor de Alto Rendimiento Tokio + Axum)
+                </div>
+            </div>
 
-            if (autocompleteTimeout) clearTimeout(autocompleteTimeout);
+            <!-- PANEL 3: CÓDIGO -->
+            <div class="view-panel" id="panel-code" style="padding: 24px; font-family: var(--font-mono); color: #cbd5e1; overflow-y: auto;">
+                <h3 style="color: var(--neon-cyan); margin-bottom: 16px;">&lt;/&gt; Código Fuente - CockpitHUD.jsx</h3>
+                <pre style="background: #0d1117; border: 1px solid #21262d; padding: 20px; border-radius: 12px; color: #c9d1d9; font-size: 0.85rem;">
+<code>import React, { useState, useEffect } from 'react';
 
-            autocompleteTimeout = setTimeout(async () => {
-                const val = termInput.value.trim();
-                if (!val) {
-                    hideSuggestions();
-                    return;
-                }
+export const CockpitHUD = ({ speed, fuel, grainTank, aiActive }) => {
+    return (
+        &lt;div className="speedometer-card"&gt;
+            &lt;div className="speed-dial"&gt;
+                &lt;span className="speed-num"&gt;{speed}&lt;/span&gt;
+                &lt;span className="speed-unit"&gt;KM/H&lt;/span&gt;
+            &lt;/div&gt;
+            &lt;div className="gauges-list"&gt;
+                &lt;div className="gauge-item"&gt;
+                    &lt;span&gt;⛽ Diesel: {fuel}%&lt;/span&gt;
+                    &lt;div className="bar" style={{ width: `${fuel}%` }} /&gt;
+                &lt;/div&gt;
+                &lt;div className="gauge-item"&gt;
+                    &lt;span&gt;🌾 Cosecha: {grainTank} L&lt;/span&gt;
+                &lt;/div&gt;
+            &lt;/div&gt;
+        &lt;/div&gt;
+    );
+};</code></pre>
+            </div>
 
-                try {
-                    const prompt = `Sugiere de 3 a 5 comandos válidos de shell Linux relacionados con '${val}'. Devuelve únicamente la lista separada por saltos de línea sin formato adicional.`;
-                    const response = await fetch("http://localhost:8080/nexus/v1/pensar", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ prompt: prompt, modo: "auto" })
-                    });
-                    const data = await response.json();
-                    const text = data.respuesta || '';
-                    
-                    currentSuggestions = text.split("\n")
-                        .map(s => s.trim())
-                        .filter(s => s && !s.startsWith("`"));
+            <!-- PANEL 4: CAPAS / ERD INTERACTIVO -->
+            <div class="view-panel" id="panel-erd" style="padding: 24px; font-family: var(--font-mono); color: #cbd5e1;">
+                <h3 style="color: var(--fs-gold); margin-bottom: 16px;">🥞 Diagrama Interactivo de Capas y ERD PostgreSQL</h3>
+                <div style="background: rgba(14, 22, 32, 0.8); border: 1px solid var(--fs-gold); padding: 24px; border-radius: 12px; text-align: center;">
+                    <div style="font-size: 1.1rem; color: #fff; font-weight: 700; margin-bottom: 12px;">ReactFlow Node Graph Canvas</div>
+                    <div style="display: flex; justify-content: center; gap: 30px; margin-top: 20px;">
+                        <div style="background: rgba(0, 255, 136, 0.15); border: 1px solid var(--neon-green); padding: 16px 24px; border-radius: 10px; color: var(--neon-green); font-weight: 800;">
+                            🚜 VEHICLES_TABLE<br><span style="font-size:0.75rem; color:#aaa;">id, brand, health, fuel</span>
+                        </div>
+                        <div style="align-self: center; font-size: 20px;">➔</div>
+                        <div style="background: rgba(229, 169, 59, 0.15); border: 1px solid var(--fs-gold); padding: 16px 24px; border-radius: 10px; color: var(--fs-gold); font-weight: 800;">
+                            🗺️ FIELDS_TABLE<br><span style="font-size:0.75rem; color:#aaa;">field_id, crop_type, ready_status</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-                    if (currentSuggestions.length > 0) {
-                        selectedSuggestionIndex = 0;
-                        renderSuggestionsList();
-                    } else {
-                        hideSuggestions();
-                    }
-                } catch (err) {
-                    currentSuggestions = ["git status", "cargo check -p core", "just dev"]
-                        .filter(c => c.startsWith(val));
-                    if (currentSuggestions.length > 0) {
-                        selectedSuggestionIndex = 0;
-                        renderSuggestionsList();
-                    } else {
-                        hideSuggestions();
-                    }
-                }
-            }, 300); // 300ms debounce
-        });
+        </div>
+    </div>
 
-        function renderSuggestionsList() {
-            const suggestionsDiv = document.getElementById('term-suggestions');
-            suggestionsDiv.innerHTML = '';
-            suggestionsDiv.style.display = 'flex';
+    <!-- ============================================================
+         3. PUBLISH DEPLOYMENT MODAL
+         ============================================================ -->
+    <div id="publish-modal">
+        <div class="publish-card">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h2 style="font-family: var(--font-display); color: var(--neon-green); font-size: 1.3rem;">🚀 Publicar Farming Simulator 20</h2>
+                <button style="background: none; border: none; color: #94a3b8; font-size: 1.2rem; cursor: pointer;" onclick="closePublishModal()">✕</button>
+            </div>
+            <p style="font-size: 0.85rem; color: #cbd5e1; line-height: 1.5;">Selecciona el destino de compilación optimizado para desplegar la aplicación nativa en producción:</p>
+            
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <button style="background: rgba(0, 255, 136, 0.1); border: 1px solid var(--neon-green); color: var(--neon-green); padding: 14px; border-radius: 10px; font-weight: 800; text-align: left; cursor: pointer;" onclick="executeDeploy('Rust Axum Tokio Native')">
+                    🦀 Rust Axum Tokio Native Server (Puerta 5173)
+                </button>
+                <button style="background: rgba(0, 240, 255, 0.1); border: 1px solid var(--neon-cyan); color: var(--neon-cyan); padding: 14px; border-radius: 10px; font-weight: 800; text-align: left; cursor: pointer;" onclick="executeDeploy('Vercel Edge Platform')">
+                    ▲ Vercel Edge Runtime (Global CDN)
+                </button>
+                <button style="background: rgba(229, 169, 59, 0.1); border: 1px solid var(--fs-gold); color: var(--fs-gold); padding: 14px; border-radius: 10px; font-weight: 800; text-align: left; cursor: pointer;" onclick="executeDeploy('Cloudflare Workers Native')">
+                    🧡 Cloudflare Workers Serverless
+                </button>
+            </div>
+        </div>
+    </div>
 
-            currentSuggestions.forEach((s, idx) => {
-                const item = document.createElement('div');
-                item.className = 'suggestion-item' + (idx === selectedSuggestionIndex ? ' selected' : '');
-                item.textContent = s;
-                item.onclick = () => {
-                    termInput.value = s;
-                    termInput.focus();
-                    hideSuggestions();
-                };
-                suggestionsDiv.appendChild(item);
-            });
-        }
-
-        function hideSuggestions() {
-            const suggestionsDiv = document.getElementById('term-suggestions');
-            if (suggestionsDiv) {
-                suggestionsDiv.style.display = 'none';
-            }
-            selectedSuggestionIndex = -1;
-            currentSuggestions = [];
-        }
-
-        // ============================================================
-        // INTERACTIVIDAD DE BOTONES DE CHAT Y SELECTORES DE MODELO
-        // ============================================================
-
-        // 1. Selector de Modelo del Chat Input
-        const btnModelChat = document.getElementById('btn-model-chat');
-        const chatModelDropdown = document.getElementById('chat-model-dropdown');
-
-        if (btnModelChat && chatModelDropdown) {
-            btnModelChat.addEventListener('click', (e) => {
-                e.stopPropagation();
-                chatModelDropdown.classList.toggle('show-dropdown');
-            });
-        }
-
-        // Cerrar dropdowns al hacer click fuera
-        document.addEventListener('click', () => {
-            if (chatModelDropdown) chatModelDropdown.classList.remove('show-dropdown');
-        });
-
-        // ============================================================
-        // PANEL DE PROVEEDORES ESTILO ROO CODE
-        // ============================================================
-        const PROVIDER_CATALOG = {
-            'nexus-local':  { nombre: 'NEXUS Local',        icono: '🧠', modelo: 'nexus-local',   tipo: 'local' },
-            'nexus-puro':   { nombre: 'NEXUS Puro',         icono: '🌀', modelo: 'nexus-puro',    tipo: 'local' },
-            'anthropic':    { nombre: 'Anthropic',          icono: '🧬', modelo: 'claude',        tipo: 'api',    apiKey: true },
-            'bedrock':      { nombre: 'Amazon Bedrock',     icono: '⛰️', modelo: 'bedrock',       tipo: 'api',    apiKey: true, baseUrl: true },
-            'vertex':       { nombre: 'Vertex AI',          icono: '▲',  modelo: 'vertex',        tipo: 'api',    apiKey: true, baseUrl: true },
-            'gemini':       { nombre: 'Google Gemini',      icono: '✨', modelo: 'gemini-2.5-flash', tipo: 'api', apiKey: true },
-            'deepseek':     { nombre: 'DeepSeek',           icono: '🐋', modelo: 'deepseek-instant', tipo: 'api', apiKey: true },
-            'openai':       { nombre: 'OpenAI',             icono: '🟢', modelo: 'openai',        tipo: 'api',    apiKey: true, baseUrl: true },
-            'openrouter':   { nombre: 'OpenRouter',         icono: '🛣️', modelo: 'openrouter',    tipo: 'api',    apiKey: true, baseUrl: true },
-            'ollama':       { nombre: 'Ollama',             icono: '🦙', modelo: 'ollama',        tipo: 'local',  baseUrl: true },
-            'groq':         { nombre: 'Groq',               icono: '⚡', modelo: 'groq',          tipo: 'api',    apiKey: true },
-            'mistral':      { nombre: 'Mistral AI',         icono: '🌬️', modelo: 'mistral',      tipo: 'api',    apiKey: true },
-            'lmstudio':     { nombre: 'LM Studio',          icono: '🖥️', modelo: 'lmstudio',     tipo: 'local',  baseUrl: true },
-            'openai-free':  { nombre: 'OpenAI Free',        icono: '🆓', modelo: 'openai-free',   tipo: 'api',    apiKey: true }
+    <!-- ============================================================
+         4. JAVASCRIPT LOGIC - FS20 ENGINE & INTERACTIVITY
+         ============================================================ -->
+    <script>
+        // FS20 GAME ENGINE STATE
+        const fsState = {
+            money: 1245800,
+            speed: 24,
+            engineOn: true,
+            toolOn: true,
+            pipeOut: false,
+            aiWorker: false,
+            fuel: 85,
+            grainTank: 12400,
+            activeVehicleIdx: 0,
+            vehicles: [
+                { name: "John Deere 8RX 410", brand: "John Deere", hp: "410 HP", category: "Tractor Grande" },
+                { name: "Case IH Axial-Flow 9250", brand: "Case IH", hp: "634 HP", category: "Cosechadora" },
+                { name: "New Holland T8.435", brand: "New Holland", hp: "435 HP", category: "Tractor Mediano" },
+                { name: "Claas Xerion 5000", brand: "Claas", hp: "509 HP", category: "Tractor Pesado" }
+            ]
         };
 
-        const STORAGE_KEY = 'nexus_providers_config_v1';
-        let providerActual = null;
+        // NAV VIEW TABS SWITCHER
+        function switchMainTab(tab) {
+            document.querySelectorAll('.nav-tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
 
-        // Cargar configuración guardada
-        function loadProvidersConfig() {
-            try {
-                const raw = localStorage.getItem(STORAGE_KEY);
-                return raw ? JSON.parse(raw) : {};
-            } catch (e) {
-                return {};
-            }
+            document.getElementById(`tab-${tab}`).classList.add('active');
+            document.getElementById(`panel-${tab}`).classList.add('active');
         }
 
-        function saveProvidersConfig(cfg) {
-            try {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(cfg));
-            } catch (e) {
-                console.warn('[providers] No se pudo guardar en localStorage:', e);
-            }
+        // CASCADE MODEL SELECTOR DROPDOWN
+        function toggleCascadeDropdown() {
+            document.getElementById('cascade-dropdown-menu').classList.toggle('show');
         }
 
-        // Abrir / cerrar el modal
-        function toggleProvidersModal() {
-            const modal = document.getElementById('providers-modal');
-            if (modal.classList.contains('show-modal')) {
-                closeProvidersModal();
+        function selectModel(name) {
+            document.getElementById('active-model-name').textContent = `✨ ${name}`;
+            document.getElementById('cascade-dropdown-menu').classList.remove('show');
+        }
+
+        // PROMPT INPUT & ASSISTANT CARDS
+        function sendQuickPrompt(promptText) {
+            document.getElementById('prompt-input').value = promptText;
+            submitPrompt();
+        }
+
+        function submitPrompt() {
+            const input = document.getElementById('prompt-input');
+            const text = input.value.trim();
+            if (!text) return;
+
+            const chatHistory = document.getElementById('chat-history');
+
+            // User card
+            const userCard = document.createElement('div');
+            userCard.className = 'chat-card user';
+            userCard.innerHTML = `<div class="card-header user">TÚ (Arquitecto)</div><div class="card-body">${text}</div>`;
+            chatHistory.appendChild(userCard);
+
+            input.value = '';
+
+            // Assistant card response simulation
+            setTimeout(() => {
+                const assistantCard = document.createElement('div');
+                assistantCard.className = 'chat-card assistant';
+
+                let reply = `Comando ejecutado con éxito en Farming Simulator 20: "${text}". Estado de telemetría y maquinaria actualizados.`;
+                if (text.includes("Cosechar")) {
+                    reply = `🌾 **Cosechadora John Deere 8RX activada** en Campo #4. Rendimiento estimado: 18,500 Litros de Trigo.`;
+                } else if (text.includes("Piloto Automático")) {
+                    toggleAIWorker();
+                    reply = `🤖 **Trabajador IA contratado**. Rutas de arado y recolección optimizadas automáticamente.`;
+                } else if (text.includes("Préstamo")) {
+                    fsState.money += 50000;
+                    updateFSUI();
+                    reply = `💰 **Préstamo de $50,000 concedido**. Nuevo saldo: $${fsState.money.toLocaleString()}.`;
+                }
+
+                assistantCard.innerHTML = `<div class="card-header assistant">AGENTE NEXUS</div><div class="card-body">${reply}</div><div class="code-badge">FS20 :: Sync Complete</div>`;
+                chatHistory.appendChild(assistantCard);
+                chatHistory.scrollTop = chatHistory.scrollHeight;
+            }, 600);
+        }
+
+        function togglePlusMenu() {
+            document.getElementById('plus-menu').classList.toggle('show');
+        }
+
+        function toggleMode() {
+            const btn = document.getElementById('mode-btn');
+            btn.textContent = btn.textContent.includes('Crear') ? 'Plan ˅' : 'Crear ˅';
+        }
+
+        function toggleVoice() {
+            const btn = document.getElementById('mic-btn');
+            btn.style.color = btn.style.color === 'red' ? '' : 'red';
+            alert('Escuchando comandos de voz para Farming Simulator 20...');
+        }
+
+        // FS20 HUD CONTROLS
+        function updateFSUI() {
+            document.getElementById('player-money').textContent = `$${fsState.money.toLocaleString()}`;
+            document.getElementById('speed-display').textContent = fsState.speed;
+            document.getElementById('fuel-val').textContent = `${fsState.fuel}%`;
+            document.getElementById('fuel-bar').style.width = `${fsState.fuel}%`;
+            document.getElementById('grain-val').textContent = `${fsState.grainTank.toLocaleString()} L`;
+            document.getElementById('active-vehicle-name').textContent = fsState.vehicles[fsState.activeVehicleIdx].name;
+        }
+
+        function switchVehicle(direction) {
+            fsState.activeVehicleIdx = (fsState.activeVehicleIdx + direction + fsState.vehicles.length) % fsState.vehicles.length;
+            updateFSUI();
+        }
+
+        function toggleEngine() {
+            fsState.engineOn = !fsState.engineOn;
+            document.getElementById('btn-engine').textContent = `🔑 Motor: ${fsState.engineOn ? 'ENCENDIDO' : 'APAGADO'}`;
+            if (!fsState.engineOn) { fsState.speed = 0; } else { fsState.speed = 24; }
+            updateFSUI();
+        }
+
+        function toggleTool() {
+            fsState.toolOn = !fsState.toolOn;
+            document.getElementById('btn-tool').textContent = `⚡ Herramienta: ${fsState.toolOn ? 'ACTIVADA' : 'DESACTIVADA'}`;
+        }
+
+        function togglePipe() {
+            fsState.pipeOut = !fsState.pipeOut;
+            alert(fsState.pipeOut ? "🌾 Tubo de descarga desplegado" : "🌾 Tubo de descarga replegado");
+        }
+
+        function toggleAIWorker() {
+            fsState.aiWorker = !fsState.aiWorker;
+            const btn = document.getElementById('btn-ai-worker');
+            if (fsState.aiWorker) {
+                btn.classList.add('ai-active');
+                btn.textContent = "🤖 Trabajador IA: ACTIVO";
             } else {
-                modal.classList.add('show-modal');
-                const cfg = loadProvidersConfig();
-                // Seleccionar el proveedor activo del chat si existe
-                const activeId = Object.keys(PROVIDER_CATALOG).find(id =>
-                    cfg[id] && cfg[id].activo) || providerActual || 'nexus-local';
-                selectProvider(activeId);
-                renderProviderList('');
+                btn.classList.remove('ai-active');
+                btn.textContent = "🤖 Contratar Trabajador IA";
             }
         }
 
-        function closeProvidersModal() {
-            document.getElementById('providers-modal').classList.remove('show-modal');
+        function accelerateTractor() {
+            if (fsState.engineOn && fsState.speed < 50) fsState.speed += 4;
+            updateFSUI();
         }
 
-        // Filtrar la lista de proveedores por búsqueda
-        function filterProviders(query) {
-            renderProviderList(query.trim().toLowerCase());
+        function brakeTractor() {
+            if (fsState.speed > 0) fsState.speed = Math.max(0, fsState.speed - 6);
+            updateFSUI();
         }
 
-        function renderProviderList(query) {
-            const list = document.getElementById('providers-list');
-            const cfg = loadProvidersConfig();
-            list.querySelectorAll('.provider-item').forEach(item => {
-                const pid = item.getAttribute('data-provider-id');
-                const info = PROVIDER_CATALOG[pid];
-                const match = !query ||
-                    (info && (info.nombre.toLowerCase().includes(query) || pid.includes(query)));
-                item.style.display = match ? 'flex' : 'none';
-                if (cfg[pid] && cfg[pid].activo) {
-                    item.classList.add('selected');
-                } else {
-                    item.classList.remove('selected');
-                }
-            });
-        }
+        // FS20 MODAL SYSTEM (MAP, STORE, FLEET, MARKET, ETC)
+        function openFS20Modal(tab) {
+            const modal = document.getElementById('fs20-modal');
+            const title = document.getElementById('fs20-modal-title');
+            const body = document.getElementById('fs20-modal-body');
 
-        // Seleccionar un proveedor y mostrar su configuración
-        function selectProvider(pid) {
-            providerActual = pid;
-            const info = PROVIDER_CATALOG[pid];
-            if (!info) return;
+            modal.classList.add('show');
 
-            // Resaltar item seleccionado
-            document.querySelectorAll('.provider-item').forEach(item => {
-                item.classList.toggle('selected', item.getAttribute('data-provider-id') === pid);
-            });
-
-            // Cargar configuración guardada
-            const cfg = loadProvidersConfig();
-            const saved = cfg[pid] || {};
-
-            document.getElementById('provider-config-title').textContent =
-                `${info.icono} ${info.nombre} — Configuración`;
-            document.getElementById('cfg-model').value = saved.modelo || info.modelo || '';
-            document.getElementById('cfg-api-key').value = saved.apiKey || '';
-            document.getElementById('cfg-base-url').value = saved.baseUrl || '';
-
-            // Mostrar/ocultar campos según el tipo
-            const apiKeyField = document.getElementById('field-api-key');
-            const baseUrlField = document.getElementById('field-base-url');
-            if (apiKeyField) apiKeyField.style.display = info.apiKey ? 'block' : 'none';
-            if (baseUrlField) baseUrlField.style.display = info.baseUrl ? 'block' : 'none';
-
-            document.getElementById('provider-config').classList.add('active');
-        }
-
-        // Guardar la configuración del proveedor seleccionado
-        function saveProviderConfig() {
-            if (!providerActual) return;
-            const cfg = loadProvidersConfig();
-            const info = PROVIDER_CATALOG[providerActual];
-            const modelo = document.getElementById('cfg-model').value.trim() || info.modelo || '';
-            const apiKey = document.getElementById('cfg-api-key').value.trim();
-            const baseUrl = document.getElementById('cfg-base-url').value.trim();
-
-            // Quitar "activo" de los demás proveedores
-            Object.keys(cfg).forEach(k => { if (cfg[k]) cfg[k].activo = false; });
-
-            cfg[providerActual] = { activo: true, modelo, apiKey, baseUrl };
-            saveProvidersConfig(cfg);
-
-            // Sincronizar con el dropdown del chat y el botón
-            modeloActual = modelo || info.modelo || providerActual;
-            if (btnModelChat) {
-                const displayName = modelo ? `${info.icono} ${info.nombre} (${modelo})` : `${info.icono} ${info.nombre}`;
-                btnModelChat.innerHTML = `^ ${displayName} ▼`;
-                btnModelChat.style.color = '#00ff88';
+            if (tab === 'map') {
+                title.innerHTML = '🗺️ Mapa Táctico de Campos y Propiedades';
+                body.innerHTML = `
+                    <div style="display:grid; grid-template-columns: 2fr 1fr; gap:20px;">
+                        <div style="background:rgba(0,0,0,0.5); border:1px solid var(--fs-gold); border-radius:12px; padding:20px; text-align:center;">
+                            <div style="font-size:1rem; color:var(--fs-gold); font-weight:800; margin-bottom:12px;">Plano Vectorial del Terreno - 12 Campos</div>
+                            <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:12px;">
+                                <div style="background:rgba(76,175,80,0.3); border:1px solid #4caf50; padding:16px; border-radius:8px;">Campo #1<br><small style="color:#fff">Trigo (Listo)</small></div>
+                                <div style="background:rgba(255,199,0,0.3); border:1px solid #ffc700; padding:16px; border-radius:8px;">Campo #2<br><small style="color:#fff">Maíz (Creciendo)</small></div>
+                                <div style="background:rgba(0,240,255,0.3); border:1px solid #00f0ff; padding:16px; border-radius:8px;">Campo #3<br><small style="color:#fff">Algodón (Sembrado)</small></div>
+                                <div style="background:rgba(76,175,80,0.3); border:1px solid #4caf50; padding:16px; border-radius:8px;">Campo #4<br><small style="color:#fff">Trigo (Cosechando)</small></div>
+                            </div>
+                        </div>
+                        <div style="background:rgba(14,22,32,0.8); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:16px;">
+                            <h4 style="color:#fff; margin-bottom:10px;">Comprar Tierra</h4>
+                            <div style="font-size:0.8rem; color:#aaa; margin-bottom:12px;">Parcela Norte #8: $220,000</div>
+                            <button class="btn-buy" onclick="alert('Parcela adquirida con éxito!')">Comprar Parcela</button>
+                        </div>
+                    </div>
+                `;
+            } else if (tab === 'market') {
+                title.innerHTML = '🌾 Mercado de Cultivos y Economía';
+                body.innerHTML = `
+                    <table class="fs-table">
+                        <thead>
+                            <tr>
+                                <th>Cultivo</th>
+                                <th>Elevador de Granos</th>
+                                <th>Molino Harinero</th>
+                                <th>Puerto Exportador</th>
+                                <th>Tendencia</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>🌾 Trigo</td>
+                                <td>$1,240 / 1,000L</td>
+                                <td>$1,420 / 1,000L <span class="badge-best-price">MEJOR</span></td>
+                                <td>$1,180 / 1,000L</td>
+                                <td style="color:var(--neon-green)">▲ +4.5%</td>
+                                <td><button class="hud-btn" onclick="alert('Trigo vendido por $17,608!')">Vender Todo</button></td>
+                            </tr>
+                            <tr>
+                                <td>🌽 Maíz</td>
+                                <td>$1,550 / 1,000L <span class="badge-best-price">MEJOR</span></td>
+                                <td>$1,380 / 1,000L</td>
+                                <td>$1,490 / 1,000L</td>
+                                <td style="color:var(--neon-red)">▼ -2.1%</td>
+                                <td><button class="hud-btn" onclick="alert('Maíz vendido por $24,800!')">Vender Todo</button></td>
+                            </tr>
+                            <tr>
+                                <td>☁️ Algodón</td>
+                                <td>$3,100 / 1,000L</td>
+                                <td>$2,950 / 1,000L</td>
+                                <td>$3,450 / 1,000L <span class="badge-best-price">MEJOR</span></td>
+                                <td style="color:var(--neon-green)">▲ +8.2%</td>
+                                <td><button class="hud-btn" onclick="alert('Algodón vendido por $41,400!')">Vender Todo</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                `;
+            } else if (tab === 'fleet') {
+                title.innerHTML = '🚜 Flota de Vehículos y Maquinaria';
+                body.innerHTML = `
+                    <div class="cards-grid">
+                        ${fsState.vehicles.map(v => `
+                            <div class="machinery-card">
+                                <div>
+                                    <div class="machine-brand">${v.brand}</div>
+                                    <div class="machine-name">${v.name}</div>
+                                    <div style="font-size:0.75rem; color:#aaa; margin-top:4px;">${v.hp} · ${v.category}</div>
+                                </div>
+                                <div style="font-size:0.75rem; color:var(--neon-green)">Estado: 98% Operativo</div>
+                                <button class="hud-btn" onclick="alert('Teletransportado a ${v.name}')">Teletransportar</button>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            } else if (tab === 'shop') {
+                title.innerHTML = '🏪 Tienda Oficial de Maquinaria Agrícola';
+                body.innerHTML = `
+                    <div class="cards-grid">
+                        <div class="machinery-card">
+                            <div>
+                                <div class="machine-brand">John Deere</div>
+                                <div class="machine-name">John Deere 9R 640</div>
+                                <div class="machine-price">$485,000</div>
+                            </div>
+                            <button class="btn-buy" onclick="alert('John Deere 9R comprado!')">Comprar Vehículo</button>
+                        </div>
+                        <div class="machinery-card">
+                            <div>
+                                <div class="machine-brand">Case IH</div>
+                                <div class="machine-name">Case IH Magnum 400</div>
+                                <div class="machine-price">$312,000</div>
+                            </div>
+                            <button class="btn-buy" onclick="alert('Case IH Magnum comprado!')">Comprar Vehículo</button>
+                        </div>
+                        <div class="machinery-card">
+                            <div>
+                                <div class="machine-brand">Claas</div>
+                                <div class="machine-name">Claas Lexion 8900</div>
+                                <div class="machine-price">$540,000</div>
+                            </div>
+                            <button class="btn-buy" onclick="alert('Claas Lexion comprado!')">Comprar Cosechadora</button>
+                        </div>
+                    </div>
+                `;
+            } else {
+                title.innerHTML = `⚙️ ${tab.toUpperCase()}`;
+                body.innerHTML = `<div style="color:#fff; padding:20px;">Configuración y gestión de ${tab} lista.</div>`;
             }
-            syncDropdownFromProviders();
-
-            const statusEl = document.getElementById('providers-status-text');
-            if (statusEl) statusEl.textContent = `✓ ${info.nombre} configurado y activo`;
-
-            // Cerrar el modal tras guardar
-            closeProvidersModal();
         }
 
-        function clearProviderConfig() {
-            if (!providerActual) return;
-            const cfg = loadProvidersConfig();
-            delete cfg[providerActual];
-            saveProvidersConfig(cfg);
-            document.getElementById('cfg-api-key').value = '';
-            document.getElementById('cfg-model').value = PROVIDER_CATALOG[providerActual]?.modelo || '';
-            document.getElementById('cfg-base-url').value = '';
-            const statusEl = document.getElementById('providers-status-text');
-            if (statusEl) statusEl.textContent = `🗑️ ${PROVIDER_CATALOG[providerActual]?.nombre} limpiado`;
+        function closeFS20Modal() {
+            document.getElementById('fs20-modal').classList.remove('show');
         }
 
-        // Marcar el modelo activo en el dropdown principal según configuración guardada
-        function syncDropdownFromProviders() {
-            const cfg = loadProvidersConfig();
-            const activeProvider = Object.keys(cfg).find(k => cfg[k] && cfg[k].activo);
-            if (!activeProvider) return;
-            const info = PROVIDER_CATALOG[activeProvider];
-            const modelId = (cfg[activeProvider] && cfg[activeProvider].modelo) || (info && info.modelo);
+        // PUBLISH MODAL
+        function openPublishModal() {
+            document.getElementById('publish-modal').classList.add('show');
+        }
 
-            document.querySelectorAll('.model-dropdown-content a').forEach(a => {
-                if (a.getAttribute('data-model-id') === modelId) {
-                    a.classList.add('active-model');
-                } else {
-                    a.classList.remove('active-model');
+        function closePublishModal() {
+            document.getElementById('publish-modal').classList.remove('show');
+        }
+
+        function executeDeploy(target) {
+            closePublishModal();
+            alert(`🚀 Desplegando Farming Simulator 20 en ${target}... ¡Compilación exitosa!`);
+        }
+
+        // MINIMAP RADAR CANVAS ANIMATION
+        (function initMinimap() {
+            const canvas = document.getElementById('minimap-canvas-el');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            canvas.width = 210;
+            canvas.height = 210;
+
+            function drawRadar() {
+                ctx.clearRect(0, 0, 210, 210);
+                
+                // Map background
+                ctx.fillStyle = "#0d1b12";
+                ctx.fillRect(0, 0, 210, 210);
+
+                // Fields shapes
+                ctx.fillStyle = "rgba(76,175,80,0.4)";
+                ctx.fillRect(20, 20, 70, 70);
+                ctx.fillRect(105, 20, 80, 50);
+                ctx.fillRect(20, 105, 60, 80);
+                ctx.fillRect(95, 95, 95, 95);
+
+                // Grid lines
+                ctx.strokeStyle = "rgba(0,255,136,0.15)";
+                ctx.lineWidth = 1;
+                for (let i = 0; i < 210; i += 30) {
+                    ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, 210); ctx.stroke();
+                    ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(210, i); ctx.stroke();
                 }
-            });
-        }
 
-        // Al iniciar, aplicar el proveedor guardado al chat
-        (function initProviderFromStorage() {
-            const cfg = loadProvidersConfig();
-            const activeKey = Object.keys(cfg).find(k => cfg[k] && cfg[k].activo);
-            if (activeKey && PROVIDER_CATALOG[activeKey]) {
-                const info = PROVIDER_CATALOG[activeKey];
-                const modelo = cfg[activeKey].modelo || info.modelo;
-                modeloActual = modelo;
-                if (btnModelChat) {
-                    const displayName = modelo ? `${info.icono} ${info.nombre} (${modelo})` : `${info.icono} ${info.nombre}`;
-                    btnModelChat.innerHTML = `^ ${displayName} ▼`;
-                    btnModelChat.style.color = '#00ff88';
-                }
+                // Player tractor marker
+                ctx.fillStyle = "#ffe100";
+                ctx.beginPath();
+                ctx.arc(105, 105, 6, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = "#fff";
+                ctx.stroke();
+
+                requestAnimationFrame(drawRadar);
             }
+            drawRadar();
         })();
 
-        // Configuración de los links en el dropdown
-        function setupDropdownLinks(dropdownId, updateBtnId) {
-            const dropdown = document.getElementById(dropdownId);
-            if (!dropdown) return;
-
-            dropdown.querySelectorAll('a').forEach(link => {
-                link.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-
-                    const modelId = link.getAttribute('data-model-id');
-                    const modelName = link.textContent;
-
-                    // Actualizar variable global de modelo
-                    modeloActual = modelId;
-
-                    // Sincronizar UI del botón de chat
-                    if (btnModelChat) {
-                        btnModelChat.innerHTML = `^ ${modelName} ▼`;
-                        
-                        // Asignar colores por categoría de modelo
-                        if (modelId === 'nexus-puro') {
-                            btnModelChat.style.color = '#00ff88'; // NEXUS Puro
-                        } else if (modelId === 'nexus-local') {
-                            btnModelChat.style.color = '#a855f7'; // NEXUS Local
-                        } else if (modelId.startsWith('deepseek-')) {
-                            btnModelChat.style.color = 'var(--neon-cyan)'; // DeepSeek API
-                        } else if (modelId.startsWith('gemini-')) {
-                            btnModelChat.style.color = '#ffb700'; // Gemini API
-                        } else {
-                            btnModelChat.style.color = '#a855f7'; // Ollama / Local por defecto
-                        }
-                    }
-
-                    // Marcar como activo en el dropdown
-                    document.querySelectorAll('.model-dropdown-content a').forEach(a => {
-                        if (a.getAttribute('data-model-id') === modelId) {
-                            a.classList.add('active-model');
-                        } else {
-                            a.classList.remove('active-model');
-                        }
-                    });
-
-                    // Cerrar dropdown
-                    if (chatModelDropdown) chatModelDropdown.classList.remove('show-dropdown');
-                });
-            });
-        }
-
-        setupDropdownLinks('chat-model-dropdown', 'btn-model-chat');
-
-        // 3. Botón de agregar archivo (+)
-        const btnPlus = document.getElementById('btn-plus');
-        const chatFileInput = document.getElementById('chat-file-input');
-
-        if (btnPlus && chatFileInput) {
-            btnPlus.addEventListener('click', () => {
-                chatFileInput.click();
-            });
-
-            chatFileInput.addEventListener('change', (e) => {
-                if (e.target.files.length > 0) {
-                    const fileName = e.target.files[0].name;
-
-                    chatInput.focus();
-                }
-            });
-        }
-
-
-
-        // 5. Botón de micrófono (🎙️) - Integración REAL estilo ChatGPT
-        const btnMic = document.getElementById('btn-mic');
-        let isRecording = false;
-        let recognition = null;
-
-        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            recognition = new SpeechRecognition();
-            recognition.lang = 'es-ES';
-            recognition.interimResults = true;
-            recognition.continuous = true; // Mantener escucha activa hasta que el usuario decida parar
-
-            recognition.onstart = () => {
-                isRecording = true;
-                btnMic.textContent = '🔴';
-                btnMic.style.color = 'var(--neon-red)';
-                btnMic.style.textShadow = '0 0 15px rgba(255, 51, 102, 0.8)';
-                chatInput.placeholder = 'Escuchando tu voz, Arquitecto...';
-            };
-
-            recognition.onresult = (event) => {
-                const transcript = Array.from(event.results)
-                    .map(result => result[0])
-                    .map(result => result.transcript)
-                    .join('');
-                
-                chatInput.value = transcript;
-            };
-
-            recognition.onerror = (event) => {
-                console.error('Error en reconocimiento:', event.error);
-                stopRecording();
-            };
-
-            recognition.onend = () => {
-                if (isRecording) {
-                    try {
-                        recognition.start(); // Reinicio automático para persistencia total
-                    } catch (e) {
-                        console.error("Error reiniciando reconocimiento:", e);
-                        stopRecording();
-                    }
-                } else {
-                    stopRecording();
-                }
-            };
-
-            function stopRecording() {
-                isRecording = false;
-                btnMic.textContent = '🎙️';
-                btnMic.style.color = '';
-                btnMic.style.textShadow = '';
-                chatInput.placeholder = 'Pregunta lo que sea al Oráculo o ingresa un comando...';
+        // CLOCK TICKING ANIMATION
+        setInterval(() => {
+            const el = document.getElementById('game-clock');
+            if (el) {
+                let [h, m] = el.textContent.split(':').map(Number);
+                m += 1;
+                if (m >= 60) { m = 0; h = (h + 1) % 24; }
+                el.textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
             }
-
-            btnMic.addEventListener('click', () => {
-                if (isRecording) {
-                    recognition.stop();
-                } else {
-                    recognition.start();
-                }
-            });
-        } else {
-            btnMic.title = "Reconocimiento de voz no soportado en este navegador";
-            btnMic.style.opacity = "0.5";
-        }
-
-        // Health Polling
-        async function pollHealth() {
-            try {
-                const res = await fetch('http://127.0.0.1:8080/nexus/v1/health');
-                const data = await res.json(); // data ahora es HealthResponse
-                const dot = document.getElementById('health-dot');
-                const details = document.getElementById('health-details');
-                
-                const healthReport = data.health_report; // Acceder al nuevo campo health_report
-
-                // Actualizar color del dot según el estado principal del reporte
-                if (healthReport.estado === 'Healthy') {
-                    dot.style.background = '#4caf50'; // Verde
-                } else if (healthReport.estado === 'Degraded') {
-                    dot.style.background = '#ff9800'; // Naranja
-                } else { // Critical
-                    dot.style.background = '#f44336'; // Rojo
-                }
-                
-                // Construir detalles expandibles
-                let probesDetails = ``;
-                if (healthReport.probes && healthReport.probes.length > 0) {
-                    probesDetails = healthReport.probes
-                        .map(p => `${p.passed ? '✅' : '❌'} ${p.nombre}: ${p.mensaje}`)
-                        .join('<br>');
-                } else {
-                    probesDetails = 'No hay pruebas de salud configuradas.';
-                }
-
-                // Mostrar resumen y score global
-                details.innerHTML = `
-                    <strong>Estado:</strong> ${healthReport.estado}<br>
-                    <strong>Score:</strong> ${(healthReport.score_global * 100).toFixed(0)}%<br>
-                    <strong>Resumen:</strong> ${healthReport.resumen}<br>
-                    <hr style="border-color: rgba(0,255,136,0.1);">
-                    <strong>Detalles de Probes:</strong><br>
-                    ${probesDetails}
-                `;
-                
-                // Mostrar/ocultar detalles al hacer clic en el widget
-                document.getElementById('health-widget').onclick = () => {
-                    details.style.display = details.style.display === 'none' ? 'block' : 'none';
-                };
-                details.style.display = 'block'; // Mostrar por defecto si hay detalles
-            } catch (e) {
-                document.getElementById('health-dot').style.background = '#666';
-                document.getElementById('health-details').innerHTML = `<span style="color:var(--neon-red);">Error conectando al Health API: ${e.message}</span>`;
-                document.getElementById('health-details').style.display = 'block';
-            }
-        }
-        pollHealth();
-        setInterval(pollHealth, 30000); // Cada 30 segundos
-
+        }, 1200);
     </script>
-<!-- ⚡ NEXUS UNIVERSAL LIVE EDITOR (Todos los Puertos) -->
-<script src="http://localhost:5180/nexus_live_editor.js"></script>
 </body>
 </html>
